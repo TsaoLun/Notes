@@ -365,13 +365,13 @@ housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 X = imputer.fit_transform(housing_num)
 ```
 #### _Scikit-Learn Design_
->估算器 _estimators_ :能根据数据集对某些参数进行估算的任意对象都能被称为估算器,通过fit方法执行并以数据集作为参数，此时如 _strategy_ 这类的其他参数作为超参数 _hyperparameter_ (用于 _SimpleImputer_ 实例)
+>估计器 _estimators_ :能根据数据集对某些参数进行估计的任意对象都能被称为估计器,通过fit方法执行并以数据集作为参数，此时如 _strategy_ 这类的其他参数作为超参数 _hyperparameter_ (用于 _SimpleImputer_ 实例)
 
->转换器 _transformers_ :有些估算器可以用于转换数据集，这些被称为转换器，由transform()方法与待转换数据一起执行并返回转换后的数据集，所有转换器都能使用 _fit_transform_ 方法。
+>转换器 _transformers_ :有些估计器可以用于转换数据集，这些被称为转换器，由transform()方法与待转换数据一起执行并返回转换后的数据集，所有转换器都能使用 _fit_transform_ 方法。
 
->预测器 _predictors_ :有些估算器能基于一个给定的数据集进行预测，被称为预测器。预测器的predict()方法会接受一个新实例的数据集，然后返回一个包含相应预测的数据集。score()方法则用来衡量给定测试集的预测质量。
+>预测器 _predictors_ :有些估计器能基于一个给定的数据集进行预测，被称为预测器。预测器的predict()方法会接受一个新实例的数据集，然后返回一个包含相应预测的数据集。score()方法则用来衡量给定测试集的预测质量。
 
-+ 检查 _Inspection_ :所有估算器的超参数都可以通过公共实例变量直接访问(e.g., imputer.strategy)直接访问，所有估计器的学习参数也可以通过带下划线后缀的公共实例变量来访问, imputer.statistics_得到是housing_num.median().values
++ 检查 _Inspection_ :所有估计器的超参数都可以通过公共实例变量直接访问(e.g., imputer.strategy)直接访问，所有估计器的学习参数也可以通过带下划线后缀的公共实例变量来访问, imputer.statistics_得到是housing_num.median().values
 + 类不扩散 _Nonproliferation of classes_ :数据集被表示为Numpy数组或者Scipy稀疏矩阵，而不是自定义类型。超参数只是普通 _Python_ 字符串或者数字。
 + 构成 _Composition_ :现有构建代码块 _blocks_ 尽最大可能重用，任意序列的转换器加上预测器就能创建一个 _Pipeline_
 + 合理默认值 _Sensible defaults_ :_Scikit-Learn_ 为大多数参数提供了合理的默认值，从而可以快速搭建起一个基础工作系统 _baseline working system_
@@ -434,7 +434,7 @@ housing_cat_1hot
 from sklearn.base import BaseEstimator, TransformerMixin
 rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
-    def __init__(self，add_bedrooms_per_room=True): #no *args or **kargs
+    def __init__(self，add_bedrooms_per_room=True): #no *args or **kwargs
         self.add_bedrooms_per_room = add_bedrooms_per_room
     def fit(self, X, y=None):
         return self #nothing else to do
