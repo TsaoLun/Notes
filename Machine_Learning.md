@@ -344,15 +344,15 @@ housing.drop("total_bedrooms",axis=1)#法2
 median = housing["total_bedrooms"].median()
 housing["total_bedrooms"].fillna(median)#法3
 ```
-Scikit-Learn提供了一个非常容易上手的类 _class_ 来处理缺失值： _SimpleImputer_ ，首先创建实例并指定替代值类型
+Scikit-Learn提供了一个非常容易上手的类 _class_ 来处理缺失值：**SimpleImputer**，首先创建实例并指定替代值类型
 ```python
 from sklearn.impute import SimpleInputer
 imputer = SimpleImputer(strategy="median")
-#把ocean_proximity排除在外因为它不是数值,没有中位数
+#把ocean_proximity排除在外因为它不是数值,没有中位数，无法根据中位数填补缺失值
 housing_num = housing.drop("ocean_proximity".axis=1)
 #使用fit()方法将imputer实例适配到训练集
 imputer.fit(housing_num)
-#这里imputer计算了每个属性的中位数值并将结果存储在实例变量statistics_中
+#这里imputer计算了每个属性的中位数值以实现填补并将结果存储在实例变量imputer.statistics_中
 ```
 虽然 _total_bedrooms_ 存在缺失值，但我们无法确认系统启动后新数据是否一定不存在任何缺失值
 此时可以使用这个imputer将缺失值转化为中位数得到一个Numpy array,再放回DataFrame中:
@@ -360,9 +360,11 @@ imputer.fit(housing_num)
 X = imputer.transform(housing_num)
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 ```
-再查看housing_tr.info()得到完整的数据集,上例也可以在得到imputer实例后直接作拟合与转换:
+再查看housing_tr.info()得到完整的数据集
+上例也可以在得到imputer实例和housing_num数据集后利用**fit_transform**一步实现拟合与转换:
 ```python
 X = imputer.fit_transform(housing_num)
+housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 ```
 #### _Scikit-Learn Design_
 >估计器 _estimators_ :能根据数据集对某些参数进行估计的任意对象都能被称为估计器,通过fit方法执行并以数据集作为参数，此时如 _strategy_ 这类的其他参数作为超参数 _hyperparameter_ (用于 _SimpleImputer_ 实例)
@@ -429,12 +431,13 @@ housing_cat_1hot
 	with 16512 stored elements in Compressed Sparse Row format>
 #### Custom Transformers定制转换器
 虽然 _Scikit-Learn_ 提供了许多有用的转换器，但仍需要一些自定义清理操作或者组合任务的转换器
-由于 _Scikit-Learn_ 依赖于 _duck typing_ 而不是继承 _inheritance_ ,所以只需**创建一个类**，然后应用fit()、transform()、fit_transform()，如果添加**TransformerMixin**作为基类就能直接得到最后一个方法。同样如果添加**BaseEstimator**作为基类（并在函数构造中避免*args和**kargs），还能获得两个非常有用的自动调整超参数的方法 _get_params()和set_params()_
+由于 _Scikit-Learn_ 依赖于 _duck typing_ 而不是继承 _inheritance_ ,所以只需**创建一个类**，然后应用fit()、transform()、fit_transform()，如果添加**TransformerMixin**作为基类就能直接得到最后一个方法。同样如果添加**BaseEstimator**作为基类（并在函数构造中避免*args和**kargs），还能获得两个非常有用的自动调整超参数的方法 _get_params()和set_params()_，以下定制转换器用来添加组合后的属性：
 ```python
+#问题代码
 from sklearn.base import BaseEstimator, TransformerMixin
-rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6
+rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6#各属性在housing_num中所属的列
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
-    def __init__(self，add_bedrooms_per_room=True): #no *args or **kwargs
+    def __init__(self, add_bedrooms_per_room=True):#no *args or **kwargs
         self.add_bedrooms_per_room = add_bedrooms_per_room
     def fit(self, X, y=None):
         return self #nothing else to do
@@ -442,8 +445,58 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
         rooms_per_household=X[:,rooms_ix]/X[:,household_ix]
         population_per_household=X[:,population_ix]/X[:,household_ix]
         if self.add_bedrooms_per_room:
-            bedrooms_per_room = X[:.bedrooms_ix]/X[:,rooms_ix]
+            bedrooms_per_room = X[:,bedrooms_ix]/X[:,household_ix]
             return np.c_[X, rooms_per_household, population_per_household,bedrooms_per_room]
         else:
             return np.c_[X, rooms_per_household, population_per_household]
+attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
+housing_extra_attribs = attr_adder.transform(housing.values)
+```
+在本例中，转换器有一个默认设置为真的超参数add_bedrooms_per_room,用来控制该步骤的开关。自动化执行的步骤越多，能尝试的组合也就越多。
+#### Feature Scaling特征缩放
+数值差异过大会导致算法性能不佳，常用的两种缩放方法是 _min-max sacling_ 归一化和 _standardization_ 标准化
+归一化即将值减去最小值并除以最大值和最小值的差使得最终范围在0～1之间。_Scikit-Learn_ 提供了名为**MinMaxScaler**的转换器，并可以通过超参数feature_range进行更改。
+标准化则是减去平均值再除以方差，受异常值的影响较小，不会把数值限制在一个特定的范围，对于有些算法比如神经网络来说可能存在问题。_Scikit-Learn_ 提供了一个标准化的转换器**StandardScaler**
+>跟所有转换一样，缩放器仅用来拟合训练集，而不是完整的数据集
+
+####Transformation Pipelines
+_Scikit-Learn_ 提供了Pipeline类来支持一系列的转换：
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+num_pipeline = Pipeline([
+    ('imputer', SimpleImputer(strategy="median")),
+    ('attribs_adder',CombinedAttributesAdder()),
+    ('std_scaler',StandardScaler())
+])
+
+housing_num_tr = num_pipeline.fit_transform(housing_num)
+```
+Pipeline构造函数会通过一系列名称/估计器(name/estimator)的配对来定义步骤的序列，除了最后一个之前的估计器必须是转换器（有fit_transform()方法)
+当对Pipeline调用fit()方法时会在所有转换器上调用fit_transfrom()方法，将前面调用的输出作为参数传递给下一个调用方法，直到最后一个估算器只调用fit()方法
+Pipeline的方法与最终估计器的调用方法一致，本例中最后一个估计器是StandardScaler，因此也可以直接使用transform()方法和fit_transform()方法
+接下来，为了同时在分类值上应用LabelBinarizer（把文本转换为独热），需要用到Scikit-Learn的**FeatureUnion**类，即特征联合。可以接受多个待转换对象，只需分别提供转换器列表（可以是Pipelines），就能依次调用transform()或者fit()方法，并将输出串联到复合特征空间。以下是一个完整的处理数值和分类属性的Pipline：
+```python
+from sklearn.pipeline import FeatureUnion
+
+num_attribs = list(housing_num) #即housing_num中各属性
+cat_attribs = ["ocean_proximity"]
+
+num_pipeline = Pipeline([
+    ('selector',DataFrameSelector(num_attribs)), #选择待处理的特征
+    ('imputer',Imputer(strategy="median")),      #求出中位数
+    ('attribs_adder',CombinedAttributesAdder()), #加上组合属性
+    ('std_scaler',StandardScaler()),
+])
+
+cat_pipeline = Pipeline([
+    ('selector',DataFrameSelector(cat_attribs)),
+    ('label_binarizer',LabelBinarizer()),
+])
+
+full_pipeline = FeatureUnion(transformer_list=[
+    ("num_pipeline",num_pipeline),
+    ("cat_pipeline",cat_pipeline),
+])
 ```
