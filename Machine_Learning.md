@@ -414,6 +414,7 @@ array([[1., 0., 0., 0., 0.],
        [1., 0., 0., 0., 0.],
        [0., 0., 0., 1., 0.]])
 使用**LabelBinarizer类**实现一次性完成两个转换（从文本到整数再到独热向量）
+注意现在LabelBinarizer只能用来转换labels而不能同时处理X(Features),如果直接放入Pipeline中会报错因为Pipeline会传给它X和y
 ```python
 from sklearn.preprocessing import LabelBinarizer
 encoder = LabelBinarizer()
@@ -433,7 +434,7 @@ housing_cat_1hot
 虽然 _Scikit-Learn_ 提供了许多有用的转换器，但仍需要一些自定义清理操作或者组合任务的转换器
 由于 _Scikit-Learn_ 依赖于 _duck typing_ 而不是继承 _inheritance_ ,所以只需**创建一个类**，然后应用fit()、transform()、fit_transform()，如果添加**TransformerMixin**作为基类就能直接得到最后一个方法。同样如果添加**BaseEstimator**作为基类（并在函数构造中避免*args和**kargs），还能获得两个非常有用的自动调整超参数的方法 _get_params()和set_params()_，以下定制转换器用来添加组合后的属性：
 ```python
-#问题代码
+
 from sklearn.base import BaseEstimator, TransformerMixin
 rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6#各属性在housing_num中所属的列
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
@@ -460,7 +461,7 @@ housing_extra_attribs = attr_adder.transform(housing.values)
 >跟所有转换一样，缩放器仅用来拟合训练集，而不是完整的数据集
 
 ####Transformation Pipelines
-_Scikit-Learn_ 提供了Pipeline类来支持一系列的转换：
+_Scikit-Learn_ 提供了Pipeline类来支持一系列的转换，以下为测试：
 ```python
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -484,19 +485,53 @@ num_attribs = list(housing_num) #即housing_num中各属性
 cat_attribs = ["ocean_proximity"]
 
 num_pipeline = Pipeline([
-    ('selector',DataFrameSelector(num_attribs)), #选择待处理的特征
-    ('imputer',Imputer(strategy="median")),      #求出中位数
+    ('selector',DataFrameSelector(num_attribs)), #选择待处理的数值特征
+    ('imputer',SimpleImputer(strategy="median")),      #求出中位数
     ('attribs_adder',CombinedAttributesAdder()), #加上组合属性
-    ('std_scaler',StandardScaler()),
+    ('std_scaler',StandardScaler()),             #进行标准化
 ])
 
 cat_pipeline = Pipeline([
-    ('selector',DataFrameSelector(cat_attribs)),
-    ('label_binarizer',LabelBinarizer()),
+    ('selector',DataFrameSelector(cat_attribs)), #选出待处理分类特征
+    ('label_binarizer',LabelBinarizer()),        #转换为独热向量
 ])
 
 full_pipeline = FeatureUnion(transformer_list=[
-    ("num_pipeline",num_pipeline),
+    ("num_pipeline",num_pipeline),               
     ("cat_pipeline",cat_pipeline),
 ])
+```
+对了，还需要定义一下上例中的DataFrameSelector()，它选出指定类型特征并将结果从DataFrame转换为Numpy数组:
+```python
+from sklearn.base import BaseEstimator, TransformerMixin
+class DataFrameSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, attribute_names):
+        self.attribute_names=attribute_names
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return X[self.attribute_names].values
+```
+接下来正式处理housing数据集
+```python
+housing_prepared = full_pipeline.fit_transform(housing)
+housing_prepared
+```
+此处报错，因为Pipeline假设LabelBinarizer方法会接受三个参数即fit_transform(self, X, y)而实际上它现在的fit_tranform只用到fit_transform(self, X)
+解决办法，创建一个定制转换器可以接受三个参数
+```python
+from sklearn.base import TransformerMixin #gives fit_transform method for free
+class MyLabelBinarizer(TransformerMixin):
+    def __init__(self, *args, **kwargs):
+        self.encoder = LabelBinarizer(*args, **kwargs)
+    def fit(self, x, y=0):
+        self.encoder.fit(x)
+        return self
+    def transform(self, x, y=0):
+        return self.encoder.transform(x)
+```
+在FeatureUnion的Pipeline中替换,再使用：
+```python
+housing_prepared = full_pipeline.fit_transform(housing)
+housing_prepared
 ```
