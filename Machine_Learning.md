@@ -1,4 +1,4 @@
-# 学习笔记<br /> Hands-On Machine Learning with Scikit-Learn & TensorFlow
+# Machine Learning with Scikit-Learn & TensorFlow
 
 ## 学习要点
 >机器学习基础与方法论
@@ -97,6 +97,7 @@ L0表示向量中非0元素的个数，Lp则是 $\parallel v \parallel _p=(|v_0|
 
 RMSE对离群点的敏感程度高于MAE，当离群点很少时优先选择RMSE进行评估
 接下来来从网页读取Housing文件：
+
 ```python
 #function to fetch the data
 import os
@@ -268,14 +269,16 @@ housing = strat_train_set.copy()
 #建立一个各区域的分布图，设置alpha=0.1突出高密度区域
 housing.plot(kind="scatter", x="longitude", y="latitude",alpha=0.1)
 ```
-![avatar](geohousing.png)
+![avatar](images/geohousing.png)
 圆半径大小代表人口数量 _s_ ，颜色代表价格 _c_ ，我们使用名为jet的预定义颜色表 _cmap_ 来进行可视化：
+
 ```python
 housing.plot(kind="scatter", x="longitude", y="latitude",alpha=0.4,s=housing["population"]/100,label="population",c="median_house_value",cmap=plt.get_cmap("jet"),colorbar=True)
 plt.legend()
 ```
-![avatar](mixhousing.png)
+![avatar](images/mixhousing.png)
 可以通过corr()方法计算每对属性间的标准相关系数 _standard correlation coefficient_ (也叫皮尔逊相关系数 _Pearson's_ )
+
 ```python
 corr_matrix = housing.corr()
 ```
@@ -299,8 +302,9 @@ from pandas.plotting import scatter_matrix
 attributes = ["median_house_value","median_income","total_rooms","housing_median_age"]
 scatter_matrix(housing[attributes], figsize=(12, 8))
 ```
-![avatar](scattermatrix.png)
+![avatar](images/scattermatrix.png)
 在输入数据之前还能尝试各自属性的组合:
+
 ```python
 housing["rooms_per_household"] = housing["total_rooms"]/housing["households"]
 housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
@@ -403,6 +407,7 @@ housing_cat_1hot
 <16512x5 sparse matrix of type '<class 'numpy.float64'>'
 	with 16512 stored elements in Compressed Sparse Row format>
 这里的稀疏矩阵仅储存非零元素的位置更节约内存，可以通过toarray()方法来将其转换为dense array
+
 ```python
 housing_cat_1hot.toarray()
 ```
@@ -430,6 +435,7 @@ housing_cat_1hot
 ```
 <16512x5 sparse matrix of type '<class 'numpy.int64'>'
 	with 16512 stored elements in Compressed Sparse Row format>
+
 #### Custom Transformers定制转换器
 虽然 _Scikit-Learn_ 提供了许多有用的转换器，但仍需要一些自定义清理操作或者组合任务的转换器
 由于 _Scikit-Learn_ 依赖于 _duck typing_ 而不是继承 _inheritance_ ,所以只需**创建一个类**，然后应用fit()、transform()、fit_transform()，如果添加**TransformerMixin**作为基类就能直接得到最后一个方法。同样如果添加**BaseEstimator**作为基类（并在函数构造中避免*args和**kargs），还能获得两个非常有用的自动调整超参数的方法 _get_params()和set_params()_，以下定制转换器用来添加组合后的属性：
@@ -460,8 +466,9 @@ housing_extra_attribs = attr_adder.transform(housing.values)
 标准化则是减去平均值再除以方差，受异常值的影响较小，不会把数值限制在一个特定的范围，对于有些算法比如神经网络来说可能存在问题。_Scikit-Learn_ 提供了一个标准化的转换器**StandardScaler**
 >跟所有转换一样，缩放器仅用来拟合训练集，而不是完整的数据集
 
-####Transformation Pipelines
+#### Transformation Pipelines
 _Scikit-Learn_ 提供了Pipeline类来支持一系列的转换，以下为测试：
+
 ```python
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -478,6 +485,7 @@ Pipeline构造函数会通过一系列名称/估计器(name/estimator)的配对�
 当对Pipeline调用fit()方法时会在所有转换器上调用fit_transfrom()方法，将前面调用的输出作为参数传递给下一个调用方法，直到最后一个估算器只调用fit()方法
 Pipeline的方法与最终估计器的调用方法一致，本例中最后一个估计器是StandardScaler，因此也可以直接使用transform()方法和fit_transform()方法
 接下来，为了同时在分类值上应用LabelBinarizer（把文本转换为独热），需要用到Scikit-Learn的**FeatureUnion**类，即特征联合。可以接受多个待转换对象，只需分别提供转换器列表（可以是Pipelines），就能依次调用transform()或者fit()方法，并将输出串联到复合特征空间。以下是一个完整的处理数值和分类属性的Pipline：
+
 ```python
 from sklearn.pipeline import FeatureUnion
 
