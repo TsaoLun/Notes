@@ -193,50 +193,50 @@ for train_index, test_index in split.split(housing, housing["income_cat"]):
 查看一下 _income_ 各类别占比
 ```python
 housing["income_cat"].value_counts()/len(housing)
-```
 3.0    0.350581
 2.0    0.318847
 4.0    0.176308
 5.0    0.114438
 1.0    0.039826
 Name: income_cat, dtype: float64
+```
 再查看一下训练集与测试集中的类别占比
 ```python
 strat_train_set["income_cat"].value_counts()/len(strat_train_set)
-```
 3.0    0.350594
 2.0    0.318859
 4.0    0.176296
 5.0    0.114402
 1.0    0.039850
 Name: income_cat, dtype: float64
+```
 ```python
 strat_test_set["income_cat"].value_counts()/len(strat_test_set)
-```
 3.0    0.350533
 2.0    0.318798
 4.0    0.176357
 5.0    0.114583
 1.0    0.039729
 Name: income_cat, dtype: float64
+```
 ```python
 train_set["income_cat"].value_counts()/len(train_set)
-```
 3.0    0.348595
 2.0    0.317466
 4.0    0.178537
 5.0    0.115673
 1.0    0.039729
 Name: income_cat, dtype: float64
+```
 ```python
 test_set["income_cat"].value_counts()/len(test_set)
-```
 3.0    0.358527
 2.0    0.324370
 4.0    0.167393
 5.0    0.109496
 1.0    0.040213
 Name: income_cat, dtype: float64
+```
 可见在分层抽样下，训练集、测试集与完整数据分布基本一致，而随机的train_test_split则稍有偏差
 在train_test_split()中加入**stratify参数**，比如stratify=y,这里是housing["income_cat"]
 ```python
@@ -244,7 +244,6 @@ from sklearn.model_selection import train_test_split
 train_set, test_set = train_test_split(housing, test_size=0.2,stratify=housing["income_cat"],random_state=42)
 train_set["income_cat"].value_counts()/len(train_set)
 test_set["income_cat"].value_counts()/len(test_set)
-```
 3.0    0.350594
 2.0    0.318859
 4.0    0.176296
@@ -257,6 +256,7 @@ Name: income_cat, dtype: float64
 5.0    0.114583
 1.0    0.039729
 Name: income_cat, dtype: float64
+```
 得到与整体分布更接近的样本采样，现在删除 _income_cat_ 属性，将数据复原:
 ```python
 for set in (strat_train_set, strat_test_set):
@@ -288,6 +288,8 @@ corr_matrix = housing.corr()
 ```python
 corr_matrix["median_house_value"].sort_values(ascending=False)
 ```
+
+```python
 median_house_value    1.000000
 median_income         0.688075
 total_rooms           0.134153
@@ -298,6 +300,7 @@ population           -0.024650
 longitude            -0.045967
 latitude             -0.144160
 Name: median_house_value, dtype: float64
+```
 还可以使用Pandas绘制 _scatter_matrix_ 函数，我们选取那些与房价中位数相关的属性：
 ```python
 from pandas.plotting import scatter_matrix
@@ -315,6 +318,8 @@ housing["population_per_household"] = housing["population"]/housing["households"
 corr_matrix = housing.corr()
 corr_matrix["median_house_value"].sort_values(ascending=False)
 ```
+
+```python
 median_house_value          1.000000
 median_income               0.688075
 rooms_per_household         0.151948
@@ -328,6 +333,7 @@ longitude                  -0.045967
 latitude                   -0.144160
 bedrooms_per_room          -0.255880
 Name: median_house_value, dtype: float64
+```
 发现 _bedrooms_per_room_ 与 _median_house_value_ 负相关，而 _rooms_per_household_ 与也比 _total_rooms_ 更具信息量
 
 ### 数据准备
@@ -416,6 +422,8 @@ housing_cat_1hot
 ```python
 housing_cat_1hot.toarray()
 ```
+
+```python
 array([[1., 0., 0., 0., 0.],
        [1., 0., 0., 0., 0.],
        [0., 0., 0., 0., 1.],
@@ -423,6 +431,7 @@ array([[1., 0., 0., 0., 0.],
        [0., 1., 0., 0., 0.],
        [1., 0., 0., 0., 0.],
        [0., 0., 0., 1., 0.]])
+```
 使用**LabelBinarizer类**实现一次性完成两个转换（从文本到整数再到独热向量）
 注意现在LabelBinarizer只能用来转换labels而不能同时处理X(Features),如果直接放入Pipeline中会报错因为Pipeline会传给它X和y
 ```python
@@ -437,9 +446,11 @@ from sklearn.preprocessing import LabelBinarizer
 encoder = LabelBinarizer(sparse_output=True)
 housing_cat_1hot = encoder.fit_transform(housing_cat)
 housing_cat_1hot
-```
+"""
 <16512x5 sparse matrix of type '<class 'numpy.int64'>'
 	with 16512 stored elements in Compressed Sparse Row format>
+"""
+```
 
 #### Custom Transformers定制转换器
 虽然 _Scikit-Learn_ 提供了许多有用的转换器，但仍需要一些自定义清理操作或者组合任务的转换器
@@ -548,9 +559,8 @@ class MyLabelBinarizer(TransformerMixin):
 ```python
 housing_prepared = full_pipeline.fit_transform(housing)
 housing_prepared
+#housing_prepared.shape为(16512, 16)与书中(16513, 17)不同
 ```
-housing_prepared.shape为(16512, 16)与书中(16513, 17)不同
-
 ### 模型选择
 
 从线性回归模型开始
@@ -565,12 +575,14 @@ some_labels = housing_labels.iloc[:5]
 some_data_prepared = full_pipeline.transform(some_data)
 print("Predictions:\n",np.around(lin_reg.predict(some_data_prepared)))
 print("Labels:\n",list(some_labels))
-```
+"""
 Predictions:
  [211881. 321219. 210878.  62198. 194848.]
 Labels:
- [286600.0, 340600.0, 196900.0, 46300.0, 254500.0]
- 用Scikit-Learn的mean_squared_error来测量训练集上的RMSE
+[286600.0, 340600.0, 196900.0, 46300.0, 254500.0]
+"""
+```
+用Scikit-Learn的mean_squared_error来测量训练集上的RMSE
 
 ```python
 from sklearn.metrics import mean_squared_error
@@ -581,7 +593,7 @@ lin_rmse
 #68911.49637588045
 ```
 大多数地区的房价中位数在120000到265000之间，所以这个预测误差差强人意。通常在欠拟合时，可以选择更强大的模型，或者为训练模型提供更好的特征，再或者减少对模型的限制（正则化）。
-我们尝试一下DecisionTreeRegressor
+我们尝试一下DecisionTreeRegressor:
 
 ```python
 from sklearn.tree import DecisionTreeRegressor
@@ -608,24 +620,26 @@ def display_scores(scores):
     print("Mean:",scores.mean())
     print("Standard deviation:",scores.std())
 display_scores(rmse_scores)
-```
+"""
 Scores: [69446.17322491 68573.17026052 70222.96673604 72645.5123251
  68148.61712134 74340.91209792 73857.73237391 70829.25079841
  76758.25414382 69888.59320288]
 Mean: 71471.11822848504
-Standard deviation: 2669.7646210032563
+Standard deviation: 2669.7646210032563"""
+```
 RMSE的均值比线性回归还糟糕，交叉验证不仅可以得到模型性能的评估值，还可以衡量该评估的精确度（即标准差）。接下来看一下线性模型的评分：
 
 ```python
 lin_scores = cross_val_score(lin_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error",cv=10)
 lin_rmse_scores = np.sqrt(-lin_scores)
 display_scores(lin_rmse_scores)
-```
+"""
 Scores: [67474.11780426 67233.22466524 69301.86479972 74716.01783105
  68426.80214612 71609.98356263 65200.14338307 68687.78826919
  72262.43484426 68111.81213342]
 Mean: 69302.41894389638
-Standard deviation: 2653.460699447043
+Standard deviation: 2653.460699447043"""
+```
 决策树确实严重过拟合了，来看看最后一个模型RandomForestRegressor
 
 ```python
@@ -642,12 +656,13 @@ forest_reg_scores = cross_val_score(forest_reg, housing_prepared, housing_labels
 forest_rmse_scores = np.sqrt(-forest_reg_scores)
 
 display_scores(forest_rmse_scores)
-```
+"""
 Scores: [49667.82885713 47559.50920685 49912.7619866  52847.90520482
  49503.35788784 54392.18195777 49534.25454753 48141.15339194
  53330.88218057 50496.84842538]
 Mean: 50538.66836464148
-Standard deviation: 2140.9028742731366
+Standard deviation: 2140.9028742731366"""
+```
 效果得到提升，书上说训练集得分低于测试集存在过拟合（难道不是欠拟合？）但是我用train_test_split得到的得分接近：
 
 ```python
@@ -655,9 +670,9 @@ from sklearn.model_selection import train_test_split
 X_train,X_test,y_train,y_test = train_test_split(housing_prepared,housing_labels)
 print('Train score:{:.3f}'.format(forest_reg.score(X_train, y_train)))
 print('Test score:{:.3f}'.format(forest_reg.score(X_test, y_test)))
+#Train score:0.974
+#Test score:0.973
 ```
-Train score:0.974
-Test score:0.973
 妥善保存模型，参数和超参数，以及交叉验证的评分和实际预测的结果，这样就能轻松对比不同模型。通过Python的pickel模块或是sklearn.externals.joblib，可以保存sklearn模型，更有效地将大型Numpy数组序列化：
 
 ```python
@@ -681,10 +696,11 @@ grid_search = GridSearchCV(forest_reg, param_grid, cv=5, scoring='neg_mean_squar
 grid_search.fit(housing_prepared, housing_labels)
 ```
 先评估第一个dict中n_estimators和max_features的3X4种超参数组合，再尝试第二个dict中2X3种组合且bootstrap为False
-`grid_search.best_params_`输出{'max_features': 6, 'n_estimators': 30}
+grid_search.best_params_输出 {'max_features': 6, 'n_estimators': 30}
 n_estimators的最大值是30，所以可以尝试更高的值看评分是否继续改善
-也可以直接得到最好的估算器 `grid_search.best_estimator_`
+也可以直接得到最好的估算器 grid_search.best_estimator_
 
+```python
 RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
                       max_depth=None, max_features=6, max_leaf_nodes=None,
                       max_samples=None, min_impurity_decrease=0.0,
@@ -692,14 +708,14 @@ RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
                       min_samples_split=2, min_weight_fraction_leaf=0.0,
                       n_estimators=30, n_jobs=None, oob_score=False,
                       random_state=None, verbose=0, warm_start=False)
-
+```
 可以通过通过以下代码查看评估分数:
 
 ```python
 cvres = grid_search.cv_results_
 for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
     print(np.sqrt(-mean_score),params)
-```
+"""
 64224.53778180021 {'max_features': 2, 'n_estimators': 3}
 55615.95389014503 {'max_features': 2, 'n_estimators': 10}
 53354.46171627235 {'max_features': 2, 'n_estimators': 30}
@@ -710,8 +726,8 @@ for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
 51738.49779800306 {'max_features': 6, 'n_estimators': 10}
 50013.298214917035 {'max_features': 6, 'n_estimators': 30}
 ...
-51813.13032113271 {'bootstrap': False, 'max_features': 4, 'n_estimators': 10}
-
+51813.13032113271 {'bootstrap': False, 'max_features': 4, 'n_estimators': 10}"""
+```
 这里mean_score交叉验证得分scoring是neg_mean_squared_error（MSE的负数）为了得到RMSE需要取负号再开方。50013的得分比默认参数下50539要好一些。
 有些数据准备步骤也能当超参数来处理，例如是否使用转换器CombinedAttributesAdder的超参数add_bedrooms_per_room。网格搜索还能用于自动查找处理异常值、缺失特征与特征选择等问题。
 
@@ -747,7 +763,7 @@ sorted(zip(feature_importances, attributes),reverse=True)
  (0.004175517190766886, 'NEAR OCEAN'),
  (0.0020439918957843575, 'NEAR BAY'),
  (9.564049814187357e-05, 'ISLAND')]
- ```
+```
 有了这些信息，就能删除一些不太有用的特征。现在在测试集上评估最终的模型：
 ```python
  final_model = grid_search.best_estimator_
@@ -760,4 +776,4 @@ sorted(zip(feature_importances, attributes),reverse=True)
 
  final_mse = mean_squared_error(y_test, final_predictions)
  final_rmse = np.sqrt(final_mse)#47611.75169361235
- ```
+```

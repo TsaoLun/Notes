@@ -1114,5 +1114,65 @@ guess = ''
 while guess not in ('head','tails'):
     print('Guess the coin toss! Enter heads or tails:')
     guess = input()
-    
+toss = random.randint(0,1) #0 is tails, 1 is heads
+if toss == guess:
+    print('You got it!')
+else:
+    print('None! Guess again!')
+    guess = input()
+    if toss == guess:
+        print('You got it!')
+    else:
+        print('Nope. You are really bad at this game.')
+```
+修改后增加logging
+```python
+import random
+import logging
+logging.basicConfig(filename='guesslog.txt',level=logging.DEBUG, format='%(asctime)s-%(levelname)s-%(message)s')
+logging.debug('Start of program')
+guess = ''
+while guess not in ('heads','tails'):
+    print('Guess the coin toss! Enter heads or tails:')
+    guess = input()
+    logging.debug('guess is {}'.format(guess))
+num = random.randint(0,1) #0 is tails, 1 is heads
+tosslist = ['heads','tails']
+toss = tosslist[num]
+logging.debug('toss is {}'.format(toss))
+if toss == guess:
+    logging.debug('toss == guess')
+    print('You got it!')
+else:
+    print('None! Guess again!')
+    logging.debug('toss != guess')
+    guess = input()
+    logging.debug('second guess is {}'.format(guess))
+    if toss == guess:
+        logging.debug('toss == guess')
+        print('You got it!')
+    else:
+        print('Nope. You are really bad at this game.')
+        logging.debug('toss != guess')
+logging.debug('End of program')
+```
+```python
+#运行三次后查看logging
+2020-05-12 21:17:29,212-DEBUG-Start of program
+2020-05-12 21:17:45,849-DEBUG-guess is heads
+2020-05-12 21:17:45,850-DEBUG-toss is heads
+2020-05-12 21:17:45,850-DEBUG-toss == guess
+2020-05-12 21:17:45,850-DEBUG-End of program
+2020-05-12 21:17:51,076-DEBUG-Start of program
+2020-05-12 21:18:42,187-DEBUG-guess is heads
+2020-05-12 21:18:42,187-DEBUG-toss is heads
+2020-05-12 21:18:42,187-DEBUG-toss == guess
+2020-05-12 21:18:42,188-DEBUG-End of program
+2020-05-12 21:18:46,799-DEBUG-Start of program
+2020-05-12 21:18:49,179-DEBUG-guess is heads
+2020-05-12 21:18:49,179-DEBUG-toss is tails
+2020-05-12 21:18:49,180-DEBUG-toss != guess
+2020-05-12 21:18:53,082-DEBUG-second guess is tails
+2020-05-12 21:18:53,082-DEBUG-toss == guess
+2020-05-12 21:18:53,082-DEBUG-End of program
 ```
