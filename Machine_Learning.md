@@ -76,12 +76,12 @@ lin_reg_model.fit(X, y)
 X_new = [[22587]] # Cyprus' GDP per capita
 print(lin_reg_model.predict(X_new)) # outputs
 ```
-## 端对端机器学习 _END TO END_
+## END TO END
 
 ### Get the data
 
 构建一个可以预测加州任何地区房价中位数的模型，以给后续Pipeline中的投资模型提供数据
-_多变量回归的批量学习 multivariate regression with batch learning_
+>多变量回归的批量学习 _multivariate regression with batch learning_
 
 回归问题常用的性能衡量指标 _Performance Measure_ 是**均方根误差** _Root Mean Square Error_
 _It measures the standard deviation of the errors the system makes in its predictions._
@@ -96,7 +96,7 @@ MAE对应曼哈顿范数，L1范数写作$\parallel . \parallel _1$
 L0表示向量中非0元素的个数，Lp则是 $\parallel v \parallel _p=(|v_0|^p+|v_1|^p+...+|v_n|^p)^{1\over p}$
 
 RMSE对离群点的敏感程度高于MAE，当离群点很少时优先选择RMSE进行评估
-接下来来从网页读取Housing文件：
+接下来从网页读取Housing文件：
 
 ```python
 #function to fetch the data
@@ -151,7 +151,7 @@ def split_train_test(data, test_ratio):
 完成训练集与测试集分组，但每运行一次产生的数据集不一样会导致模型最终学习了整个数据集。解决方法之是每次运行完保存数据，或者在调用np.random.permutation()之前设置一个随机数生成器的种子(比如np.random.seed)以生成相同的随机索引。但这样仍会在更新数据后实效，最好的方法是对每个实例使用一个**标识符** _identifier_ 来决定是否放入测试集，即便有新数据也会被确保放入测试集，实现方式如下：
 ```python
 import hashlib
-#接受传入内容并得到hash值
+#接受传入内容并得到hash值(散列函数，将任意长度的值转换为固定长度的输出)
 def test_set_check(identifier, test_ratio, hash):
     return hash(np.int64(identifier)).digest()[-1] < 256 * test_ratio #digest()返回摘要
 def split_train_test_by_id(data, test_ratio, id_column, hash=hashlib.md5):
@@ -178,7 +178,8 @@ train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 ```python
 housing["income_cat"] = np.ceil(housing["median_income"]/1.5)
 housing["income_cat"].where(housing["income_cat"] < 5, 5.0, inplace=True)
-#np.where(condition, x, y):满足条件(condition)，输出x，不满足输出y
+#注意这里不是np.where(condition, x, y):满足条件(condition)，输出x，不满足输出y
+#housing["income_cat"]是pandas.seris,df.where(df < 0, -df) == np.where(df < 0, df, -df),inplace取代原数据
 ```
 现在可以根据收入类别进行分层抽样了，使用 _Scikit-Learn_ 的 _Stratified-Shuffle Split_ 类:
 ```python
@@ -262,6 +263,7 @@ for set in (strat_train_set, strat_test_set):
     set.drop(["income_cat"], axis=1, inplace=True)
 ```
 ### 数据探索与可视化
+
 _Put the test set aside and only explore the training set._
 ```python
 #创建副本进行探索
@@ -329,6 +331,7 @@ Name: median_house_value, dtype: float64
 发现 _bedrooms_per_room_ 与 _median_house_value_ 负相关，而 _rooms_per_household_ 与也比 _total_rooms_ 更具信息量
 
 ### 数据准备
+
 通过编写函数来准备数据的好处：
 + 可以在任何数据集上重现这些转换
 + 可以逐渐建立起转换函数的函数库
@@ -366,6 +369,7 @@ housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 ```
 再查看housing_tr.info()得到完整的数据集
 上例也可以在得到imputer实例和housing_num数据集后利用**fit_transform**一步实现拟合与转换:
+
 ```python
 X = imputer.fit_transform(housing_num)
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
@@ -383,6 +387,7 @@ housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 + 合理默认值 _Sensible defaults_ :_Scikit-Learn_ 为大多数参数提供了合理的默认值，从而可以快速搭建起一个基础工作系统 _baseline working system_
 
 #### 处理文本和分类属性
+
 之前我们排除的分类属性ocean_proximity是文本属性，无法计算中位数，其实大部分机器学习算法都适合处理数字，接下来将其转换成数字，_Scikit-Learn_ 提供了转换器**LabelEncoder**:
 ```python
 from sklearn.preprocessing import LabelEncoder
@@ -464,6 +469,7 @@ housing_extra_attribs = attr_adder.transform(housing.values)
 数值差异过大会导致算法性能不佳，常用的两种缩放方法是 _min-max sacling_ 归一化和 _standardization_ 标准化
 归一化即将值减去最小值并除以最大值和最小值的差使得最终范围在0～1之间。_Scikit-Learn_ 提供了名为**MinMaxScaler**的转换器，并可以通过超参数feature_range进行更改。
 标准化则是减去平均值再除以方差，受异常值的影响较小，不会把数值限制在一个特定的范围，对于有些算法比如神经网络来说可能存在问题。_Scikit-Learn_ 提供了一个标准化的转换器**StandardScaler**
+
 >跟所有转换一样，缩放器仅用来拟合训练集，而不是完整的数据集
 
 #### Transformation Pipelines
@@ -525,7 +531,7 @@ class DataFrameSelector(BaseEstimator, TransformerMixin):
 housing_prepared = full_pipeline.fit_transform(housing)
 housing_prepared
 ```
-此处报错，因为Pipeline假设LabelBinarizer方法会接受三个参数即fit_transform(self, X, y)而实际上它现在的fit_tranform只用到fit_transform(self, X)
+此处报错，因为Pipeline假设LabelBinarizer方法会接受三个参数即fit_transform(self, X, y)而实际上它现在的fit_transform只用到fit_transform(self, X)
 解决办法，创建一个定制转换器可以接受三个参数
 ```python
 from sklearn.base import TransformerMixin #gives fit_transform method for free
@@ -543,3 +549,215 @@ class MyLabelBinarizer(TransformerMixin):
 housing_prepared = full_pipeline.fit_transform(housing)
 housing_prepared
 ```
+housing_prepared.shape为(16512, 16)与书中(16513, 17)不同
+
+### 模型选择
+
+从线性回归模型开始
+
+```python
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
+lin_reg.fit(housing_prepared, housing_labels)
+
+some_data = housing.iloc[:5]
+some_labels = housing_labels.iloc[:5]
+some_data_prepared = full_pipeline.transform(some_data)
+print("Predictions:\n",np.around(lin_reg.predict(some_data_prepared)))
+print("Labels:\n",list(some_labels))
+```
+Predictions:
+ [211881. 321219. 210878.  62198. 194848.]
+Labels:
+ [286600.0, 340600.0, 196900.0, 46300.0, 254500.0]
+ 用Scikit-Learn的mean_squared_error来测量训练集上的RMSE
+
+```python
+from sklearn.metrics import mean_squared_error
+housing_predictions = lin_reg.predict(housing_prepared)
+lin_mse = mean_squared_error(housing_labels, housing_predictions)
+lin_rmse = np.sqrt(lin_mse)
+lin_rmse
+#68911.49637588045
+```
+大多数地区的房价中位数在120000到265000之间，所以这个预测误差差强人意。通常在欠拟合时，可以选择更强大的模型，或者为训练模型提供更好的特征，再或者减少对模型的限制（正则化）。
+我们尝试一下DecisionTreeRegressor
+
+```python
+from sklearn.tree import DecisionTreeRegressor
+tree_reg = DecisionTreeRegressor()
+tree_reg.fit(housing_prepared, housing_labels)
+
+housing_predictions = tree_reg.predict(housing_prepared)
+tree_mse = mean_squared_error(housing_labels, housing_predictions)
+tree_rmse = np.sqrt(tree_mse)
+tree_rmse
+```
+RMSE为0，极有可能过拟合，我们需要拿出部分用于训练，另一部分用于模型验证。评估决策模型的一种方法是使用train_test_split函数，另一种是使用交叉验证 _cross-validation_。以下是K-折交叉验证的代码，将训练集随机分割成10个不同的子集，每次挑选1个进行评估，另外9个进行训练，产生一个包含10次评估分数的数组。
+
+```python
+from sklearn.model_selection import cross_val_score
+scores = cross_val_score(tree_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error", cv=10)
+rmse_scores = np.sqrt(-scores)
+```
+Scikit-Learn的交叉验证的得分是MSE的负数，来看看结果：
+
+```python
+def display_scores(scores):
+    print("Scores:",scores)
+    print("Mean:",scores.mean())
+    print("Standard deviation:",scores.std())
+display_scores(rmse_scores)
+```
+Scores: [69446.17322491 68573.17026052 70222.96673604 72645.5123251
+ 68148.61712134 74340.91209792 73857.73237391 70829.25079841
+ 76758.25414382 69888.59320288]
+Mean: 71471.11822848504
+Standard deviation: 2669.7646210032563
+RMSE的均值比线性回归还糟糕，交叉验证不仅可以得到模型性能的评估值，还可以衡量该评估的精确度（即标准差）。接下来看一下线性模型的评分：
+
+```python
+lin_scores = cross_val_score(lin_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error",cv=10)
+lin_rmse_scores = np.sqrt(-lin_scores)
+display_scores(lin_rmse_scores)
+```
+Scores: [67474.11780426 67233.22466524 69301.86479972 74716.01783105
+ 68426.80214612 71609.98356263 65200.14338307 68687.78826919
+ 72262.43484426 68111.81213342]
+Mean: 69302.41894389638
+Standard deviation: 2653.460699447043
+决策树确实严重过拟合了，来看看最后一个模型RandomForestRegressor
+
+```python
+from sklearn.ensemble import RandomForestRegressor
+forest_reg = RandomForestRegressor()
+forest_reg.fit(housing_prepared, housing_labels)
+
+housing_predictions = forest_reg.predict(housing_prepared)
+forest_mse = mean_squared_error(housing_labels, housing_predictions)
+tree_rmse = np.sqrt(forest_mse)
+tree_rmse #18781.044667270027
+
+forest_reg_scores = cross_val_score(forest_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error",cv=10)
+forest_rmse_scores = np.sqrt(-forest_reg_scores)
+
+display_scores(forest_rmse_scores)
+```
+Scores: [49667.82885713 47559.50920685 49912.7619866  52847.90520482
+ 49503.35788784 54392.18195777 49534.25454753 48141.15339194
+ 53330.88218057 50496.84842538]
+Mean: 50538.66836464148
+Standard deviation: 2140.9028742731366
+效果得到提升，书上说训练集得分低于测试集存在过拟合（难道不是欠拟合？）但是我用train_test_split得到的得分接近：
+
+```python
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test = train_test_split(housing_prepared,housing_labels)
+print('Train score:{:.3f}'.format(forest_reg.score(X_train, y_train)))
+print('Test score:{:.3f}'.format(forest_reg.score(X_test, y_test)))
+```
+Train score:0.974
+Test score:0.973
+妥善保存模型，参数和超参数，以及交叉验证的评分和实际预测的结果，这样就能轻松对比不同模型。通过Python的pickel模块或是sklearn.externals.joblib，可以保存sklearn模型，更有效地将大型Numpy数组序列化：
+
+```python
+from sklearn.externals import joblib
+joblib.dump(my_model,"my_model.pkl")
+#and later...
+my_model_loaded = joblib.load("my_model.pkl")
+```
+
+### 微调模型
+可以用sklearn的GridSearchCV**网格搜索**，只要告诉它要进行实验的超参数是什么，它就会使用交叉验证来评估所有组合:
+
+```python
+from sklearn.model_selection import GridSearchCV
+param_id = [
+    {'n_estimators':[3,10,30],'max_features':[2,4,6,8]},
+    {'bootstrap':[False],'n_estimators':[3,10],'max_features':[2,3,4]}
+]
+forest_reg = RandomForestRegressor()
+grid_search = GridSearchCV(forest_reg, param_grid, cv=5, scoring='neg_mean_squared_error')
+grid_search.fit(housing_prepared, housing_labels)
+```
+先评估第一个dict中n_estimators和max_features的3X4种超参数组合，再尝试第二个dict中2X3种组合且bootstrap为False
+`grid_search.best_params_`输出{'max_features': 6, 'n_estimators': 30}
+n_estimators的最大值是30，所以可以尝试更高的值看评分是否继续改善
+也可以直接得到最好的估算器 `grid_search.best_estimator_`
+
+RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
+                      max_depth=None, max_features=6, max_leaf_nodes=None,
+                      max_samples=None, min_impurity_decrease=0.0,
+                      min_impurity_split=None, min_samples_leaf=1,
+                      min_samples_split=2, min_weight_fraction_leaf=0.0,
+                      n_estimators=30, n_jobs=None, oob_score=False,
+                      random_state=None, verbose=0, warm_start=False)
+
+可以通过通过以下代码查看评估分数:
+
+```python
+cvres = grid_search.cv_results_
+for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
+    print(np.sqrt(-mean_score),params)
+```
+64224.53778180021 {'max_features': 2, 'n_estimators': 3}
+55615.95389014503 {'max_features': 2, 'n_estimators': 10}
+53354.46171627235 {'max_features': 2, 'n_estimators': 30}
+60941.834046096104 {'max_features': 4, 'n_estimators': 3}
+52708.887304172014 {'max_features': 4, 'n_estimators': 10}
+50350.54562467355 {'max_features': 4, 'n_estimators': 30}
+59064.866569536745 {'max_features': 6, 'n_estimators': 3}
+51738.49779800306 {'max_features': 6, 'n_estimators': 10}
+50013.298214917035 {'max_features': 6, 'n_estimators': 30}
+...
+51813.13032113271 {'bootstrap': False, 'max_features': 4, 'n_estimators': 10}
+
+这里mean_score交叉验证得分scoring是neg_mean_squared_error（MSE的负数）为了得到RMSE需要取负号再开方。50013的得分比默认参数下50539要好一些。
+有些数据准备步骤也能当超参数来处理，例如是否使用转换器CombinedAttributesAdder的超参数add_bedrooms_per_room。网格搜索还能用于自动查找处理异常值、缺失特征与特征选择等问题。
+
+当超参数的搜索范围较大时，通常会选择**随机搜索**RandomizedSearchCV，它的使用与网格搜索相似只是在每次迭代iteration时为每个超参数选择一个随机值，然后对一定数量的随机组合进行评估。还有一种将表现最优的模型组合起来的微调方法，叫作**集成方法**，以后会细讲。
+
+RandomForestRegressor的网格搜索还可以指出每个属性的相对重要性：
+`
+grid_search.best_estimator_.feature_importances_
+`
+
+```python
+extra_attribs = ["rooms_per_hhold","pop_per_hhold","bedrooms_per_room"]
+cat_one_hot_attribs = list(housing_cat_1hot.classes_)
+attributes = num_attribs + extra_attribs + cat_one_hot_attribs
+sorted(zip(feature_importances, attributes),reverse=True)
+#这里的encoder需要重新赋值？
+```
+
+```python
+[(0.36429551902389495, 'median_income'),
+ (0.16481242198441456, 'INLAND'),
+ (0.10822352423812849, 'pop_per_hhold'),
+ (0.084131574436137, 'rooms_per_hhold'),
+ (0.07338186135523198, 'longitude'),
+ (0.06924900711955442, 'latitude'),
+ (0.04077900321697338, 'housing_median_age'),
+ (0.02543631663431409, 'bedrooms_per_room'),
+ (0.014793303558073727, 'total_bedrooms'),
+ (0.014790510756069453, 'population'),
+ (0.014465165531602157, 'total_rooms'),
+ (0.013983492630388885, 'households'),
+ (0.005343149930523917, '<1H OCEAN'),
+ (0.004175517190766886, 'NEAR OCEAN'),
+ (0.0020439918957843575, 'NEAR BAY'),
+ (9.564049814187357e-05, 'ISLAND')]
+ ```
+有了这些信息，就能删除一些不太有用的特征。现在在测试集上评估最终的模型：
+```python
+ final_model = grid_search.best_estimator_
+ 
+ X_test = strat_test_set.drop("median_house_value",axis=1)
+ y_test = strat_test_set["median_house_value"].copy()
+
+ X_test_prepared = full_pipeline.transform(X_test)
+ final_predictions = final_model.predict(X_test_prepared)
+
+ final_mse = mean_squared_error(y_test, final_predictions)
+ final_rmse = np.sqrt(final_mse)#47611.75169361235
+ ```
