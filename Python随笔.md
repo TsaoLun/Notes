@@ -1176,3 +1176,202 @@ logging.debug('End of program')
 2020-05-12 21:18:53,082-DEBUG-toss == guess
 2020-05-12 21:18:53,082-DEBUG-End of program
 ```
+
+### Web信息抓取
+
+**webbrowser**的open()函数启动浏览器打开指定URL
+
+```python
+import webbrowser
+webbrowser.open('http://inventwithpython.com/')
+```
+首先弄清楚URL，再处理命令行参数以得到字符串。
+
+```python
+import webbrowser, sys
+if len(sys.argv) > 1:
+    address = ' '.join(sys.argv[1:])
+```
+sys.argv变量保存了程序的文件名和命令行参数的列表，如果列表不只有文件名返回值就会大于1，意味着提供了命令行参数。命令行参数通常用空格分隔，将它传递给join()方法返回字符串，同时去掉程序名sys.argv[0]
+
+```python
+import webbrowser, sys, pyperclip
+if len(sys.argv) > 1:
+    address = ' '.join(sys.argv[1:])
+else:
+    address = pyperclip.paste()
+webbrowser.open('https://www.bing.com/maps/place/'+address)
+#如果没有命令行参数，程序将假定地址保存在剪切版中，并调用webbrowser进行搜索。
+```
+**requests模块**
+requests.get()函数接受一个要下载的URL字符串，通过在requests.get()的返回值上调用type()，你可以看到它返回一个Response对象，其中包含了Web服务器对请求作出的响应。
+
+```python
+import requests
+res = requests.get('http://www.gutenberg.org/cache/epub/1112/pg1112.txt')
+type(res) #requests.models.Response
+```
+通过检查Response对象的status_code属性，可以了解对这个网页的请求是否成功。下载的页面作为字符串，保存在Response对象的text变量中。
+
+```python
+res.status_code == requests.codes.ok #True(200)
+len(res.text) #179378
+print(res.text[:250])
+"""
+The Project Gutenberg EBook of Romeo and Juliet, by William Shakespeare
+
+
+*******************************************************************
+THIS EBOOK WAS ONE OF PROJECT GUTENBERG'S EARLY FILES PRODUCED AT A
+TIME WHEN PROOFING METHODS AND TOO"""
+```
+在Response对象上调用raise_for_status()方法也可以了解请求是否成功，可以确保程序在下载失败时停止。
+
+```python
+res = requests.get('http://inventwithpython.com/page_that_does_not_exist')
+res.raise_for_status()
+#HTTPError: 404 Client Error: Not Found for url: http://inventwithpython.com/page_that_does_not_exist
+```
+用try和except语句将raise_for_status()代码行包裹起来，不让程序崩溃：
+
+```python
+res = requests.get('http://inventwithpython.com/page_that_does_not_exist')
+try:
+    res.raise_for_status()
+except Exception as exc: #注意这个用法
+    print('There was a problem: %s' % (exc))
+#There was a problem: 404 Client Error: Not Found for url: http://inventwithpython.com/page_that_does_not_exist
+```
+用标准的open()函数和write()方法将Web页面保存到硬盘中的一个文件，这里有两点注意：为了保存该文本中的Unicode编码，必须用二进制模式即'wb'打开，也必须写入二进制数据，并利用Respose对象的iter_content()方法做循环，参数为100000。
+
+```python
+import requests
+res = requests.get('http://www.gutenberg.org/cache/epub/1112/pg1112.txt')
+res.raise_for_status()
+with open('RomeoAndJuliet.txt','wb') as playfile:
+    for chunk in res.iter_content(100000): #bytes数据类型
+        playfile.write(chunk)
+```
+**BeautifulSoup**
+bs4模块用于从HTML页面提取信息，首先创建BeautifulSoup对象：
+
+```python
+import requests, bs4
+res = requests.get('http://nostarch.com')
+res.raise_for_status()
+noStarchSoup = bs4.BeautifulSoup(res.text)
+type(noStarchSoup)
+#现在要验证码了
+```
+
+```python
+#尝试本地html文件
+exampleFile = open('example.html')
+exampleSoup = bs4.BeautifulSoup(exampleFile)
+type(exampleSoup) #bs4.BeautifulSoup
+```
+用select()方法寻找元素，向BeautifulSoup对象的select()方法传递CSS选择器，比如soup.select('div')将匹配所有名为< div >的元素，soup.select('input[type="button"]')匹配所有名为< input >并有一个type属性值为button的元素。
+
+select()方法将返回一个针对每次匹配的Tag对象列表，这是Beautiful Soup表示一个HTML元素的方式。Tag值可以传递给str()函数，显示它们代表的HTML标签。Tag值也可以有attrs属性，它将该Tag的所有HTML属性作为一个字典。
+
+```python
+import bs4
+exampleFile = open('example.html')
+exampleSoup = bs4.BeautifulSoup(exampleFile.read())
+elems = exampleSoup.select('#author')
+type(elems) #bs4.element.ResultSet
+len(elems) #1
+type(elems[0]) #bs4.element.Tag
+elems[0].getText() #'Al Sweigart'
+str(elems[0]) #'<span id="author">Al Sweigart</span>'
+elems[0].attrs #{'id': 'author'}
+```
+也可以从BeautifulSoup对象中找出< p>元素，保存在pElems中，分别对其中每个元素使用str()函数，调用getText()方法。
+
+```python
+pElems = exampleSoup.select('p')
+str(pElems[0]) #'<p>Download my <strong>Python</strong> book from <a href="http://inventwithpython.com">my website</a>.</p>'
+pElems[0].getText() #'Download my Python book from my website.'
+str(pElems[1]) #'<p class="slogan">Learn Python the easy way!</p>'
+pElems[1].getText() #'Learn Python the easy way!'
+str(pElems[2]) #'<p>By <span id="author">Al Sweigart</span></p>'
+pElems[2].getText() #'By Al Sweigart'
+```
+Tag对象的get()方法可以从元素中获取属性值，向该方法传入一个属性名称的字符串将返回该属性的值。
+
+```python
+import bs4
+soup = bs4.BeautifulSoup(open('example.html'))
+spanElem = soup.select('span')[0]
+str(spanElem) #'<span id="author">Al Sweigart</span>'
+spanElem.get('id') #'author'
+spanElem.get('some_nonexistent_addr') == None #True
+spanElem.attrs #{'id': 'author'}
+```
+**练手：Bing查找 lucky.py**
++ 从命令行参数中获取查询关键字
++ 取得查询结果页面
++ 为每个结果打开浏览器选项卡
+
+代码需要完成以下工作
+
+- 从sys.argv中读取命令行参数
+- 用requests模块取得查询结果页面
+- 找到每个查询结果的链接
+- 调用webbrowser.open()函数打开Web浏览器
+
+```python
+import requests, sys, webbrower, bs4
+print('Bing...')
+res = requests.get("http://bing.com/search?q=" + ' '.join(sys.argv[1:]))
+res.raise_for_status()
+
+soup = bs4.BeautifulSoup(res.text)
+linkelems = soup.select('.r a')
+
+numopen = min(5, len(linkelems))
+for i in range(numopen):
+    webbrowser.open('http://bing.com'+linkelems[i].get('href'))
+```
+
+**练手：下载所有XKCD漫画**
+
+程序需要做的事：
++ 加载主页
++ 保存该页的漫画
++ 转入前一张漫画的链接
++ 重复直到第一张漫画
+
+代码需要做的事：
++ 利用requests模块下载页面
++ 利用Beautiful Soup找到页面中漫画图像的URL
++ 利用iter_cotent()下载漫画图像并保存
++ 找到前一张漫画的连接URL，然后重复这一过程
+
+```python
+import requests, os, bs4
+url = 'http://xkcd.com'
+os.makedirs('xkcd', exist_ok=True)
+while not url.endswith('#'):
+    print('Downing page %s...' % url)
+    res = requests.get(url)
+    res.raise_for_status
+    soup = bs4.BeautifulSoup(res.text)
+    comicElem = soup.select('#comic img')
+    if comicElem == []:
+        print('Could not find comic image.')
+    else:
+        comicUrl = 'http:'+comicElem[0].get('src')
+        print('Downloading image %s...' % (comicUrl))
+        res = requests.get(comicUrl)
+        res.raise_for_status()
+    
+        imageFile = open(os.path.join('xkcd', os.path.basename(comicUrl)),'wb')
+        for chunk in res.iter_content(100000):
+            imageFile.write(chunk)
+        imageFile.close()
+    
+    prevlink = soup.select('a[rel="prec"]')[0]
+    url = 'http://xkcd.com' + prevLink.get('href')
+print('Done.')
+```
