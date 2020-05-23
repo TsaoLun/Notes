@@ -820,12 +820,12 @@ import numpy as np
 
 X_train, X_test, y_train, y_test = X[:60000], X[60000:], y[:60000], y[60000:]
 shuffle_index = np.random.permutation(60000) #生成取值0～59999的随机一维数组
-X_train, y_train = X_train[shuffle_index], y_train[shuffle_index]
+X_train, y_train = X_train[shuffle_index], y_train[shuffle_index] #将训练集顺序打乱
 ```
 注意，如果处理时间序列数据则不能洗牌。接下来先训练一个二元分类器，只识别5，先创建目标向量(对应标签)：
 
 ```python
-y_train_5 = (y_train == '5') #布尔数组
+y_train_5 = (y_train == '5') #将10分类数据变成二元，得到一个shape为(60000,)的布尔数组
 y_test_5 = (y_test == '5')
 ```
 选择随机梯度下降(SGD)分类器，使用sklearn的SGDClassifier，能有效处理大型数据集。同时因为SGD独立处理训练实例，所以很适合在线学习。
@@ -847,20 +847,21 @@ sgd_clf.predict(X_test[23].reshape(1,-1)) #array([ True])
 
 ### 性能考核
 
-**implementing Cross-Validation** 为了在交叉验证过程中获得更多控制，手工实现交叉验证:
+评估分类器比评估回归器要困难，这里还是使用交叉验证。**implementing Cross-Validation** 为了在交叉验证过程中获得更多控制，比如分层，这里手工实现交叉验证:
 
 ```python
 from sklearn.model_selection import StratifiedKFold
 from sklearn.base import clone
 
-skfolds = StratifiedKFold(n_splits=3, random_state=42)
+skfolds = StratifiedKFold(n_splits=3, random_state=42) #得到3折分类器，分层保证分类前后比例一致
 
-for train_index, test_index in skfolds.split(X_train,y_train_5):
+for train_index, test_index in skfolds.split(X_train,y_train_5): 
+#分类器的split(X,y)方法返回切片后的训练集测试集索引，kfolds只需要参数X但skfolds还需要y作为分层标签
     clone_clf = clone(sgd_clf)
     X_train_folds = X_train[train_index]
     y_train_folds = (y_train_5[train_index])
     X_test_fold = X_train[test_index]
-    y_test_fold = (y_train_5[test_index])
+    y_test_fold = (y_train_5[test_index])#split的是X_train，train_fold和test_fold都在其中
 
     clone_clf.fit(X_train_folds, y_train_folds)
     y_pred = clone_clf.predict(X_test_fold)
@@ -893,4 +894,341 @@ cross_val_score(never_5_clf, X_train, y_train_5, cv=3, scoring="accuracy")
 #array([0.90895, 0.9099 , 0.9101 ])
 ```
 这说明准确率通常无法成为分类器的首要性能指标，特别是在处理偏斜数据集时。
-**混淆矩阵**
+
+**混淆矩阵** Confusion Matrix
+计算混淆矩阵，需要先有一组预测才能将其与实际目标比较，这里使用 **cross_val_predict()** 函数，传入模型、数据集、标签以及折数cv。
+
+```python
+from sklearn.model_selection import cross_val_predict
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+```
+与cross_val_score()函数一样，cross_val_predict()函数同样执行K-fold交叉验证，但返回的是每个折叠的预测，在这里是布尔数组。sklearn.metrics模块的confusion_matrix()函数根据正类标签和决策结果（实际分类和预测分类）得到混淆矩阵：
+
+```python
+from sklearn.metrics import confusion_matrix
+confusion_matrix(y_train_5, y_train_pred)
+"""
+array([[52125,  2454],
+       [  764,  4657]])"""
+```
+**混淆矩阵**的行是正确的类别，列是预测类别，二元分类的右下角对应的行是正类，列为预测的正类。上例第一行表示所有非5，即所有负类。它们中有52125个被正确地分为非5(真负类true negatives)，而2454张被错误地划分为5(假正类false positives)。第二行表示所有的5，即所有正类。有764张被错误的分为非5类(false negatives)，4657张被正确地分类在5类(true positives)。完美的分类器应该只存在真正类和真负类，即混淆矩阵的对角线。接下来介绍评估函数：**precision_score()**, **recall_score()** 和 **f1_score()**，参数都是正类标签和决策结果，在这里即两组布尔数组。
+
+正类预测的准确率，精度**Precision**
+
+$precision=\frac{TP}{TP+FP}$
+
+精度会忽略正类实例以外的信息，通常我们还需要召回率**Recall**来衡量，也称为灵敏度(sensitivity)或者真正类率TPR
+
+$recall=\frac{TP}{TP+FN}$
+
+```python
+from sklearn.metrics import precision_score, recall_score
+precision_score(y_train_5, y_train_pred) #0.6549 即4192/(4192+2153)
+recall_score(y_train_5, y_train_pred) #0.8591 即4657/(4657+764)
+```
+这两个指标已不像准确率那么高了，当它说一张图片是5时，只有65.49%的时候是准确的，并且只有85.91%的数字5被识别出来。
+我们将精度与召回率合成一个单一指标，称为 **$F_1$分数**，即两者的调和平均数，只有在两者都很高时才能得到较高分数:
+
+$F_1=\frac{2}{\frac{TP+FP}{TP}+\frac{TP+FN}{TP}}$
+
+```python
+from sklearn.metrics import f1_score
+f1_score(y_train_5, y_train_pred) #0.7432
+```
+SGDClassifier的分类决策：对于每个实例，基于决策函数计算出一个分值，如果该值大于阈值则判为正类。sklearn不允许直接设置阈值，但是可以通过调用分类器的decision_function()方法返回单个实例的**决策分数**，通过这些分数设置阈值即得到预测结果(：
+
+```python
+y_scores = sgd_clf.decision_function([some_digit])
+y_scores #array([-7202.31479923])
+threshold = -7500
+y_some_digit_pred = (y_scores > threshold)
+y_some_digit_pred #array([ True])
+```
+
+```python
+threshold = 7000 #提高阈值
+y_some_digit_pred = (y_scores > threshold)
+y_some_digit_pred #array([False])
+```
+即提高阈值会降低召回率，那么如何确定阈值？先使用 **cross_val_predict()** 函数获取训练集中**所有实例的决策分数** y_scores，参数方法选择 **decision_function**:
+
+```python
+y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3, method="decision_function")
+```
+再对正类标签 y_train_5 与全部决策分数 y_scores 调用 **precision_recall_curve()** 函数返回所有可能阈值的精度和召回率:
+
+```python
+from sklearn.metrics import precision_recall_curve
+
+precision, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+#注意precision和recalls的 array,shape = [n_thresholds + 1]，分别多了1和0
+```
+最后使用matplotlib绘制精度与召回率相对于阈值的函数图:
+
+```python
+def plot_precision_recall_vs_threshold(precision, recalls, thresholds):
+    plt.plot(thresholds, precision[:-1],"b--",label="Precision") 
+    plt.plot(thresholds, recalls[:-1],"g-",label="Recall")
+    #除去最后一位数因为p和r多了最后一位数
+    plt.xlabel("Threshold")
+    plt.legend(loc="upper left")
+    plt.ylim([0,1])
+    plt.xlim([-20000,20000])
+
+plot_precision_recall_vs_threshold(precision, recalls, thresholds)
+plt.show()
+```
+![avatar](images/PR89.svg)
+一般来说，随着阈值提升，精度会提高，召回率会下降。注意在某些时候，提高阈值反而会使精度下降；但召回率一定是持续下降的：
+
+$precision=\frac{TP}{TP+FP}$，$recall=\frac{TP}{TP+FN}$
+
+阈值提高时，TP和FP都可能减少，但FN不会减少，$recall=1-\frac{FN}{TP+FN}$右边分式恒增，整体恒减。我们选择的阈值为-700：
+
+```python
+y_train_pred_90 = (y_scores > -700)
+#筛选出决策分数大于-700的作为决策结果，即将阈值设置为-700，由正类标签和决策结果(这里都是布尔值)得到此时的精度和召回率
+precision_score(y_train_5, y_train_pred_90) #0.8069
+recall_score(y_train_5, y_train_pred_90) #0.7037
+```
+得到一个折中的选择器，此时有80%精度和70%的召回率，我们还能绘制**P-R图**:
+
+```python
+def plot_pr_sgd():
+    plt.plot(recalls, precision,"b--",label="SGD") 
+    plt.xlabel("recalls")
+    plt.ylabel("precision")
+    plt.legend(loc="bottom left")
+    plt.ylim([0,1])
+    plt.xlim([0,1])
+plot_pr_sgd()
+```
+![avatar](images/PR.svg)
+
+**ROC曲线**
+ROC曲线绘制的是真正类率TPR（被正确分为正类的正类实例占比，即召回率$\frac{TP}{TP+FN}$）与假正类率FPR（被错误分为正类的负类实例占比，$\frac{FP}{FP+TN}$)。FPR等于1-真负类率TNR，即1-特异度。
+要绘制ROC曲线，首先要使用 **roc_curve()** 函数计算多种阈值的TPR和FPR:
+
+```python
+from sklearn.metrics import roc_curve
+fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)#正类标签与决策分数
+```
+使用Matplotlib绘制FPR对TPR的曲线：
+
+```python
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr, tpr, linewidth=2, label=label) #绘制曲线
+    plt.plot([0,1],[0,1],'k--') #绘制虚线
+    plt.axis([0,1,0,1]) #轴的范围
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+
+plot_roc_curve(fpr, tpr)
+plt.show()
+```
+![avatar](images/ROC91.svg)
+同样，召回率TPR越高，假正类FPR就越多。虚线表示纯随机分类的ROC曲线，优秀的分类器应该靠左上角远离这条线。AUC是曲线下面积，可以衡量比较分类器，随机分类器AUC等于0.5，完美分类器则是1。sklearn提供了ROC AUC的函数  **roc_auc_score()**，传入正类标签和决策分数：
+
+```python
+from sklearn.metrics import roc_auc_score
+roc_auc_score(y_train_5, y_scores) #0.9652601846998695
+```
+>经验法则：当正类非常少见，或者更关注假正类时，应该选择PR曲线，反之则是ROC曲线。上例中PR曲线更能显示出分类器还有改进空间。
+
+接下来训练一个RandomForestClassifier分类器，并比较它和SGDClassifier分类器的ROC曲线和ROC AUC分数。首先用函数 **cross_val_predict()** 获取所有实例的决策分数，因为工作方式不同，RandomForestClassifier类没有decision_function()方法，而是sklearn中的另一种方法：**predict_proba()**，即 **method="predict_proba"** 。它会返回一个数组，每行为一个实例，每列为一个类别，即给定实例属于某类别的概率:
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+forest_clf = RandomForestClassifier(random_state=42)
+y_probas_forest = cross_val_predict(forest_clf, X_train, y_train_5, cv=3, method = "predict_proba")
+```
+
+要绘制ROC曲线需要**决策分数**而不是每个类别的概率，随机森林不直接提供决策分数，简单的办法是直接拿正类概率作为决策分数。
+函数**roc_curve**接受正类标签和决策分数，返回 fpr, tpr, thresholds 
+```python
+y_scores_forest = y_probas_forest[:, 1]
+fpr_forest, tpr_forest, thresholds_forest = roc_curve(y_train_5, y_scores_forest)
+```
+现在根据fpr和tpr绘制ROC曲线:
+
+```python
+plt.plot(fpr, tpr, "b:",label="SGD")
+plot_roc_curve(fpr_forest, tpr_forest, "Random Forest")
+plt.legend(loc="bottom right")
+plt.show()
+
+roc_auc_score(y_train_5, y_scores_forest) #0.9982643772216961
+precision_score(y_train_5, y_scores_forest)
+recall_score(y_train_5, y_scores_forest)
+```
+![avatar](images/roc_forest.svg)
+
+顺便绘制一下的P-R曲线对比图:
+
+```python
+from sklearn.metrics import precision_recall_curve
+precision_rf, recalls_rf, thresholds_rf = precision_recall_curve(y_train_5,y_scores_forest)
+plt.plot(recalls_rf, precision_rf, "r",label="Random Forest")
+plt.xlabel("Precision")
+plt.ylabel("Recalls")
+plt.xlim([0,1])
+plt.ylim([0,1])
+plot_pr_sgd()
+plt.legend(loc="bottom left")
+```
+![avatar](images/pr_rfc.svg)
+
+**多类别分类器**
+随机森林或者朴素贝叶斯可以直接处理多分类，但支持向量机或线性分类器只支持二元分类。二元分类器的解决多分类问题，可以用一对多策略OvA，针对每个类别训练一个二元分类器并获得每个实例的决策分数，最后根据最高分归类。这是大多数二元分类器使用的方法。
+
+另一种方法是为每一对类别训练一个二元分类器，一对一策略OvO，统计哪个类别获胜最多。如果存在N个类别需要训练$N(N-1)/2$个分类器，会很麻烦，但是优点是每个分类器训练时只需用到部分训练集，很适合支持向量分类器这样训练数据集规模较小的分类器。
+
+Scikit-Learn可以检测到你尝试用二分类算法进行多类别分类，自动运行OvA(SVM除外，会使用OvO)，尝试一下SGDClassifier：
+
+```python
+sgd_clf.fit(X_train, y_train)
+sgd_clf.predict([some_digit]) #array(['4'], dtype='<U1')，实际是y[36000]='9'
+```
+在sklearn内部训练了10个二元分类器，我们调用decision_function()方法返回这10个决策分数:
+
+```python
+some_digit_scores = sgd_clf.decision_function([some_digit])
+"""
+array([[-42776.50220583, -20474.29071157, -25078.16881794,
+        -12547.06380114,  -1130.02850545, -10005.25975074,
+        -28513.96430584,  -5639.10079092,  -6992.25592381,
+         -8300.79496841]])"""
+np.argmax(some_digit_scores) #4
+sgd_clf.classes_ 
+#array(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], dtype='<U1')
+sgd_clf.classes_[4] #'4'
+```
+也可以强制Scikit-Learn使用一对一或一对多策略，使用OneVsOneClassifier或OneVsRestClassifier类。需创建一个实例，再将二元分类器传给其构造函数。
+
+```python
+from sklearn.multiclass import OneVsOneClassifier
+ovo_clf = OneVsOneClassifier(SGDClassifier(random_state=42))
+ovo_clf.fit(X_train, y_train)
+ovo_clf.predict([some_digit])
+#array(['4'], dtype=object)一对一策略同样分类错误...
+
+len(ovo_clf.estimators_)#45
+```
+接下来看一看随机森林:
+
+```python
+forest_clf.fit(X_train, y_train)
+forest_clf.predict([some_digit])
+#array(['9'], dtype=object)对了，some_digit即X[36000]是否在训练集中？
+
+x_in_it = False
+for i in X_train:
+    if (X[36000]==i).all() == True:
+        x_in_it = True
+        break
+print(x_in_it) #True
+#in it...怎么判定一个数组在不在多个数组中？in无效，'=='得到布尔数组再用all()方法。
+#试试X[65000],'3'
+
+ovo_clf.predict(X[65000].reshape(1,-1))
+#array(['5'], dtype=object)，错了，再跑一次就对了
+forest_clf.predict(X[65000].reshape(1,-1))
+#array(['3'], dtype=object)，对了
+```
+可以调用predict_proba()方法得到随机森林分类器的概率列表:
+
+```python
+forest_clf.predict_proba(X[65000].reshape(1,-1))
+#array([[0.04, 0.  , 0.01, 0.84, 0.01, 0.08, 0.  , 0.01, 0.01, 0.  ]]) 
+#注意sgd没有这个方法，但有decision_function()方法返回每个类别决策分数
+```
+再次利用交叉验证cross_val_score()函数评估SGDClassifier和的准确性:
+
+```python
+cross_val_score(sgd_clf, X_train, y_train, cv=3, scoring="accuracy")
+#array([0.8606 , 0.87995, 0.87525])
+cross_val_score(forest_clf, X_train, y_train, cv=3, scoring="accuracy")
+#array([0.9653 , 0.96595, 0.9642 ])
+```
+准确率不错，但可以通过将输入简单缩放进一步提高:
+
+```python
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train.astype(np.float64))
+cross_val_score(sgd_clf, X_train_scaled, y_train, cv=3, scoring="accuracy") 
+#array([0.8982 , 0.907  , 0.90525])
+#交叉验证将训练和测试结合，不需担心数据泄露
+```
+随机森林一般不需要数据缩放，我们来尝试一下:
+
+```python
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train.astype(np.float64))
+cross_val_score(forest_clf, X_train_scaled, y_train, cv=3, scoring="accuracy")
+#array([0.9655, 0.9662, 0.964 ]) 好吧几乎没区别...
+```
+
+### 错误分析
+假设已经找到一个有潜力的模型，现在希望找到一些方法对其进一步改进，其中一种就是**错误分析**。
+首先来看混淆矩阵，使用cross_val_predict()函数进行预测，然后调用confusion_matrix()函数:
+
+```python
+y_train_pred = cross_val_predict(sgd_clf, X_train_scaled, y_train, cv=3)
+conf_mx = confusion_matrix(y_train, y_train_pred)
+conf_mx
+"""
+array([[5597,    0,   19,   10,    8,   40,   33,    6,  208,    2],
+       [   1, 6416,   48,   17,    3,   43,    4,    8,  193,    9],
+       [  22,   24, 5259,   90,   74,   21,   64,   35,  360,    9],
+       [  26,   22,  112, 5238,    0,  197,   23,   41,  401,   71],
+       [  12,   13,   42,   11, 5233,   10,   30,   16,  305,  170],
+       [  24,   14,   29,  155,   52, 4470,   77,   15,  521,   64],
+       [  29,   14,   53,    3,   37,   93, 5558,    2,  129,    0],
+       [  19,   11,   50,   25,   56,    9,    4, 5693,  178,  220],
+       [  20,   66,   46,   96,    4,  114,   28,    9, 5421,   47],
+       [  23,   22,   29,   59,  123,   37,    1,  163,  373, 5119]])"""
+```
+使用Matplotlib的matshow()函数来查看混淆矩阵的图像表示：
+
+```python
+plt.matshow(conf_mx,cmap=plt.cm.hsv) #配色自己调？
+plt.show()
+```
+![avatar](images/conf_mx97.svg)
+数字5很突出，但这里突出的是数量而不是错误率。将混淆矩阵中的每个值除以响应类别中的图片数量:
+
+```python
+row_sums = conf_mx.sum(axis=1, keepdims=True)
+#行axis=1是类别列axis=0是预测类别，shape是(10, 1)
+norm_conf_mx = conf_mx / row_sums #得到新的混淆矩阵
+```
+用0填充对角线，只保留错误，再重新绘图分析错误率：
+
+```python
+np.fill_diagonal(norm_conf_mx, 0)
+plt.matshow(norm_conf_mx)#cmap=plt.cm.hsv显示不准，选默认配色
+plt.show()
+```
+![avatar](images/norm_conf_mx.svg)
+看得出主要问题在预测数字8上，我们可以收集更多这些数字的训练数据，或者开发一些新特征来改进分类器，如计算闭环数量？或者对图片预处理让闭环模式更突出?分析单个错误也可以提供洞察，来分析一下5和8（模型经常将5识别为8）：
+
+```python
+cl_a, cl_b= 5, 8
+X_aa = X_train[(y_train == cl_a) & (y_train_pred == cl_a)]
+X_ab = X_train[(y_train == cl_a) & (y_train_pred == cl_b)]
+X_ba = X_train[(y_train == cl_b) & (y_train_pred == cl_a)]
+X_bb = X_train[(y_train == cl_b) & (y_train_pred == cl_b)]
+
+plt.figure(figsize=(8, 8))
+plt.subplot(221); plot_digits(X_aa[:25], images_per_row=5)
+plt.subplot(222); plot_digits(X_ab[:25], images_per_row=5)
+plt.subplot(223); plot_digits(X_ba[:25], images_per_row=5)
+plt.subplot(224); plot_digits(X_bb[:25], images_per_row=5)
+plt.show()
+#wtf?没有定义plot_digits()？兴奋，自己来
+
+def plot_digits()#接受两个参数，第一个是多维数组的列表,第二个是每行个数n,实现nxn打印
+```
