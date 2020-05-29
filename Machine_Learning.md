@@ -380,7 +380,9 @@ housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 X = imputer.fit_transform(housing_num)
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 ```
-#### _Scikit-Learn Design_
+<br/>
+ **_Scikit-Learn Design_**
+
 >估计器 _estimators_ ：根据数据集对某些参数进行估计的任意对象都能被称为估计器，通过fit方法执行并以数据集作为参数，如 _strategy_ 这类的其他参数作为超参数 _hyperparameter_ (用于创建 _SimpleImputer_ 实例)
 
 >转换器 _transformers_ ：有些估计器可以用于转换数据集，这些被称为转换器，由transform()方法与待转换数据一起执行并返回转换后的数据集，所有转换器都能使用 _fit_transform_ 方法。
@@ -392,7 +394,9 @@ housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 + 构成 _Composition_ ：现有构建代码块 _blocks_ 尽最大可能重用，任意序列的转换器加上预测器就能创建一个 _Pipeline_
 + 合理默认值 _Sensible defaults_ ：_Scikit-Learn_ 为大多数参数提供了合理的默认值，从而可以快速搭建起一个基础工作系统 _baseline working system_
 
-#### 处理文本和分类属性
+<br/>
+
+**处理文本和分类属性**
 
 之前我们排除的分类属性ocean_proximity是文本属性，无法计算中位数，其实大部分机器学习算法都适合处理数字，接下来将其转换成数字，_Scikit-Learn_ 提供了转换器**LabelEncoder**:
 ```python
@@ -450,8 +454,10 @@ housing_cat_1hot
 	with 16512 stored elements in Compressed Sparse Row format>
 """
 ```
+<br/>
 
-#### Custom Transformers
+**Custom Transformers**
+
 虽然 _Scikit-Learn_ 提供了许多有用的转换器，但仍需要**定制转换器**处理特定任务。
 由于 _Scikit-Learn_ 依赖于 _duck typing_ 而不是继承 _inheritance_ ,所以只需**创建一个类**，然后应用fit()、transform()、fit_transform()，如果添加**TransformerMixin**作为基类就能直接得到最后一个方法。同样如果添加**BaseEstimator**作为基类，并在函数构造中避免*args和**kargs（元组参数和字典参数），还能获得两个非常有用的自动调整超参数的方法get_params()和set_params()，以下定制转换器用来添加组合后的属性：
 
@@ -476,12 +482,17 @@ attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
 housing_extra_attribs = attr_adder.transform(housing.values)
 ```
 在本例中，转换器有一个默认设置为真的超参数add_bedrooms_per_room,用来控制该步骤的开关。自动化执行的步骤越多，能尝试的组合也就越多。
-#### Feature Scaling
+<br/>
+**Feature Scaling**
+
 数值差异过大会导致算法性能不佳，常用的两种**特征缩放**方法是 _min-max sacling_ 归一化和 _standardization_ 标准化。归一化即将值减去最小值并除以最大值和最小值的差使得最终范围在0～1之间。_Scikit-Learn_ 提供了名为**MinMaxScaler**的转换器，并可以通过超参数feature_range进行更改。标准化则是减去平均值再除以方差，受异常值的影响较小，不会把数值限制在一个特定的范围，对于有些算法比如神经网络来说可能存在问题，_Scikit-Learn_ 标准化的转换器是**StandardScaler**。
 
 >跟所有转换一样，缩放器仅用来拟合训练集，而不是完整的数据集
 
-#### Transformation Pipelines
+<br/>
+
+**Transformation Pipelines**
+
 _Scikit-Learn_ 提供了Pipeline类来支持一系列的转换，以下为测试：
 
 ```python
@@ -1216,7 +1227,7 @@ plt.show()
 看得出主要问题在预测数字8上，我们可以收集更多这些数字的训练数据，或者开发一些新特征来改进分类器，如计算闭环数量？或者对图片预处理让闭环模式更突出?分析单个错误也可以提供洞察，来分析一下5和8（模型经常将5识别为8）：
 
 ```python
-cl_a, cl_b= 5, 8
+cl_a, cl_b= '5', '8'
 X_aa = X_train[(y_train == cl_a) & (y_train_pred == cl_a)]
 X_ab = X_train[(y_train == cl_a) & (y_train_pred == cl_b)]
 X_ba = X_train[(y_train == cl_b) & (y_train_pred == cl_a)]
@@ -1228,7 +1239,379 @@ plt.subplot(222); plot_digits(X_ab[:25], images_per_row=5)
 plt.subplot(223); plot_digits(X_ba[:25], images_per_row=5)
 plt.subplot(224); plot_digits(X_bb[:25], images_per_row=5)
 plt.show()
-#wtf?没有定义plot_digits()？兴奋，自己来
-
-def plot_digits()#接受两个参数，第一个是多维数组的列表,第二个是每行个数n,实现nxn打印
+#wtf?没有定义plot_digits()
 ```
+
+```python
+def plot_digits(instances, images_per_row=10, **options):
+    size = 28
+    images_per_row = min(len(instances), images_per_row)
+    images = [instance.reshape(size,size) for instance in instances] #二维数组变三维数组
+    n_rows = (len(instances) - 1) // images_per_row + 1 #不足一行排成一行
+    row_images = []
+    n_empty = n_rows * images_per_row - len(instances) #最后一行剩余数量
+    images.append(np.zeros((size, size * n_empty))) #纵向为size，横向为size*n_empty
+    for row in range(n_rows):
+        rimages = images[row * images_per_row : (row + 1) * images_per_row] 
+        row_images.append(np.concatenate(rimages, axis=1)) #将三维数组切片到二维再按行合并
+    image = np.concatenate(row_images, axis=0) #将已合并的图像按列合并
+    plt.imshow(image, cmap = plt.cm.binary, **options)
+    plt.axis("off")
+```
+![avatar](images/58.svg)
+
+由右上那块可见这个分类器对图像移位和旋转非常敏感，所以数据预处理会减少这类错误。用同样方法，将随机森林的混淆矩阵可视化，可见主要问题是4被识别为9，我们将图片打印出来：:
+
+![avatar](images/49.svg)
+
+![avatar](images/49p.svg)
+
+<br/>
+
+**多标签分类**
+当一个实例中有多个类别（多标签），我们就需要用到多标签分类系统multilabel：
+
+```python
+from sklearn.neighbors import KNeighborsClassifier
+
+#通过astype将字符串numpy数组转换为整型numpy数组
+from sklearn.neighbors import KNeighborsClassifier
+ 
+y_train = y_train.astype(np.int16)
+
+y_train_large = (y_train >= 7)
+y_train_odd = (y_train % 2 == 1)
+y_multilabel = np.c_[y_train_large, y_train_odd]
+#通过np.c_建立multilabel替代原先的y_train
+
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(X_train, y_multilabel)
+```
+现在来预测:
+
+```python
+y[65000] #'3'
+knn_clf.predict(x[65000].reshape(1,-1))
+#array([[False,  True]])
+```
+评估多标签分类器的方法很多，可以通过平均F1分数衡量:
+
+```python
+y_train_knn_pred = cross_val_predict(knn_clf, X_train, y_train, cv=3)
+f1_score(y_train, y_train_knn_pred, average="macro") #问题：运行时间超长是不是因为y_train改成字符串?
+#这里的average参数可以修改成权重weighted
+```
+
+## 训练模型
+
+### 线性回归
+
+**LinearRegression**线性模型就是对输入特征加权求和，再加上一个偏置项（截距）常数，以此进行预测：
+
+$\hat{y}=\theta_0+\theta_1x_1+\theta_2x_2+...+\theta_nx_n$
+
+向量化的线性回归模型预测：
+
+$\hat{y}=h_\theta(X)=\theta^T{\cdot}X$
+
+$h_\theta$ 是使用模型参数$\theta$的假设函数，转置后的 $\theta$ 由列向量变成行向量，$x$ 是实例特征向量 $x_0$ 到 $x_n$ 其中 $x_0$ 为 1 。
+回归模型最常见的性能指标是均方根误差（RMSE），而在实践中求均方误差（MSE）也叫成本函数更加简单而且效果相同:
+
+$MSE(X, h_\theta)=\frac{1}{m}\sum^m_{i=1}(\theta^T{\cdot}X^{(i)}-y^{(i)})^2$
+
+使得成本函数最小的 $\theta$ 值的**标准方程**：
+
+$\hat\theta=(X^T{\cdot}X)^{-1}{\cdot}X^T{\cdot}y$
+
+
+$y$ 是 $y^{(1)}$ 到 $y^{(m)}$ 即目标值向量。最终的多元线性回归模型为：
+
+$\hat{y}=\hat{x}{\cdot}\hat{\theta}$
+
+其中 $\hat{x}=(x_i;1)$，我们通过生成一些数据来测试这个公式:
+
+```python
+import numpy as np
+
+X = 2 * np.random.rand(100, 1) #rand()根据给定维度生成[0,1）间的数据
+y = 4 + 3 * X +np.random.randn(100, 1) #返回一组标准正态分布
+```
+借助标准方程实现线性模型的 $\hat\theta$ 计算并完成预测：
+
+```python
+#添加theta0对应的x0，并通过np.c_进行横向合并，纵向为np.r_
+X_b = np.c_[np.ones((100,1)), X] 
+#用Numpy的线性代数模块np.linalg中的inv()函数求逆矩阵
+theta_best = np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
+
+"""
+array([[3.8503802 ],
+       [3.20339254]])"""
+```
+我们期待 $\theta_0$=4, $\theta_1$=3 得到的是3.85和3.2，因为噪声的存在使得不可能完全还原。接下来进行预测：
+
+```python
+X_new = np.array([[0],[2]]) #X_new.shape是(2,1)
+X_new_b = np.c_[np.ones((2, 1)), X_new] #合并后shape(2,2)
+y_predict = X_new_b.dot(theta_best)
+y_predict
+"""
+array([[ 3.8503802 ],
+       [10.25716528]])"""
+```
+
+```python
+plt.plot(X_new, y_predict, "r-")
+plt.plot(X, y, "b.")
+plt.axis([0, 2, 0, 15])
+plt.show()
+```
+![avatar](images/l&p.svg)
+
+Scikit-Learn的**LinearRegression**等效代码如下：
+
+```python
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+lin_reg.intercept_, lin_reg.coef_
+#(array([3.8503802]), array([[3.20339254]]))
+lin_reg.predict(X_new)
+"""
+array([[ 3.8503802 ],
+       [10.25716528]])"""
+```
+计算复杂度：标准方程求逆的矩阵$X^TX$是一个 n x n 矩阵（n是特征数量），对这种矩阵求逆的计算复杂度通常为 $O(n^{2.4})$ 到 $O(n^{3})$ 之间。
+线性模型一经完成训练，预测速度就非常快，计算复杂度相对于实例与特征数量来说都是线性的。
+
+### 梯度下降
+
+梯度下降 **Gradient Descent** 是一种通用优化算法，能为大范围的问题找到最优解，中心思想是迭代地调整参数从而使成本函数最小化。通过测量参数向量 $\theta$ 值相关的误差函数的局部梯度，并不断沿着降低梯度的方向调整，直到梯度降为0 。
+
+具体来说，首先使用一个随机的 $\theta$ 值（这被称为随机初始化），然后逐步改进，每一步都尝试降低一点成本函数（如MSE），直到算法收敛出一个最小值。
+
+梯度下降中一个重要参数是每一步的步长，这取决于超参数学习率。学习率过低会导致需要大量迭代，耗时过长；过高则导致算法发散无法找到解决方案。
+
+两个主要挑战：如果随机初始化，算法会可能收敛到一个局部最小值，也可能经过很长时间多次迭代后依然远离最小值（处于高原）。在线性模型中，MSE成本函数是个凸函数即不存在局部最小值，同时它也是连续函数，斜率不会产生陡峭的变化。
+
+但即便成本函数是碗状的，但如果不同特征的尺寸差别巨大使得一侧曲线拉长依旧会形成“高原”，花费大量时间。为保证所有特征值大小比例相近，可以使用Scikit-Learn的StandardScaler类。
+
+**批量梯度下降**
+
+实现梯度下降，需要计算每个模型关于参数$\theta_j$的成本函数的梯度，即关于该参数成本函数的偏导数$\frac{\partial}{\partial{\theta_j}}MSE(\theta)$
+
+$\frac{\partial}{\partial{\theta_j}}MSE(\theta)=\frac{2}{m}\sum^m_{i=1}(\theta^T{\cdot}x^{(i)}-y^{(i)})x^{(i)}_j$
+
+得到梯度向量 ${\nabla}MSE(\theta)=\begin{pmatrix}\frac{\partial}{\partial{\theta_j}}MSE(\theta)\\\frac{\partial}{\partial{\theta_j}}MSE(\theta)\\{\vdots}\\\frac{\partial}{\partial{\theta_j}}MSE(\theta)\end{pmatrix}=\frac{2}{m}X^T{\cdot}(X{\cdot}\theta-y)$
+
+该公式在计算梯度下降的每一步都基于完整的训练集 X ，在面对非常庞大的训练集时，算法会变得极慢。但即便如此，梯度下降随特征数量扩展的表现依然比标准方程要更快，比如在训练的线性模型拥有几十万个特征时。
+
+一旦有了梯度向量，哪个点向上，就朝反方向下坡。即从 $\theta$ 中减去 ${\nabla}MSE(\theta)$ ，这时学习率 $\eta$ 就发挥作用了：用梯度向量乘以 $\eta$ 确定下坡步长的大小 。
+
+$\theta^{(next step)}=\theta-\eta\nabla_{\theta}MSE(\theta)$
+
+接下来快速实现：
+
+```python
+eta = 0.1 # learning rate
+n_iterations = 1000
+m = 100 #训练样本数量
+
+theta = np.random.randn(2,1) # random initialization
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta)-y)
+    theta = theta - eta * gradients
+"""
+array([[4.11314008],
+       [2.97895637]])"""
+```
+尝试使用其他学习率eta，并将这个过程绘图：
+
+```python
+eta = 0.0001 #0.1 #0.5
+n_iterations = 1000
+m = 100 
+
+theta = np.random.randn(2,1)
+x = np.linspace(0,2,100)
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta)-y)
+    theta = theta - eta * gradients
+
+    if iteration % 100 == 0:
+        intercept = theta[0][0]
+        coef = theta[1][0]
+        yy = x*coef + intercept
+
+        plt.plot(x, yy, label=iteration)
+        plt.plot(X, y, "b.")
+        plt.axis([0, 2, 0, 15])
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title(eta)
+        plt.legend()
+```
+![avatar](images/gd00001.svg)
+上图学习效率过低，若找到最终解需要迭代次数很大
+![avatar](images/gd01.svg)
+上图线01间的空白表示梯度下降初期迭代效率高，几次迭代就找到解
+![avatar](images/gd05.svg)
+上图算法发散，直接跳过了数据区域
+
+为找到合适的学习率，可以使用网格搜索，但需要限制迭代次数以淘汰耗时太长的模型。可以在初始阶段设置一个较大的迭代次数，但在梯度向量变得很微小时中断算法，即设置范数容差。
+
+$收敛率=O(\frac{1}{iterations})$
+<br/>
+
+**随机梯度下降 Stochastic Gradient Descent**
+
+随机梯度下降的每一步在训练集中随机选择一个实例，并基于单个实例计算梯度。由于算法的随机性质，它比批量梯度下降要不规则多，即便达到了最小值依然会持续反弹。得益于这一点，当成本函数同样不规则时，随机梯度下降有助于跳出局部最小找到全局最小值。
+
+为了较准确地定位最小值，有一个办法是逐步降低学习率，开始学习率较大再逐步减小，即模拟退火。确定每个迭代学习率的函数叫做**学习计划**。如果学习率降得太快可能会陷入局部最小值，或者停在半途中。如果学习率降得太慢，则耗时将非常久，提前结束训练只能得到次优解。接下来实现随机梯度下降:
+
+```python
+n_epochs = 50
+t0, t1 = 5, 50 #学习计划超参数
+
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+theta = np.random.randn(2,1)
+
+for epoch in range(n_epochs):
+    for i in range(m):
+        random_index = np.random.randint(m)
+        xi = X_b[random_index:random_index+1] #二维数组,即矩阵
+        yi = y[random_index:random_index+1]
+        gradients = 2 * xi.T.dot(xi.dot(theta) - yi)
+        eta = learning_schedule(epoch * m + i)
+        theta = theta - eta * gradients
+
+"""
+array([[4.25816069],
+       [2.83683168]])"""
+```
+在Scikit-Learn里，用SGD执行线性回归可以使用**SGDRegressor**类，其默认优化的成本函数是平方误差:
+
+```python
+from sklearn.linear_model import SGDRegressor
+sgd_reg = SGDRegressor(eta0=0.1, penalty=None)
+sgd_reg.fit(X, y.ravel())
+"""
+SGDRegressor(alpha=0.0001, average=False, early_stopping=False, epsilon=0.1,
+             eta0=0.1, fit_intercept=True, l1_ratio=0.15,
+             learning_rate='invscaling', loss='squared_loss', max_iter=1000,
+             n_iter_no_change=5, penalty=None, power_t=0.25, random_state=None,
+             shuffle=True, tol=0.001, validation_fraction=0.1, verbose=0,
+             warm_start=False)"""
+
+sgd_reg.intercept_, sgd_reg.coef_
+#(array([4.19280537]), array([2.91587029]))
+```
+
+**小批量梯度下降**：每一步梯度计算基于一小部分随机的实例集。相比于随机梯度下降，小批量主要优势是可以从矩阵运算的硬件优化中获得性能提升。
+
+### 多项式回归
+
+对于非线性数据，一个简单的方法就是将每个特征的幂次方添加一个新特征，然后在这个拓展过的特征集上训练线性模型。来看一下$y=ax^2+bx+c$ 加上随机噪声。
+```python
+m = 100
+X = 6 * np.random.rand(m, 1) - 3
+y = 0.5 * X**2 + X + 2 + np.random.randn(m, 1)
+```
+使用Scikit-Learn的PolynomialFeatures类来对训练数据进行转换，将每个特征的平方作为新特征加入训练集：
+
+```python
+from sklearn.preprocessing import PolynomialFeatures
+poly_features = PolynomialFeatures(degree=2, include_bias=False)
+X_poly = poly_features.fit_transform(X)
+X[0] #array([-2.63025418])
+X_poly[0] #array([-2.63025418,  6.91823707])
+```
+X_poly现在包含原本的特征X和该特征的平方。现在对这个拓展后的训练集匹配一个LinearRegression模型：
+
+```python
+lin_reg = LinearRegression()
+lin_reg.fit(X_poly, y)
+lin_reg.intercept_, lin_reg.coef_
+#(array([2.01850842]), array([[0.9069566 , 0.47403023]]))
+```
+估计模型为 $\hat{y}=0.47x^2_1+0.91x_1+2.02$ 而实际上为 $y=0.5x^2_1+1.0x_2+2.0+g$ , g 为高斯噪声。
+
+注意，当存在多个特征时，多项式回归能发现特征和特征之间的关系，因为PolynomialFeatures会在给定阶数degree下添加所有特征组合。比如，特征a和b在degree=3下会添加特征$a^2$、$a^3$、$b^2$和 $b^3$，还会添加组合$ab$、$a^2b$、$ab^2$ 。
+>PolynomialFeatures(degree=d)可以将一个包含n个特征的数组转换为包含$\frac{(n+d)!}{d!n!}$个特征的数组，要小心特征组合的数量爆炸。
+
+**学习曲线**
+
+高阶多项式回归容易过拟合而线性模型容易欠拟合，可以通过交叉验证在训练集和验证集上的表现来评估模型泛化性能。也可以通过观察学习曲线，即模型在训练集和验证集上关于“训练集大小”的性能函数，我们需要在不同大小的训练子集上多次训练模型：
+
+```python
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+def plot_learning_curves(model, X, y):
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+    train_errors, val_errors = [], []
+    for m in range(1, len(X_train)):
+        model.fit(X_train[:m], y_train[:m])
+        y_train_predict = model.predict(X_train[:m])
+        y_val_predict = model.predict(X_val)
+        #这里用validation而不是test?
+
+        train_errors.append(mean_squared_error(y_train_predict, y_train[:m]))
+        val_errors.append(mean_squared_error(y_val_predict, y_val))
+        
+    plt.plot(np.sqrt(train_errors), "r-+", linewidth=2, label="train")
+    plt.plot(np.sqrt(val_errors), "b-", linewidth=3, label="val")
+    plt.xlabel('trainsize')
+    plt.ylabel('RMSE')
+    plt.legend()
+
+lin_reg = LinearRegression()
+plot_learning_curves(lin_reg, X, y)
+```
+![avatar](images/learningcurve.svg)
+当训练集只有一两个实例时模型可以完美拟合，到后来添加新实例也不会让训练集平均误差上升或下降。而验证集在训练集实例很少时不能很好泛化，随着模型学习更多的训练数据，验证集误差慢慢下降，最终接近训练集的曲线。
+
+这是典型的模型欠拟合，两条曲线均到达高地且非常接近，但误差都很大。在添加训练集也无法改善时，需要使用更复杂的模型以找到更好的特征。现在来看看10阶多项式模型：
+
+```python
+from sklearn.pipeline import Pipeline
+
+polynomial_regression = Pipeline((
+    ("poly_features", PolynomialFeatures(degree=10, include_bias=False)),
+    ("sgd_reg", LinearRegression()),
+))
+
+plot_learning_curves(polynomial_regression, X, y)
+```
+![avatar](images/polylearning.svg)
+训练数据的误差远低于线性回归模型，且训练集上的表现比测试集上要好得多，这也是过度拟合的标志。随着训练集的变大，两条曲线会更加接近，过拟合程度也会改善。
+
+>偏差/方差权衡：
+偏差导致的泛化误差主要原因是错误的假设，比如假设数据是线性而实际上是二次的，高偏差模型可能导致欠拟合，可换用复杂性高的模型。
+方差导致的误差主要由高自由度或过于复杂（敏感）的模型导致，很容易对训练模型过拟合。可对模型正则化以降低复杂度。
+不可避免误差：主要是数据噪声所致，减少方法是清理数据（修复或检测移出异常值）
+
+### 正则化线性模型
+
+为避免过拟合，将多项式模型正则化的简单方法就是降低多项式阶数。而多线性模型来说，正则化通常是通过约束模型的权重来实现。接下来介绍岭回归(Ridge Regression)、Lasso 回归以及弹性网络(Elastic Net)。
+
+**岭回归**
+
+岭回归是线性回归的正则化版，在成本函数中添加一个等于$\alpha\sum^n_{i=1}\theta^2_i$的正则项，使得模型不仅需要拟合数据还得让模型权重保持最小。注意，正则项只能在训练时加入成本函数中，一旦训练完成则需要未经正则化的性能指标来评估模型。
+
+>注意类似这样训练阶段与测试阶段成本函数不同的现象很常见，比如一个使用对数损失函数(log loss)作为成本函数来训练的分类器，评估指标会用精度/召回率。
+
+超参数$\alpha$控制的是对模型进行正则化的程度，如果$\alpha$为0那么岭回归就是线性模型，如果$\alpha$非常大则所有权重都非常接近零，即$\alpha$越大正则化越强：
+
+$J(\theta)=MSE(\theta)+\alpha\frac{1}{2}\sum^n_{i=1}\theta^2_i$
+
+注意，这里的偏置项$\theta_0$没有正则化；正则化用到了权重向量的$l_2$范数。和大多数正则化模型类似，岭回归对输入特征的大小非常敏感，必须对数据进行缩放。
+
+与线性模型一样，也可以计算执行梯度下降时的 $\hat\theta$ 值：
+
+$\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y$
+
