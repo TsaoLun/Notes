@@ -462,7 +462,6 @@ float precision = 6 digits
 float epsilon = 1.192093e-07
 */
 ```
-<br/>
 
 **printf()和scanf()**
 
@@ -567,3 +566,76 @@ int main(void)
 **    6**  006**00006**  006**
 */
 ```
+
+```c++
+//stringf.c -- 字符串格式
+#include <stdio.h>
+#define BLURB "Authentic imitation!"
+int main(void)
+{
+    printf("[%2s]\n", BLURB);
+    printf("[%24s]\n", BLURB);
+    printf("[%24.5s]\n", BLURB);
+    printf("[%-24.5s]\n", BLURB);
+
+    return 0;
+}
+
+/*
+[Authentic imitation!]
+[    Authentic imitation!]
+[                   Authe]
+[Authe                   ]
+*/
+```
+
+```c++
+//intconv.c -- 一些不匹配的整型转换
+#include <stdio.h>
+#define PAGES 336
+#define WORDS 65618
+int main(void)
+{
+    short num = PAGES;
+    short mnum = -PAGES;
+    
+    printf("num as short and unsigned short: %hd %hu\n", num, num);
+    printf("-num as short and unsigned short: %hd %hu\n", mnum, mnum);
+    printf("num as int and char: %d %c\n", num, num);
+    printf("WORDS as int, short, and char: %d %hd %c\n", WORDS, WORDS, WORDS);
+
+    return 0;
+}
+
+/*
+num as short and unsigned short: 336 336
+-num as short and unsigned short: -336 65200
+num as int and char: 336 P
+WORDS as int, short, and char: 65618 82 R
+*/
+```
+
+```c++
+//floatcnv.c -- 不匹配的浮点型转换
+#include <stdio.h>
+int main(void)
+{
+    float n1 = 3.0;
+    double n2 = 3.0;
+    long n3 = 2000000000;
+    long n4 = 1234567890;
+
+    printf("%.1e %.1e %.1e %.1e\n", n1, n2, n3, n4);
+    printf("%ld %ld\n", n3, n4);
+    printf("%ld %ld %ld %ld\n", n1, n2, n3, n4);
+
+    return 0;
+}
+
+/*
+3.0e+00 3.0e+00 -5.5e+303 3.2e-319
+2000000000 1234567890
+2000000000 1234567890 0 0
+*/
+```
+参数传递
