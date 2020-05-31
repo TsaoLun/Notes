@@ -853,3 +853,152 @@ baseConverter(223, 16) #'DF'
 ```
 
 **前序、中序和后序表达式**
+
+我们平时书写习惯为中序表达式，A + B * C 的前序表达式为 + A * B C ,乘号出现在B和C之前代表它的优先级高于加号。上式对应的后序表达式为 A B C * + ，乘号跟随B和C出现意味它的优先级比加号高。
+
+现在来看中序表达式，需要用括号来保证优先级。而前序可以通过前提星号 * + A B C 以改变优先级，后序可以通过 A B + C * 实现同样的优先级改变。鉴于此，中序表达式是最不理想的算数表达式。
+
+>问题 ： 为什么 A+B+C+D 前序表达式为 +++A B C D ，后序为 A B+C+D+ 而不是 A B C D +++ ？ 因为的确有差异，前者先计算A+B而后者会先计算C+D
+
+转换任意复杂度的表达式：首先使用完全括号表达式，以括号表示优先级高低，再将每个子表达式的运算符移动到对应阔后的固定侧，前序为左后序为右。
+
+```C
+(A+B)*C-(D-E)*(F+G)`-->(((A+B)*C)-((D-E)*(F+G)))
+
+//前序表达式
+-*+ABC*-DE+FG
+
+//后序表达式
+AB+C*DE-FG+*-
+```
+接下来实现转换表达式的算法，在转换到后序的过程中，由于运算符右边操作数还未出现，以此需要将运算符保存在某处。鉴于 A + B * C 的后序表达式 A B C * + 将符号的保存顺序反转，可以用栈来存储。对于 （A + B）* C 的后序则为 A B + C * ，故遇到左括号时需要将其保存以表示接下来会遇到高优先级的运算符，当右括号出现时确定该运算符的位置，将运算符从栈中取出。
+
+后序标记串的步骤：
+1. 创建用于保存运算符的空栈opstack，以及用于保存结果的空列表。
+2. 使用字符串方法split将输入的中序表达式转换成一个列表。
+3. 从左往右扫描这个标记列表。
+如果标记的是操作数，将其添加到结果列表的末尾。
+如果标记的是左括号，将其压入opstack栈中。
+如果标记的是右括号，反复从opstack栈中移除元素，直到移除对应的左括号。将从栈中取出的每一个运算符都添加到结果列表的末尾。
+如果标记的是运算符，将其压入opstack中，在这之前需要从栈中取出优先级更高或相同的运算符，并将它们添加到结果列表的末尾。
+4. 处理完输入表达式以后，检查opstack并将其中所有残留的运算符全部添加到结果列表的末尾。
+PS . 看完步骤依然很迷，但图示很清晰
+
+为了实现这个算法，我们使用一个叫prec的字典来存储优先级，通过比较值来确定优先级。其中左括号的优先级最小，所以任意与之比较的运算符都会被压入栈中。导入string模块所有大写字母组成的字符串 _string.ascii_uppercase_ ，以下是完整的转换函数：
+
+```python
+import string
+
+def infixToPostfix(infixexpr):
+    prec = {}
+    prec["*"] = 3
+    prec["/"] = 3
+    prec["+"] = 2
+    prec["-"] = 2
+    prec["("] = 1
+
+    opStack = Stack()
+    postfixList = []
+
+    tokenList = infixexpr.split()
+
+    for token in tokenList:
+        if token in string.ascii_uppercase:
+            postfixList.append(token)
+        elif token == '(':
+            opStack.push(token)
+        elif token == ')':
+            topToken = opStack.pop()
+            while topToken != '(':
+                postfixList.append(topToken)
+                topToken = opStack.pop()
+    #遇到右括号，将元素从栈中一个个弹出放入列表中，直到弹出左括号
+        else:
+            while (not opStack.isEmpty()) and \
+            (prec[opStack.peek()] >= prec[token]):
+                postfixList.append(opStack.pop())
+            opStack.push(token)
+    #当栈不为空且栈顶优先级大于当前符号优先级时，将栈顶元素弹出到列表中，再将当前符号推到栈中
+    #当栈为空或栈顶优先级小于当前符号时，只需要将当前符号推至栈中
+
+    while not opStack.isEmpty():
+        postfixList.append(opStack.pop())
+
+    return "".join(postfixList)
+
+#测试
+infixToPostfix("( A + B ) * ( C + B )") #'AB+CB+*'，注意中序表达式之间有空格以便分割
+infixToPostfix("( A + B ) * C") #'AB+C*'
+infixToPostfix("A + B * C") #'ABC*+'
+```
+接下来实现后序表达式的运算：
+1. 创建空栈operandStack 。
+2. 使用字符串方法split将输入的后序表达式转换成一个列表。
+3. 从左往右扫描这个标记列表。
+如果标记是操作数，将其转换为整数并压入operandStack栈中。
+如果标记是运算符，从operandStack栈中取出两个操作数，先右再左进行运算并将结果压入operandStack栈中。
+4. 处理结束后，栈中的值就是结果，将其返回。
+
+```python
+def postfixEval(postfixExpr):
+    operandStack = Stack()
+
+    tokenList = postfixExpr.split()
+
+    for token in tokenList:
+        if token in "0123456789":
+            operandStack.push(int(token))
+        else:
+            operand2 = operandStack.pop()
+            operand1 = operandStack.pop()
+            result = doMath(token, operand1, operand2) 
+            #字符串无法直接转换为操作指令
+            operandStack.push(result)
+
+    return operandStack.pop()
+    
+def doMath(op, op1, op2):
+    if op == "*":
+        return op1 * op2
+    elif op == "/":
+        return op1 / op2
+    elif op == "+":
+        return op1 + op2
+    else:
+        return op1 - op2
+
+#测试
+postfixEval("7 8 + 3 2 + /") #3.0
+```
+
+#### 队列
+
+队列是有序集合，添加操作发生在“尾部”，移除操作发生在“头部”，排序原则是FIFO，即先进先出，支持以下操作：
+
++ Queue() 创建一个空队列。
++ enqueue(item)在队列的尾部添加一个元素，需要一个元素作参数，无返回值。
++ dequeue() 从列队的头部移除一个元素。不需要参数且返回一个元素，并修改队列内容。
++ isEmpty() 检查队列是否为空。不需要参数，且会返回一个布尔值。
++ size() 返回队列中元素的数目，不需要参数。
+
+假设队列的尾部在列表的位置 0 处，可以使用 insert 函数向队列的尾部添加新元素，pop() 则可用于移除队列头部的元素。这意味着添加操作的时间复杂度为 $O(n)$ ，移除操作则是 $O(1)$ 。
+
+```python
+class Queue:
+    def __init__(self):
+        self.items = []
+    
+    def isEmpty(self):
+        return self.items == []
+    
+    def enqueue(self, item):
+        self.items.insert(0, item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def size(self):
+        return len(self.items)
+```
+模拟：传土豆
+

@@ -463,7 +463,7 @@ float epsilon = 1.192093e-07
 */
 ```
 
-**printf()和scanf()**
+**printf()**
 
 printf()函数打印数据的指令要与待打印数据的类型相匹配。转换说明 _conversion specification_ 指定了如何把数据转换成可显示的形式。
 
@@ -638,4 +638,89 @@ int main(void)
 2000000000 1234567890 0 0
 */
 ```
-参数传递
+参数传递：`printf("%ld %ld %ld %ld\n", n1, n2, n3, n4)`，该调用将n1,n2,n3,n4的值传递给程序，程序将传入的值放入被称为栈(stack)的内存区域。计算机根据变量类型（不是转换说明）将值放入栈中，分别占8,8,4,4字节。控制转到printf()函数，该函数根据转换说明从栈中读取值。%ld转换说明表明printf()应该读取四个字节，即n1的前半部分被解释为long类型的整数，后半部分则被第二个%ld读取，第三第四个%ld类，故全部读错。
+
++ printf()返回值
+
+大部分C函数都有一个返回值，这是函数计算并返回给主调程序(calling program)的值。例如C库的sqrt()函数，接受一个数作为参数并返回该数的平方根。可以把返回值赋给变量，也可以用于计算，还能作为参数传递。printf()返回打印字符的个数，如果输出有误则返回负值，可以利用其返回值来检查输出错误。
+
+```c++
+//prntval.c -- printf()返回值
+#include <stdio.h>
+int main(void)
+{
+    int bph2o = 212;
+    int rv;
+
+    rv = printf("%d F is water's boiling point.\n", bph2o);
+    //在打印信息的同时完成赋值
+    printf("The printf() function printed %d characters.\n", rv);
+
+    return 0;
+}
+
+/*
+212 F is water's boiling point.
+The printf() function printed 32 characters.
+*/
+```
+
++ 打印较长字符串
+
+一条printf()语句可以写成多行，只需在不同部分之间输入空白即可。注意不能在双引号括起来的字符串中间断行，正确断行方法如下：
+
+```c++
+//longstrg.c -- 打印较长字符串
+#include <stdio.h>
+int main(void)
+{
+    printf("Here's one way to print a ");
+    printf("long string.\n");
+    printf("Here's another way to print a \
+long string.\n");
+    printf("Here's the newest way to print a "
+    "long string.\n"); //ANSI C
+
+    return 0;
+}
+
+/*
+Here's one way to print a long string.
+Here's another way to print a long string.
+Here's the newest way to print a long string.
+*/
+```
+**scanf()**
+
+scanf()把输入的字符串转换成整数、浮点数、字符或字符串，与printf()类似，也使用格式字符串和参数列表，其中格式字符串表明字符输入流的目标数据类型，而针对参数列表，printf()函数使用变量、常量和表达式，scanf()函数使用指向变量的指针。
+
+先记住，scanf()读取**基本变量类型**的值，在变量名前加上一个&，而如果用scanf()把**字符串**读入字符数组中，则不要使用 & 。
+
+```c++
+//input.c -- 何时使用&
+#include <stdio.h>
+int main(void)
+{
+    int age;
+    float assets;
+    char pet[30];
+
+    printf("Enter your age, assets, and favorite pet.\n");
+    scanf("%d %f", &age, &asserts);
+    scanf("%s", pet);
+    printf("%d $%.2f %s\n", age, assets, pet);
+
+    return 0;
+}
+
+/*
+Enter your age, assets, and favorite pet.
+12 
+30
+Dog
+12 $30.00 Dog
+*/
+```
+scanf()函数使用空白（换行符、制表符和空格）把输入分成多个字段。唯一例外的是%c转换说明，它会读取每个字符，包括空白。
+
+在两个转换说明中添加一个逗号 `scanf("%d,%d", &n, &m);` ，则输入也必须在两个数字中间加入逗号，而两个输入数字间的空白将被忽略，两个转换说明间的空白也一样。只有在%c前加入空白时，scanf会从第一个非空白符开始读取。
