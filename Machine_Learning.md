@@ -7,6 +7,8 @@
 
 >MySQL
 
+<br/>
+
 ## 机器学习分类
 * 监督学习 _supervised learning_
   
@@ -76,6 +78,8 @@ lin_reg_model.fit(X, y)
 X_new = [[22587]] # Cyprus' GDP per capita
 print(lin_reg_model.predict(X_new)) # outputs
 ```
+<br/>
+
 ## END TO END
 
 ### Get the data
@@ -788,7 +792,10 @@ sorted(zip(feature_importances, attributes),reverse=True)
  final_mse = mean_squared_error(y_test, final_predictions)
  final_rmse = np.sqrt(final_mse)#47611.75169361235
 ```
+<br/>
+
 ## 分类Classification
+
 ### MNIST与分类器
 
 ```python
@@ -1301,6 +1308,7 @@ y_train_knn_pred = cross_val_predict(knn_clf, X_train, y_train, cv=3)
 f1_score(y_train, y_train_knn_pred, average="macro") #问题：运行时间超长是不是因为y_train改成字符串?
 #这里的average参数可以修改成权重weighted
 ```
+<br/>
 
 ## 训练模型
 
@@ -1614,4 +1622,3 @@ $J(\theta)=MSE(\theta)+\alpha\frac{1}{2}\sum^n_{i=1}\theta^2_i$
 与线性模型一样，也可以计算执行梯度下降时的 $\hat\theta$ 值：
 
 $\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y$
-
