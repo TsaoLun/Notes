@@ -1375,3 +1375,62 @@ while not url.endswith('#'):
     url = 'http://xkcd.com' + prevLink.get('href')
 print('Done.')
 ```
+
+<br/>
+
+## 实战
+
+### 简单实践一
+
+从 windows 上将之前的 markdown 笔记拖到 Ubuntu 上了，还合并了一个 images 文件夹，里面有很多笔记里没出现的多余图片，想要一张张区分开来很难搞。
+
+![avatar](images/屏幕截图.png)
+
+好在找到了规律，之前 windows 上保存的图片都是 png 后缀，而且都是插入到《ML基础教程笔记.md》中的，接下来写一个脚本，识别出 png 后缀的文件名并在 markdown 笔记中查找，对于找不到对应文件名的通通移动到指定文件夹中。
+
+首先 import 两个必用模块 os 和 shutil，用 os.walk() 函数遍历该文件夹：
+
+```python
+import os
+import shutil
+
+pnglist = []
+for fdname, subfds, flnames in os.walk('/home/lun/Notes/images'):
+    for flname in flnames:
+        if flname[:3] == 'png' or 'PNG':
+            pnglist.append(flname)
+```
+
+好，我们来看一下列表...WTF？出现了好多 svg 后缀的文件？想不通，那就换个方法...
+
+```python
+import os
+import shutil
+
+pnglist = []
+for fdname, subfds, flnames in os.walk('/home/lun/Notes/images'):
+    for flname in flnames:
+        if 'svg' not in flname and 'SVG' not in flname:
+            pnglist.append(flname)
+```
+
+现在 png 后缀的列表建好了，遍历列表中的每个文件名，看看是否在 markdown 文件中，并放入不移动列表：
+
+```python
+notmov = []
+with open('/home/lun/Notes/ML基础教程笔记.md') as f:
+    for line in f.readlines():
+        for i in pnglist:
+            if i in line:
+                notmov.append(i)
+```
+
+检查列表，嗯，大概没问题了。最后移动：
+
+```python
+for fl in pnglist:
+    if fl not in notmov:
+        shutil.move('/home/lun/Notes/images/'+fl,'/home/lun/Notes/')
+```
+
+好了，检查一下，发现刚刚的系统截图给误移除了，放回去，其他的框起来删掉就行（是的，没有用 os.unlink)

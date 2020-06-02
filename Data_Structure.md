@@ -1002,3 +1002,22 @@ class Queue:
 ```
 模拟：传土豆
 
+```python
+def hotPotato(namelist, num):
+    simqueue = Queue()
+    for name in namelist:
+        simqueue.enqueue(name) #创建队列
+    
+    while simqueue.size() > 1:
+        for i in range(num):
+            simqueue.enqueue(simqueue.dequeue())
+            #以num为次数进行队首队尾转换,num可大于len(namelist)
+        
+        simqueue.dequeue() #将此人从队首去除
+    
+    return simqueue.dequeue() #将最后一个去除并返回
+
+#测试
+hotPotato(["Bill","David","Susan","Jane","Kent","Brad"],7)
+#'Susan'
+```
