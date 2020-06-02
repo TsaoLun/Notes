@@ -4093,7 +4093,7 @@ lda = LatentDirichletAllocation(n_topics=10, learning_method="batch",max_iter=25
 document_topics = lda.fit_transform(X)
 ```
 
-LDA有一个**components_**属性，保存了每个单词对每个主题的重要性，**components_**的大小为(n_topics, n_words): `lda.components_.shape 为 (10, 10000)`
+LDA有一个 **components_** 属性，保存了每个单词对每个主题的重要性，**components_** 的大小为(n_topics, n_words): `lda.components_.shape 为 (10, 10000)`
 
 ```python
 #按每个主题排序，通过[:,::-1]将行反转，变为降序
