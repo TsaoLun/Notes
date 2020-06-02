@@ -385,7 +385,8 @@ X = imputer.fit_transform(housing_num)
 housing_tr = pd.DataFrame(X, columns=housing_num.columns)
 ```
 <br/>
- **_Scikit-Learn Design_**
+
+**_Scikit-Learn Design_**
 
 >估计器 _estimators_ ：根据数据集对某些参数进行估计的任意对象都能被称为估计器，通过fit方法执行并以数据集作为参数，如 _strategy_ 这类的其他参数作为超参数 _hyperparameter_ (用于创建 _SimpleImputer_ 实例)
 

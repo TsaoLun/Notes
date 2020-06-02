@@ -80,7 +80,7 @@ print("Data shape:{}".format(boston.data.shape))
 
 得到Data shape:(506, 13)，即506个数据点，13个特征。
 
-**特征工程**，我们不重复地两两组合这些特征并相乘，得到C(2,13)个组合即78个加上原来13个一共91个，该数据在`mglearn.datasets`中，通过`X, y = mglearn.datasets.load_extended_boston()`导入，X.shape: (506,104)
+**特征工程**，我们不重复地两两组合这些特征并相乘，得到 $C^{2}_{13}$ 个组合($\frac{13!}{2!*(13-2)!}=\frac{13*12}{2}=78$)个加上原来13个一共91个，该数据在`mglearn.datasets`中，通过`X, y = mglearn.datasets.load_extended_boston()`导入，X.shape: (506,104)
 
 `boston.DESCR`的信息如下
 
