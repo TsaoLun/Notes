@@ -19,7 +19,7 @@ print("X.shape:{}".formate(X.shape))
 
 输出 `X.shape(26, 2)` ,可知共26个样本（数据点），两个特征
 
-![](images\forge.png)
+![avatar](images/forge.png)
 
 ##### wave
 
@@ -33,7 +33,7 @@ plt.ylabel("Target")
 
 其中X.shape是(40, 1)，四十个一维数据即一个特征
 
-![](images\wave.png)
+![avatar](images/wave.png)
 
 ##### cancer
 
@@ -146,13 +146,13 @@ problems.
 
 导入**forge数据**，利用mglearn绘图`mglearn.plots.plot_knn_classification(n_neighbors=1)`，观察k-NN在一个最近邻模型下的预测结果，每个五角星都标记了与它最近的点。
 
-![](images\k-NN1.png)
+![avatar](images/k-NN1.png)
 
 还可以考虑k个邻居，在这种情况下用投票法指定标签，即通过比较类别0与1的邻居个数来决定预测结果。
 
 `mglearn.plots.plot_knn_classification(n_neighbors=3)`得到下图
 
-![](images\k-NN2.png)
+![avatar](images/k-NN2.png)
 
 **接下来正式通过`sklearn.neighbors`的`KNeighborsClassifier`来应用k近邻分类算法**
 
@@ -196,7 +196,7 @@ for n_n, a_n in zip([1,3,9], axes):
 axes[0].legend(loc=3)
 ```
 
-![](images\K-NN3.png)
+![avatar](images/K-NN3.png)
 
 可见使用更少n_neighbors(n_n)的邻居对应更高的模型复杂度，当邻居个数大到整个数据点数量时，则只剩一类。接下来用**乳腺癌数据cancer**来探讨模型复杂度与泛化能力之间的关系。
 
@@ -223,7 +223,7 @@ plt.xlabel("n_neighbors")
 plt.legend
 ```
 
-![](images\n_neighbors.png)
+![avatar](images/n_neighbors.png)
 
 由图可知，在本例中当邻居个数大约为6时性能最佳。
 
@@ -233,13 +233,13 @@ plt.legend
 
 `mglearn.plots.plot_knn_regression(n_neighbors=1)`
 
-![](images\K-NNR1.png)
+![avatar](images/K-NNR1.png)
 
 多个近邻进行回归，此时预测结果为这些近邻的平均值
 
 `mglearn.plots.plot_knn_regression(n_neighbors=3)`
 
-![](images\k-NNR3.png)
+![avatar](images/k-NNR3.png)
 
 **接下来正式通过`sklearn.neighbors`的`KNeighborsRegressor`来应用k近邻回归算法**
 
@@ -285,7 +285,7 @@ for n_neighbors, ax in zip([1,3,9], axes):
 axes[0].legend(["Model prediction","Training data/target","Test data/target",loc='best'])
 ```
 
-![](images\k-NNR.png)
+![avatar](images/k-NNR.png)
 
 注意如果line数据没有改为一列会报错提示：Reshape your data either using array.reshape(-1, 1) if your data has a single feature or array.reshape(1, -1) if it contains a single sample.即一维数组要改成列。如图可知，单一邻居下预测结果很不稳定，但过多邻居则导致对训练数据拟合性能差。
 
@@ -299,7 +299,7 @@ axes[0].legend(["Model prediction","Training data/target","Test data/target",loc
 
 `mglearn.plots.plot_linear_regression_wave()`
 
-![](images\L1.png)
+![avatar](images/L1.png)
 
 主要参数是**正则化参数**，在回归模型岭回归(L2)与Lasso(L1)中叫作**alpha**(正比),在分类器LinearSVC和LogisticRegression中叫**C**(反比)，正则化强则模型相对简单。当只有几个特征真正重要时或者需要解释性更强的模型时用L1正则，否则默认L2正则。
 
@@ -370,13 +370,13 @@ plt.ylim(-25,25)
 plt.legend()
 ```
 
-![](images\RL.png)
+![avatar](images/RL.png)
 
 这里x轴对应coef_元素，x=0对应第一特征的系数w[0]，以此类推到x=100，y轴对应该系数的具体取值。对于alpha=10系数大多在-3和3之间；对于alpha=1即默认值对应的岭回归模型，系数要稍大一些；对于没有做正则化的线性回归(alpha=0)，点范围很大。
 
 还有方法来理解正则化的影响，就是固定alpha值但改变训练数据量。我们对波士顿房价二次抽样，并在数据量逐渐增加的子数据集上分别对LinearRegression和Ridge(alpha=1)两个模型进行评估，将模型性能作为数据集大小的函数进行绘图，这样的图像叫作**学习曲线**
 
-![](images\size_score_lr.png)
+![avatar](images/size_score_lr.png)
 
 可见，无论岭回归还是线性回归，所有数据集大小对应的训练分数都要高于测试分数。正则化后的岭回归在训练分数上低于线性回归，但它的测试分数更高，特别在较小的子数据集上。随着可用数据变多，线性回归的性能最终追上了岭回归，即如果有足够多的训练数据，正则化将不再重要。
 
@@ -414,7 +414,7 @@ plt.xlabel("Coefficient index")
 plt.ylabel("Coefficient magnitude")
 ```
 
-![](images\coef_lasso_ridge.png)
+![avatar](images/coef_lasso_ridge.png)
 
 alpha=1时系数几乎都为0，减到0.01时一大部分为0，而当alpha为0.0001时正则化很弱系数很少为0。当alpha为0.01时的Lasso与alpha=0.1时的Ridge模型性能相近，但Ridge模型的系数都不为0.
 
@@ -439,13 +439,13 @@ for model,ax in zip([LinearSVC(), LogisticRegression()], axes):
 axes[0].legend()
 ```
 
-![](images\SVC_LR_F.png)
+![avatar](images/SVC_LR_F.png)
 
 两个模型都默认使用L2正则化，权衡参数为C，C值越大正则化越弱(作用与Lasso和岭回归中的alpha**相反**)。这里较大的C会强调每个点分类准确，较小的C则强调算法适应大多数数据点。
 
 `mglearn.plots.plot_linear_svc_regularization()`
 
-![](images\svm_forge.png)
+![avatar](images/svm_forge.png)
 
 C值很小对应正则化较强，线相对水平。中间C值稍大，决策边界因两个分类错误的样本而倾斜。最右C值非常大，决策边界斜率也很大，0的分类都是正确的，但可能存在过拟合。同样在高维空间中，用于分类的线性模型会更强大，但在多特征时更需避免过拟合。接下来分析cancer数据集：
 
@@ -488,7 +488,7 @@ plt.ylabel("Coefficient magnitude")
 plt.legend()
 ```
 
-![](images\LR_C.png)
+![avatar](images/LR_C.png)
 
 可见更强的正则化使得系数趋于0但不会为0，如果想得到可解释性更强的模型可使用penalty参数改用L1正则化。
 
@@ -521,7 +521,7 @@ plt.ylabel("Feature 1")
 plt.legend(["Class 0","Class 1","Class 2"])
 ```
 
-![](images\blobs.png)
+![avatar](images/blobs.png)
 
 现在在这个数据集上训练一个LinearSVC分类器
 
@@ -549,7 +549,7 @@ plt.ylabel("Feature 1")
 plt.legend(['Class 0','Class 1','Class 2','Line class 0','Line class 1','Line class 2'],loc=(1.01, 0.3))
 ```
 
-![](images\S1.png)
+![avatar](images/S1.png)
 
 接下来给出预测结果
 
@@ -564,7 +564,7 @@ for coef,intercept,color in zip(linear_svm.coef_, linear_svm.intercept_,['b','r'
     plt.ylabel("Feature 1")
 ```
 
-![](images\S2.png)
+![avatar](images/S2.png)
 
 
 
@@ -652,7 +652,7 @@ with open("tree.dot") as f:
 graphviz.Source(dot_graph)
 ```
 
-![](images\tree.PNG)
+![avatar](images/tree.PNG)
 
 接下来分析一下特征重要性
 
@@ -670,13 +670,13 @@ def plot_feature_importances_cancer(model):
 plot_feature_importances_cancer(tree)
 ```
 
-![](images\tree_features.png)
+![avatar](images/tree_features.png)
 
 与线性模型不同，树的特征重要性始终为正，但没有说明特征对应哪个类别比如良性恶性。但事实上，特征和类别之间的关系没有这么简单，如图`tree = mglearn.plots.plot_tree_not_monotone()`  /  `display(tree)`
 
-![](images\tree_class.png)
+![avatar](images/tree_class.png)
 
-![](images\tree_classTF.PNG)
+![avatar](images/tree_classTF.PNG)
 
 该图显示的是有两个特征和两个类别的数据集，信息主要包含在X[1]中，但对应关系不是单调的。
 
@@ -690,7 +690,7 @@ plt.xlabel("Year")
 plt.ylabel("Price in $/Mbyte")
 ```
 
-![](images\RAM.png)
+![avatar](images/RAM.png)
 
 我们将应用2000年前的数据来预测2000年后的价格，只用日期作为特征，对比DecisionTreeRegressor和LinearRegression，对价格**取对数**使得二者关系的线性相对更好(会影响到线性回归)。训练模型并作出预测后运用指数映射来做对数变换逆运算。
 
@@ -719,7 +719,7 @@ plt.semilogy(ram_prices.date, price_lr, label="Linear prediction")
 plt.legend()
 ```
 
-![](images\tree_ram.png)
+![avatar](images/tree_ram.png)
 
 线性模型对2000年后的数据做出了很好的预测，树模型对2000年前的训练数据完美预测，但一旦输入超出了模型训练数据的范围，模型就只能持续预测最后(近)一个已知数据点，树不能在训练数据的范围之外生成新的响应。
 
@@ -754,7 +754,7 @@ for i,(ax, tree) in enumerate(zip(axes.ravel(), forest.estimators_)):
     mglearn.discrete_scatter(X_train[:,0],X_train[:,1],y_train)
 ```
 
-![](images\tree_sep.png)
+![avatar](images/tree_sep.png)
 
 因为自助采样，随机森林比单独每一棵树的过拟合都要小，决策边界也更好，这里可以用几百上千棵树得到更平滑的边界。接下来将100棵树的随机森林应用到乳腺癌数据集cancer上:
 
@@ -779,7 +779,7 @@ Accuracy on test set:0.986
 
 `plot_feature_importances_cancer(forest)`
 
-![](images\rf_feature.png)
+![avatar](images/rf_feature.png)
 
 相比单棵决策树，随机森林有着更多重要特征，并选择最大周长作为信息量最大的特征，比单棵树更能从总体把握数据的特征。
 
@@ -831,7 +831,7 @@ gbrt.fit(X_train, y_train)
 plot_feature_importances_cancer(gbrt)
 ```
 
-![](images\gbrt.png)
+![avatar](images/gbrt.png)
 
 如果想将梯度提升应用在大规模问题上，可以研究一下xgboost包。
 
@@ -847,7 +847,7 @@ plot_feature_importances_cancer(gbrt)
 
 核支持向量机(kernelized support vector machine)，这里主要讨论支持向量分类问题SVC，类似的概念也适用于支持向量回归SVR。
 
-![](images\tree_class.png)
+![avatar](images/tree_class.png)
 
 以上是决策树给出的决策边界，线性模型（比如线性SVM）在低维空间里可能非常受限。有一种方式可以让线性模型更加灵活，就是添加更多特征：比如输入特征的交互项或多项式。借用make_blobs数据集：
 
@@ -860,7 +860,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\make_blobs.png)
+![avatar](images/make_blobs.png)
 
 利用线性SVM给出决策边界：
 
@@ -873,7 +873,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\l_svm.png)
+![avatar](images/l_svm.png)
 
 现在对输入特征进行拓展，添加第二个特征的平方(feature1**2)
 
@@ -895,7 +895,7 @@ ax.set_ylabel("feature1")
 ax.set_zlabel("feature1**2")
 ```
 
-![](images\feature1_2.png)
+![avatar](images/feature1_2.png)
 
 现在可以用线性模型（三维空间的平面）将这两个类别分开，接下来用模型拟合拓展后的数据集：
 
@@ -918,7 +918,7 @@ ax.set_ylabel("feature1")
 ax.set_zlabel("feature1**2")
 ```
 
-![](images\3dsvm.png)
+![avatar](images/3dsvm.png)
 
 这时将线性SVM模型看作原始特征的函数，呈现出椭圆
 
@@ -932,7 +932,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\svm2d.png)
+![avatar](images/svm2d.png)
 
 平时遇到线性不可分的样例尝试把特征映射到高维空间时，由于我们不知道向数据表示中添加哪些非线性特征，而且添加高维所有可能交互项计算量巨大（维度爆炸），我们一般会采用**核技巧**：利用**核函数**(Kernel Function)简化映射空间中的内积运算，直接在原来的低维空间进行计算而不需要显式地写出映射后的结果。
 
@@ -957,7 +957,7 @@ plt.xlabel=("Feature 0")
 plt.ylabel=("Feature 1")
 ```
 
-![](images\rbfsvm.png)
+![avatar](images/rbfsvm.png)
 
 接下来调节C参数与gamma参数：gamma参数用于控制高斯核宽度，决定了点与点之间“靠近”是指多大距离；C参数是正则化参数，与线性模型中的类似，用来控制每个点的重要性，即每个点的 **dual_coef_**
 
@@ -969,7 +969,7 @@ for ax, C in zip(axes,[-1,0,3]):
 axes[0,0].legend(["class 0","class 1","sv class 0","sv class 1"],ncol=4,loc=(.9,1.2))
 ```
 
-![](images\3x3svm.png)
+![avatar](images/3x3svm.png)
 
 gamma越小高斯核半径越大，越多的点被看作靠近点，图中从左往右gamma从0.1到10，决策边界从平滑变得更关注单个点，模型更加复杂；而随着C值变大，模型受限越来越小(C小则每个点影响范围有限)。
 
@@ -997,7 +997,7 @@ plt.ylabel("Feature magnitude")
 plt.yscale("log")
 ```
 
-![](images\notcallable.png)
+![avatar](images/notcallable.png)
 
 可见cancer特征具有完全不同的数量级，对其他比如线性模型来说是小问题，但是对核SVM影响极大，故需对SVM数据预处理，对每个特征进行缩放，核SVM将所有特征缩放到0到1之间（先手工缩放，以后可以学习MinMaxScaler进行预处理）：
 
@@ -1056,7 +1056,7 @@ plt.xlabel("x")
 plt.ylabel("relu(x), tanh(x)")
 ```
 
-![](images\tanh_relu.png)
+![avatar](images/tanh_relu.png)
 
 将**MLPClassifier**应用到two_moons数据集上：
 
@@ -1072,13 +1072,13 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\mlpscatter.png)
+![avatar](images/mlpscatter.png)
 
 默认情况下，MLP使用100个隐结点，可以修改参数hidden_layer_sizes=[n]，默认非线性函数是relu可以修改为tanh非线性，也可以添加第二个隐藏层[n,m]
 
 `mlp = MLPClassifier(solver='lbfgs',activation='tanh',random_state=0,hidden_layer_sizes=[10,10])`
 
-![](images\tanh_2.png)
+![avatar](images/tanh_2.png)
 
 还能利用L2惩罚使权重趋向于0，从而控制神经网络的复杂度。在MLPClassifier中的参数是alpha，它的默认值很小，正则化较弱。
 
@@ -1093,7 +1093,7 @@ for axx, n_hidden_nodes in zip(axes, [10,100]):
         ax.set_title("n_hidden=[{},{}]\nalpha={:.4f}".format(n_hidden_nodes,n_hidden_nodes,alpha))
 ```
 
-![](images\alpha2_4.png)
+![avatar](images/alpha2_4.png)
 
 这里控制神经网络复杂度的方法：**hidden_layer_sizes=[m,n]**，隐层的个数、每个隐层中的单元个数与正则化**alpha**
 
@@ -1167,7 +1167,7 @@ plt.ylabel("Input feature")
 plt.colorbar()
 ```
 
-![](images\coef.png)
+![avatar](images/coef.png)
 
 虽然有点难以理解，但可以推断的是如果某特征对所有隐单元权重都很小，则“不太重要”，比如smoothness error和fractal dimension error之间的特征权重都较小。
 
@@ -1273,7 +1273,7 @@ cbar = plt.colorbar(scores_image, ax=axes.tolist())
 axes[0].legend(["Test class 0","Test class 1","Train class 0","Train class 1"],ncol=4,loc=(.1,1.1))
 ```
 
-![](images\gbrtdf.png)
+![avatar](images/gbrtdf.png)
 
 左决策边界，右决策函数。这样既给出预测结果，又给出分类器的置信程度，但边界较为模糊。
 
@@ -1310,7 +1310,7 @@ cbar = plt.colorbar(scores_image, ax=axes.tolist())
 axes[0].legend(["Test class 0","Test class 1","Train class 0","Train class 1"],ncol=4,loc=(.1,1.1))
 ```
 
-![](images\predict_proba.png)
+![avatar](images/predict_proba.png)
 
 ##### 多分类问题的不确定度
 
@@ -1487,7 +1487,7 @@ for ax in axes:
     ax.set_ylabel("Feature 1")
 ```
 
-![](images\scaleddata.png)
+![avatar](images/scaleddata.png)
 
 在某数据集上fit一个模型，再将其transform，可以用fit_transform方法或者方法链替代：
 
@@ -1571,7 +1571,7 @@ ax[0].legend(["malignant","benign"],loc="best")
 fig.tight_layout()
 ```
 
-![](images\PCAIRISF.png)
+![avatar](images/PCAIRISF.png)
 
 这种图无法向我们展示变量之间的相互作用以及这种相互作用与类别之间的关系。我们将利用PCA获取主要相互作用，找到前两个主成分，并在新的二维空间中用散点图将数据可视化。先用StandardScaler缩放数据，使每个特征的方差均为1。
 
@@ -1609,7 +1609,7 @@ plt.xlabel("First principal component")
 plt.ylabel("Second principal component")
 ```
 
-![](images\cancerpacscatter.png)
+![avatar](images/cancerpacscatter.png)
 
 此时可见即便是线性分类器也可以有不错的表现，还看得出恶性点比良性点更加分散。PCA的缺点在于不容易对图中的两个轴做出解释，它是原始特征的组合。在拟合过程中，主成分被保存在PCA对象的components_属性中：
 
@@ -1641,7 +1641,7 @@ plt.ylabel("Principal components")
 
 Text(0,0.5,'Principal components')
 
-![](images\cancercolorbar.png)
+![avatar](images/cancercolorbar.png)
 
 用PCA对图像做**特征提取**，处理Wild数据集Labeled Faces中的人脸图像
 
@@ -1744,7 +1744,7 @@ for i,(component,ax) in enumerate(zip(pca.components_,axes.ravel())):
     ax.set_title("{}. component".format((i+1)))
 ```
 
-![](images\15component.png)
+![avatar](images/15component.png)
 
 人脸数据集前15个主成分的成分向量，原图像就是它们的加权求和。当仅使用少量主成分时，仅能捕捉图片基本特征，如果使用的成分个数与像素个数相等，则旋转后不会丢失任何信息，能完美重建图像。
 
@@ -1766,7 +1766,7 @@ for i,(component, ax) in enumerate(zip(nmf.components_,axes.ravel())):
     ax.set_title("{}. component".format(i))
 ```
 
-![](images\nmf15.png)
+![avatar](images/nmf15.png)
 
 接下来研究一下分量与图像的关系
 
@@ -1785,9 +1785,9 @@ for i,(ind,ax) in enumerate(zip(inds, axes.ravel())):
     ax.imshow(X_train[ind].reshape(image_shape))
 ```
 
-![](images\3compn.png)
+![avatar](images/3compn.png)
 
-![](images\7compn.png)
+![avatar](images/7compn.png)
 
 分量3系数较大的都是向右看的人脸，分量7较大的则是向左看。接下来分析一下叠加结构的数据，一个由三个不同信号源合成的信号
 
@@ -1799,7 +1799,7 @@ plt.xlabel("Time")
 plt.ylabel("Signal")
 ```
 
-![](images\signal.png)
+![avatar](images/signal.png)
 
 将混合信号分解为原始分量，可以用NMF来还原这三个信号:
 
@@ -1838,7 +1838,7 @@ for model, name, ax in zip(models, names, axes):
     ax.plot(model[:,:3],'-')
 ```
 
-![](images\NMFPCA.png)
+![avatar](images/NMFPCA.png)
 
 NMF发现了原始信号而PCA失败了，类似的分量分解方式在scikit-learn中还有独立成分分析(ICA)、因子分析(FA)和稀疏编码(字典学习)等等。
 
@@ -1858,7 +1858,7 @@ for ax, img in zip(axes.ravel(), digits.images):
     ax.imshow(img)
 ```
 
-![](images\digits.png)
+![avatar](images/digits.png)
 
 我们用PCA将降到二维的数据可视化，对前两个主成分作图，并按类别对数据点着色:
 
@@ -1881,7 +1881,7 @@ plt.ylabel("Second principal component")
 
 Text(0,0.5,'Second principal component')
 
-![](images\2digits.png)
+![avatar](images/2digits.png)
 
 可见0，6，4相对较好分开，但大多数重叠在一起。我们将t-SNE应用于同一数据集，由于t-SNE不支持变换新数据，所以**没有transform方法**，但可调用**fit_transform**方法来代替，它会构建模型并立刻返回变换后的数据:
 
@@ -1900,7 +1900,7 @@ plt.xlabel("t-SNE feature 0")
 plt.xlabel("t-SNE feature 1")
 ```
 
-![](images\tsnedigits.png)
+![avatar](images/tsnedigits.png)
 
 t-SNE的结果很棒，但要注意的是这种方法并不知道类别标签，它是完全无监督的，它只是根据原始空间中的靠近程度找到数据的一种二维表示。它的调节参数有perplexity和early_exaggeration，但作用很小。
 
@@ -1940,7 +1940,7 @@ mglearn.discrete_scatter(X[:,0],X[:,1],kmeans.labels_,markers='o')
 mglearn.discrete_scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],[0,1,2],markers='^',markeredgewidth=2)
 ```
 
-![](images\cluster3.png)
+![avatar](images/cluster3.png)
 
 因为每个簇仅由其中心定义，意味着每个簇都是凸形(convex)；k均值还假设所有簇在某种程度上具有相同的直径，边界都处于中间位置。来看一下簇密度不同时的聚类结果:
 
@@ -1953,7 +1953,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\f_cluster.png)
+![avatar](images/f_cluster.png)
 
 如果二维数据沿线性方向拉长，形成非球形簇，k均值也无法处理
 
@@ -1973,7 +1973,7 @@ plt.scatter(X[:,0],X[:,1],c=y_pred,cmap=mglearn.cm3)
 plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],marker='^',c=[0,1,2],s=100,linewidth=2,cmap=mglearn.cm3)
 ```
 
-![](images\longcluster.png)
+![avatar](images/longcluster.png)
 
 如果形状更加复杂比如two_moons数据，k均值同样无法处理。
 
@@ -1995,9 +1995,9 @@ X_reconstructed_nmf = np.dot(nmf.transform(X_test),nmf.components_)
 
 
 
-![](images\1003.png)
+![avatar](images/1003.png)
 
-![](images\1003_1.png)
+![avatar](images/1003_1.png)
 
 利用k均值做矢量量化的有趣在于可以用比输入维度更多的簇来对数据进行编码，回到two_moons数据，利用PCA和NMF将其讲到一维会完全破坏数据的结构，但通过使用更多的簇中心，可以用k均值找到一种更具表现力的表示
 
@@ -2022,7 +2022,7 @@ Cluster memberships:
 3 5 0 2 9 3 0 8 6 0 3 3 5 6 3 2 0 2 3 0 2 6 3 4 4 1 5 6 7 1 1 3 2 4 7 2 7
 3 8 6 4 1 4 3 9 9 5 1 7 5 8 2]
 
-![](images\moonsk.png)
+![avatar](images/moonsk.png)
 
 这时可以看作10个分量表示的数据，还可以得到一种表现力更强的数据表示，将每个簇中心的距离作为特征，利用kmeans的transform完成：
 
@@ -2052,7 +2052,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\P141.png)
+![avatar](images/P141.png)
 
 这种可视化依赖于数据的二维性质，多维数据集可用scipy的dendrogram函数来绘制树状图:
 
@@ -2074,7 +2074,7 @@ plt.xlabel("Sample index")
 plt.ylabel("Cluster distance")
 ```
 
-![](images\P142.png)
+![avatar](images/P142.png)
 
 但凝聚聚类仍然无法分离像two_moons数据集这样复杂的形状，算法DBSCAN可以解决这个问题。
 
@@ -2099,7 +2099,7 @@ Cluster memberships:
 
 结果所有数据点都被判定为噪声，下面看一下eps和min_samples参数的影响：`mglearn.plots.plot_dbscan()`
 
-![](images\P145.png)
+![avatar](images/P145.png)
 
 增大eps，更多的点会被包含在簇中，增大min_samples，核心点会变得更少，噪声会变多。
 
@@ -2120,7 +2120,7 @@ plt.xlabel("Feature 0")
 plt.ylabel("Feature 1")
 ```
 
-![](images\P146.png)
+![avatar](images/P146.png)
 
 注意，当存在噪声时标签为-1，作为另一个数据的索引会发生错误。
 
@@ -2156,7 +2156,7 @@ for ax,algorithm in zip(axes[1:],algorithms):
     ax.set_title("{} - ARI:{:.2f}".format(algorithm.__class__.__name__,adjusted_rand_score(y,clusters)))
 ```
 
-![](images\P149.png)
+![avatar](images/P149.png)
 
 这类聚类评估时常见的错误是使用accuracy_score，精度要求分配的簇标签与真实值匹配，但簇标签本身毫无意义，唯一重要的是哪些点位于同一簇中：
 
@@ -2215,7 +2215,7 @@ for image,ax in zip(noise, axes.ravel()):
     ax.imshow(image.reshape(image_shape), vmin=0, vmax=1)
 ```
 
-![](images\P151.png)
+![avatar](images/P151.png)
 
 这被称为异常值检测(outlier detection)，接下来寻找更多的簇，将eps设置得更小，取值在15和0.5(默认)之间
 
@@ -2269,7 +2269,7 @@ for center,ax in zip(km.cluster_centers_, axes.ravel()):
     ax.imshow(pca.inverse_transform(center).reshape(image_shape),vmin=0,vmax=1)
 ```
 
-![](images\P154.png)
+![avatar](images/P154.png)
 
 每个簇中心都是64到386张人脸图像的平均，注意，k平均是对所有数据点划分而不像DBSCAN那样具有噪声点的概念，利用更多簇可找到更席位区别，但也使人工更困难。
 
@@ -2298,7 +2298,7 @@ plt.xlabel("Sample index")
 plt.ylabel("Cluster distance")
 ```
 
-![](images\P156.png)
+![avatar](images/P156.png)
 
 从树状图来看，两个或三个簇就能很好划分数据。
 
@@ -2325,9 +2325,9 @@ for cluster in [10,13,19,22,36]:
 78  30 166  20  57  14  11  29  23   5   8  84  67  30  57  16  22  12
 29   2  26   8]
 
-![](images\1.png)
+![avatar](images/1.png)
 
-![](images\P158.PNG)
+![avatar](images/P158.PNG)
 
 可以找出其中的规律如"咧嘴"、"高额头"等等。
 
@@ -2358,7 +2358,7 @@ data = data[['age','workclass','education','gender','hours-per-week','occupation
 display(data.head())
 ```
 
-![](images\P164.PNG)
+![avatar](images/P164.PNG)
 
 使用pandas Series的value_counts函数检查列的内容，以显示唯一值及其出现的次数
 
@@ -2383,7 +2383,7 @@ Features after get_dummies:
 
 `data_dummies.head()`
 
-![](images\P165.PNG)
+![avatar](images/P165.PNG)
 
 使用values属性将data_dummies数据框(DataFrame)转换为NumPy数组
 
@@ -2422,11 +2422,11 @@ demo_df = pd.DataFrame({'Integer Feature':[0,1,2,1],'Categorical Feature':['sock
 display(demo_df)
 ```
 
-![](images\P167.PNG)
+![avatar](images/P167.PNG)
 
 若直接用get_dummies只会编码字符串特征，不会改变整数特征 `pd.get_dummies(demo_df)`
 
-![](images\P167_1.PNG)
+![avatar](images/P167_1.PNG)
 
 如果想为"Integer Feature"这一列创建虚拟变量，可以使用columns显式地给出想要编码的列:
 
@@ -2455,7 +2455,7 @@ plt.xlabel("Input feature")
 plt.legend(loc="best")
 ```
 
-![](images\P168.png)
+![avatar](images/P168.png)
 
 ```python
 #用linspace函数创建11个元素，从而创建10个箱子，即两个连续边界之间的空间
@@ -2513,7 +2513,7 @@ plt.ylabel("Regression output")
 plt.xlabel("Input feature")
 ```
 
-![](images\P171.png)
+![avatar](images/P171.png)
 
 线性回归模型和决策树做出完全相同的预测，相比于特征分箱之前，线性模型的灵活性提升，而决策树的灵活性降低了，所以对于特定数据集，如果有充分理由使用线性模型（如数据集很大、维度很高），但有些特征与输出的关系是非线性的，那么可以应用**分箱**来提高建模能力。
 
@@ -2539,7 +2539,7 @@ plt.xlabel("Input feature")
 plt.legend(loc="best")
 ```
 
-![](images\P173.png)
+![avatar](images/P173.png)
 
 此时每个箱子都有自己的偏移和斜率。使用分箱是拓展连续特征的一种方法，另一种方法是使用原始特征的多项式**ploynomial**。在preprocessing模块的PolynomialFeatures中实现:
 
@@ -2567,7 +2567,7 @@ plt.xlabel("Input feature")
 plt.legend(loc="best")
 ```
 
-![](images\P175.png)
+![avatar](images/P175.png)
 
 多项式在这个一维数据上得到了非常平滑的拟合，但高次多项式在边界上或者数据很少的区域可能有极端表现。
 
@@ -2584,7 +2584,7 @@ plt.xlabel("Input feature")
 plt.legend(loc="best")
 ```
 
-![](images\P176.png)
+![avatar](images/P176.png)
 
 使用更加复杂的模型可以学得类似的结果，且不需要进行显式的特征变换。
 
@@ -2647,7 +2647,7 @@ plt.ylabel("Number of appearances")
 plt.xlabel("Value")
 ```
 
-![](images\P179.png)
+![avatar](images/P179.png)
 
 X[:, 1]与X[:, 2]具有类似的性质，这种类型的数值分布实践中很常见但大多数线性模型无法很好处理。尝试一些岭回归：
 
@@ -2670,7 +2670,7 @@ plt.ylabel("Number of appearances")
 plt.xlabel("Value")
 ```
 
-![](images\P180.png)
+![avatar](images/P180.png)
 
 ```python
 score = Ridge().fit(X_train_log,y_train).score(X_test_log, y_test)
@@ -2721,7 +2721,7 @@ plt.matshow(mask.reshape(1,-1),cmap='gray_r')
 plt.xlabel("Sample index")
 ```
 
-![](images\P182.PNG)
+![avatar](images/P182.PNG)
 
 大多数所选特征为原始特征，但还原并不完美，在Logistic回归上比较选用不同特征时的性能:
 
@@ -2775,7 +2775,7 @@ plt.matshow(mask.reshape(1,-1),cmap='gray_r')
 plt.xlabel("Sample index")
 ```
 
-![](images\P184.PNG)
+![avatar](images/P184.PNG)
 
 来看一下性能：
 
@@ -2853,7 +2853,7 @@ plt.xlabel("Date")
 plt.ylabel("Rentals")
 ```
 
-![](images\P187.png)
+![avatar](images/P187.png)
 
 在对这种时间序列上的预测模型进行评估时，我们通常希望从过去学习并预测未来。这里，我们将使用前184个数据点（前23天）作为训练集，剩余64个数据点（对应8天）作为测试集。在预测任务中，我们使用唯一特征就是某一租车数量对应的日期和时间。
 
@@ -2895,7 +2895,7 @@ plt.figure()
 eval_on_features(X, y, regressor)
 ```
 
-![](images\P188.png)
+![avatar](images/P188.png)
 
 Test-set R^2:-0.04
 
@@ -2910,7 +2910,7 @@ eval_on_features(X_hour, y , regressor)
 
 Test-set R^2:0.60
 
-![](images\P189.png)
+![avatar](images/P189.png)
 
 R方已经好了很多，但并没有抓住每周的模式:
 
@@ -2921,7 +2921,7 @@ eval_on_features(X_hour_week, y, regressor)
 
 Test-set R^2:0.84
 
-![](images\P190.png)
+![avatar](images/P190.png)
 
 预测结果相当好，接下来我们尝试用更简单的模型LinearRegression
 
@@ -2942,7 +2942,7 @@ eval_on_features(X_hour_week_onehot, y, Ridge())
 
 Test-set R^2:0.62
 
-![](images\P191.png)
+![avatar](images/P191.png)
 
 利用交互特征(多项式），可以让线性模型为星期几和时刻的每一种组合都学到一个系数:
 
@@ -2955,7 +2955,7 @@ eval_on_features(X_hour_week_onehot_poly, y, lr)
 
 Test-set R^2:0.85
 
-![](images\P1917.png)
+![avatar](images/P1917.png)
 
 线性模型最终得到一个性能与随机森林类似的模型，并且可以对模型学到的系数作图:
 
@@ -2975,7 +2975,7 @@ plt.xlabel("Feature name")
 plt.ylabel("Feature magnitude")
 ```
 
-![](images\P192.png)
+![avatar](images/P192.png)
 
 可见使用适合机器学习算法的数据表示方式的重要性，例如one-hot编码过的分类变量。通过特征工程生成新特征以及利用专家知识创建特征都很有用。在线性模型中，分箱、添加多项式和交互项从而生成新特征。对更加复杂的非线性模型，比如随机森林或SVM，则**无需显式拓展特征空间**。实践中特征与方法之间的匹配通常是良好表现的前提。
 
@@ -3388,7 +3388,7 @@ plt.xlabel("Precision")
 plt.ylabel("Recall")
 ```
 
-![](images\P224.png)
+![avatar](images/P224.png)
 
 曲线越靠近右上角，则分类器越好。下面来对比SVM和随机森林，注意RandomForestClassifier没有decision_function，只有predict_proba:
 
@@ -3407,7 +3407,7 @@ plt.ylabel("Recall")
 plt.legend(loc="best")
 ```
 
-![](images\P225.png)
+![avatar](images/P225.png)
 
 可见随机森林在极值处表现更好，中间位置SVM表现更好，f分数只能反映P-R曲线在默认阈值处的性能。
 
@@ -3446,7 +3446,7 @@ plt.plot(fpr[close_zero],tpr[close_zero],'o',markersize=10,label="threshold zero
 plt.legend(loc=4)
 ```
 
-![](images\P227.png)
+![avatar](images/P227.png)
 
 理想的ROC曲线要靠近左上角：在召回率很高的同时假正例率很低。图中存在与默认阈值0相比召回率更高而FPR仅稍有增加的点。下面对比随机森林与SVM的ROC曲线:
 
@@ -3463,7 +3463,7 @@ plt.plot(fpr_rf[close_default_rf], tpr[close_default_rf],'^',markersize=10,label
 plt.legend(loc=4)
 ```
 
-![](images\P228.png)
+![avatar](images/P228.png)
 
 曲线下的面积被称为AUC，可以利用roc_auc_score函数计算ROC曲线下的面积:
 
@@ -3500,7 +3500,7 @@ plt.ylim(0, 1.02)
 plt.legend(loc="best")
 ```
 
-![](images\P229.png)
+![avatar](images/P229.png)
 
 当gamma为0.01时，我们得到等于1的完美AUC，即所有正类点排名要高于所有反类点。利用正确的阈值，可以实现对所有数据的完美分类。在不平衡数据上的评估模型使用AUC没有使用默认阈值，为了从高AUC的模型中得到有用分类结果，还需要调节决策阈值。
 
@@ -3538,7 +3538,7 @@ plt.title("Confusion matrix")
 plt.gca().invert_yaxis()
 ```
 
-![](images\P231.png)
+![avatar](images/P231.png)
 
 利用classification_report函数，可以计算每个类别准确率、召回率和f分数:
 
@@ -3848,7 +3848,7 @@ plt.yticks(range(len(param_grid['polynomialfeatures__degree'])),
 plt.colorbar()
 ```
 
-![](images\P247.png)
+![avatar](images/P247.png)
 
 可以调用grid.best_params_得到degree参数与alpha参数
 
