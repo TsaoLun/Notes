@@ -262,11 +262,11 @@ reg.fit(X_train, y_train)
 得到Test set predictions:
 [-0.054  0.357  1.137 -1.894 -1.139 -1.631  0.357  0.912 -0.447 -1.139]
 
-利用score方法来评估模型，在回归问题中该方法返回的是R^2分数，也叫决定系数，是回归模型预测的优度度量，位于0到1之间，R^2=1对应完美预测，0则对应常数模型(常数为y_train的平均值)
+利用score方法来评估模型，在回归问题中该方法返回的是$R^2$分数，也叫决定系数，是回归模型预测的优度度量，位于0到1之间，$R^2=1$对应完美预测，0则对应常数模型(常数为y_train的平均值)
 
 `print("Test set R^2:{:.2f}".format(reg.score(X_test, y_test)))`
 
-得到 Test set R^2:0.83，表示拟合结果相对较好。接下来分析一下该模型：
+得到 Test set $R^2$:0.83，表示拟合结果相对较好。接下来分析一下该模型：
 
 ```python
 fig, axes = plt.subplots(1,3,figsize=(15,4))
@@ -291,11 +291,11 @@ axes[0].legend(["Model prediction","Training data/target","Test data/target",loc
 
 #### 线性模型
 
-一般公式 : y=w[0]x[0]+w[1]x[1]+w[2]x[2]+...+w[p]x[p]+b，其中x[0]到x[p]表示单个数据点的特征(特征数为p+1)
+一般公式 :$y=w_0x_0+w_1x_1+w_2x_2+...+w_px_p+b$，其中$x_0$到$x_p$表示单个数据点的特征(特征数为p+1)
 
 多特征数据集下效果好，在特征数量大于训练数据点的数量时，任何目标y都可以在训练集上用线性模型完美拟合
 
-单一特征公式为 y=w[0]x[0]+b ,在一维wave上学习参数w[0]和b
+单一特征公式为 $y=w_0x_0+b$ ,在一维wave上学习参数$w_0$和b
 
 `mglearn.plots.plot_linear_regression_wave()`
 
@@ -321,7 +321,7 @@ print("lr.coef_:{}".format(lr.coef_))
 print("lr.intercept_:{}".format(lr.intercept_))
 ```
 
-得到:`lr.coef_:[0.39390555]   lr.intercept_:-0.031804343026759746`，该模型训练集得分0.67，测试集得分R^2是0.66，可能存在欠拟合。在高维数据集下（即有大量特征的数据集），线性模型性能会更好但过拟合可能性变大。接下来看一下波士顿房价数据集，有506个样本和105个导出特征。
+得到:`lr.coef_:[0.39390555]   lr.intercept_:-0.031804343026759746`，该模型训练集得分0.67，测试集得分$R^2$是0.66，可能存在欠拟合。在高维数据集下（即有大量特征的数据集），线性模型性能会更好但过拟合可能性变大。接下来看一下波士顿房价数据集，有506个样本和105个导出特征。
 
 ```python
 X, y = mglearn.datasets.load_extended_boston()
@@ -372,7 +372,7 @@ plt.legend()
 
 ![avatar](images/RL.png)
 
-这里x轴对应coef_元素，x=0对应第一特征的系数w[0]，以此类推到x=100，y轴对应该系数的具体取值。对于alpha=10系数大多在-3和3之间；对于alpha=1即默认值对应的岭回归模型，系数要稍大一些；对于没有做正则化的线性回归(alpha=0)，点范围很大。
+这里x轴对应coef_元素，x=0对应第一特征的系数$w_0$，以此类推到x=100，y轴对应该系数的具体取值。对于alpha=10系数大多在-3和3之间；对于alpha=1即默认值对应的岭回归模型，系数要稍大一些；对于没有做正则化的线性回归(alpha=0)，点范围很大。
 
 还有方法来理解正则化的影响，就是固定alpha值但改变训练数据量。我们对波士顿房价二次抽样，并在数据量逐渐增加的子数据集上分别对LinearRegression和Ridge(alpha=1)两个模型进行评估，将模型性能作为数据集大小的函数进行绘图，这样的图像叫作**学习曲线**
 
@@ -416,11 +416,11 @@ plt.ylabel("Coefficient magnitude")
 
 ![avatar](images/coef_lasso_ridge.png)
 
-alpha=1时系数几乎都为0，减到0.01时一大部分为0，而当alpha为0.0001时正则化很弱系数很少为0。当alpha为0.01时的Lasso与alpha=0.1时的Ridge模型性能相近，但Ridge模型的系数都不为0.
+alpha=1时系数几乎都为0，减到0.01时一大部分为0，而当alpha为0.0001时正则化很弱系数很少为0。当alpha为0.01时的Lasso与alpha=0.1时的Ridge模型性能相近，但Ridge模型的系数都不为0 。
 
 ##### 二分类:逻辑回归&线性SVM
 
-二分类下的线性模型：y = w[0]x[0]+w[1]x[1]+...+w[p]x[p]+b>0
+二分类下的线性模型：$y = w_0x_0+w_1x_1+...+w_px_p+b>0$
 
 设置阈值(0)以预测类别-1和1，对于二分类问题来说线性分类器就是利用直线、平面或超平面来分开两个类别的分类器。最常见的两种线性分类算法是**Logistic回归**与**线性支持向量机(SVM)**，接下来应用到Forge数据集上并将线性模型的**决策边界**可视化。
 
@@ -456,10 +456,10 @@ X_train,X_test,y_train,y_test = train_test_split(cancer.data, cancer.target, str
 logreg = LogisticRegression().fit(X_train, y_train)
 print("Training set score:{:.3f}".format(logreg.score(X_train, y_train)))
 print("Test set score:{:.3f}".format(logreg.score(X_test, y_test)))
-```
 
-Training set score:0.955
-Test set score:0.958
+#Training set score:0.955
+#Test set score:0.958
+```
 
 C=1的默认值在Logistic回归分类器下的效果就很好，但考虑到性能接近且测试集高于训练集可能存在欠拟合。为加强拟合这里减弱正则化，增大C值。
 
@@ -467,10 +467,10 @@ C=1的默认值在Logistic回归分类器下的效果就很好，但考虑到性
 logreg100 = LogisticRegression(C=100).fit(X_train, y_train)
 print("Training set score:{:.3f}".format(logreg100.score(X_train, y_train)))
 print("Test set score:{:.3f}".format(logreg100.score(X_test, y_test)))
-```
 
-Training set score:0.972
-Test set score:0.965
+#Training set score:0.972
+#Test set score:0.965
+```
 
 接下来看一下正则化参数不同的情况下模型学到的系数：
 
