@@ -80,6 +80,8 @@ print("Data shape:{}".format(boston.data.shape))
 
 得到Data shape:(506, 13)，即506个数据点，13个特征。
 
+
+
 **特征工程**，我们不重复地两两组合这些特征并相乘，得到 $C^{2}_{13}$ 个组合($\frac{13!}{2!*(13-2)!}=\frac{13*12}{2}=78$)个加上原来13个一共91个，该数据在`mglearn.datasets`中，通过`X, y = mglearn.datasets.load_extended_boston()`导入，X.shape: (506,104)
 
 `boston.DESCR`的信息如下
@@ -2375,13 +2377,6 @@ print("Original features:\n",list(data.columns),"\n")
 data_dummies = pd.get_dummies(data)
 print("Features after get_dummies:\n",list(data_dummies.columns))
 ```
-
-Original features:
-['age', 'workclass', 'education', 'gender', 'hours-per-week', 'occupation', 'income'] 
-Features after get_dummies:
-['age', 'hours-per-week', 'workclass_ ?', 'workclass_ Federal-gov', 'workclass_ Local-gov', 'workclass_ Never-worked', 'workclass_ Private', 'workclass_ Self-emp-inc', 'workclass_ Self-emp-not-inc', 'workclass_ State-gov', 'workclass_ Without-pay', 'education_ 10th', 'education_ 11th', 'education_ 12th', 'education_ 1st-4th', 'education_ 5th-6th', 'education_ 7th-8th', 'education_ 9th', 'education_ Assoc-acdm', 'education_ Assoc-voc', 'education_ Bachelors', 'education_ Doctorate', 'education_ HS-grad', 'education_ Masters', 'education_ Preschool', 'education_ Prof-school', 'education_ Some-college', 'gender_ Female', 'gender_ Male', 'occupation_ ?', 'occupation_ Adm-clerical', 'occupation_ Armed-Forces', 'occupation_ Craft-repair', 'occupation_ Exec-managerial', 'occupation_ Farming-fishing', 'occupation_ Handlers-cleaners', 'occupation_ Machine-op-inspct', 'occupation_ Other-service', 'occupation_ Priv-house-serv', 'occupation_ Prof-specialty', 'occupation_ Protective-serv', 'occupation_ Sales', 'occupation_ Tech-support', 'occupation_ Transport-moving', 'income_ &lt;=50K', 'income_ &gt;50K']
-
-`data_dummies.head()`
 
 ![avatar](images/P165.PNG)
 
