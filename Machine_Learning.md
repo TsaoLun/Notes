@@ -384,12 +384,12 @@ print(encoder.classes_)
 ```
 这种代表方式的问题是算法会假设两个相近的数字比较远的更相似，而实际情况可能不是。常见的解决方式是给每个类别创建一个二进制属性，即 **one-hot 编码**。
 
-Scikit-Learn preprocessing 模块的 **OneHotEncoder** 转换器，可以将整数分类转换为独热向量。不过 fit_transform() 只接受 ndarray 并输出 SciPy 稀疏矩阵，由于pd.Series的shape为(a,)并非(a, 1)，需要先提取values再reshape(-1,1) 化为一列才能处理。得到的稀疏矩阵仅储存非零元素的位置，所以更节约内存，可以通过toarray()方法来将其转换为 dense array。
+Scikit-Learn preprocessing 模块的 **OneHotEncoder** 转换器，可以将整数分类转换为独热向量。不过 fit_transform() 只接受 ndarray 并输出 SciPy 稀疏矩阵，由于pd.Series的shape为(a,)并非(a, 1)，需要先提取values再reshape(-1,1) 化为一列才能处理。得到的稀疏矩阵仅储存非零元素的位置，所以更节约内存。
 
 ```python
-encoder = OneHotEncoder()
+encoder = OneHotEncoder(sparse=False) #输出正常数组
 housing_cat_1hot = encoder.fit_transform(housing_cat.values.reshape(-1,1))
-housing_cat_1hot.toarray()
+#如果上面没设sparse参数可通过housing_cat_1hot.toarray()转换
 """
 array([[0., 0., 0., 0., 1.],
        [0., 1., 0., 0., 0.],
@@ -477,8 +477,8 @@ num_pipeline = Pipeline([
 ])
 
 cat_pipeline = Pipeline([
-    ('selector',DataFrameSelector(cat_attribs).reshape(-1,1)), #选出待处理分类特征
-    ('label_binarizer',OneHotEncoder(sparse=False)),        #转换为独热向量并以标准数组输出
+    ('selector',DataFrameSelector2(cat_attribs)), #选出待处理分类特征
+    ('label_binarizer',OneHotEncoder(sparse=False)), #转换为独热向量并以标准数组输出
 ])
 
 full_pipeline = FeatureUnion(transformer_list=[
@@ -496,13 +496,17 @@ class DataFrameSelector(BaseEstimator, TransformerMixin):
         return self
     def transform(self, X):
         return X[self.attribute_names].values
+
+class DataFrameSelector2(BaseEstimator, TransformerMixin):
+    def __init__(self, attribute_names):
+        self.attribute_names=attribute_names
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return X[self.attribute_names].values.reshape(-1,1)
 ```
-接下来正式处理housing数据集
-```python
-housing_prepared = full_pipeline.fit_transform(housing)
-housing_prepared
-```
-在FeatureUnion的Pipeline中替换,再使用：
+
+在FeatureUnion的Pipeline中替换：
 
 ```python
 housing_prepared = full_pipeline.fit_transform(housing)
@@ -510,6 +514,8 @@ housing_prepared
 #housing_prepared.shape为(16512, 16)与书中(16513, 17)不同
 #num:8+cat:5+add:3=16
 ```
+<br/>
+
 ### 模型选择与评估
 
 从线性回归模型开始：
@@ -524,6 +530,7 @@ some_labels = housing_labels.iloc[:5]
 some_data_prepared = full_pipeline.transform(some_data)
 print("Predictions:\n",np.around(lin_reg.predict(some_data_prepared)))
 print("Labels:\n",list(some_labels))
+
 """
 Predictions:
  [211881. 321219. 210878.  62198. 194848.]
@@ -533,12 +540,15 @@ Labels:
 ```
 
 
+
 回归问题常用的性能衡量指标 _Performance Measure_ 是**均方根误差**。
+
 _Root Mean Square Error_ :_It measures the standard deviation of the errors the system makes in its predictions._
 
 RMSE$(X,h)=\sqrt{{1\over m}\sum_{i=1}^m(h(x^{(i)})-y^{(i)})^2}\,$
 
 当出现很多离群点时 _outlier_ ，我们通常会用**平均绝对误差** _Mean Aboslute Error_
+
 MAE$(X,h)={1\over m}\sum_{i=1}^m|h(x^{(i)})-y^{(i)}|\,$
 
 > RMSE对应欧几里得范数，L2范数写作$\parallel . \parallel _2$
@@ -547,19 +557,18 @@ MAE$(X,h)={1\over m}\sum_{i=1}^m|h(x^{(i)})-y^{(i)}|\,$
 
 
 
-RMSE对离群点的敏感程度高于MAE，当离群点很少时优先选择RMSE进行评估。用**sklearn.metrics**模块的**mean_squared_error**函数来测量训练集上的MSE，再求平方根得到RMSE
+RMSE对离群点的敏感程度高于MAE，当离群点很少时优先选择RMSE进行评估。用**sklearn.metrics**模块的**mean_squared_error**函数来测量训练集上的MSE，再求平方根得到RMSE 。
 
 ```python
 from sklearn.metrics import mean_squared_error
+
 housing_predictions = lin_reg.predict(housing_prepared)
 lin_mse = mean_squared_error(housing_labels, housing_predictions)
-lin_rmse = np.sqrt(lin_mse)
-lin_rmse
-#68911.49637588045
+lin_rmse = np.sqrt(lin_mse) #68911.49637588045
 ```
 
 
-大多数地区的房价中位数在120000到265000之间，所以这个预测误差差强人意。通常在欠拟合时，可以选择更强大的模型，或者为训练模型提供更好的特征，再或者减少对模型的限制（正则化）。我们尝试一下DecisionTreeRegressor:
+大多数地区的房价中位数在120000到265000之间，所以这个预测误差差强人意。通常在欠拟合时，可以选择更强大的模型，或者为训练模型提供更好的特征，再或者减少对模型的限制（正则化）。我们尝试一下DecisionTreeRegressor：
 
 ```python
 from sklearn.tree import DecisionTreeRegressor
@@ -568,10 +577,13 @@ tree_reg.fit(housing_prepared, housing_labels)
 
 housing_predictions = tree_reg.predict(housing_prepared)
 tree_mse = mean_squared_error(housing_labels, housing_predictions)
-tree_rmse = np.sqrt(tree_mse)
-tree_rmse
+tree_rmse = np.sqrt(tree_mse) #0
 ```
-RMSE为0，极有可能过拟合，我们需要拿出部分用于训练，另一部分用于模型验证。评估决策模型的一种方法是使用train_test_split函数并评估，另一种是使用交叉验证 _cross-validation_，传入模型、数据、标签、评估方式与折数。以下是K-折交叉验证的代码，将训练集随机分割成10个不同的子集，每次挑选1个进行评估，另外9个进行训练，产生一个包含10次评估分数的列表。
+RMSE为0，极有可能过拟合。
+
+
+
+我们需要拿出部分用于训练，另一部分用于模型验证。一种方法是使用 **train_test_split** 函数，另一种是使用交叉验证 **cross_val_score**，传入模型、数据、标签、评估方式与折数。以下是K-折交叉验证的代码，将训练集随机分割成10个不同的子集，每次挑选1个进行评估，另外9个进行训练，产生一个包含10次评估分数的列表。
 
 ```python
 from sklearn.model_selection import cross_val_score
@@ -586,6 +598,7 @@ def display_scores(scores):
     print("Mean:",scores.mean())
     print("Standard deviation:",scores.std())
 display_scores(rmse_scores)
+
 """
 Scores: [69446.17322491 68573.17026052 70222.96673604 72645.5123251
  68148.61712134 74340.91209792 73857.73237391 70829.25079841
@@ -629,19 +642,19 @@ Scores: [49667.82885713 47559.50920685 49912.7619866  52847.90520482
 Mean: 50538.66836464148
 Standard deviation: 2140.9028742731366"""
 ```
-效果得到提升，书上说训练集得分低于测试集存在过拟合（难道不是欠拟合？）我用train_test_split与score得到的评估得分则提升明显，虽然这里的train_set与test_set问题很大：
+效果得到提升，书上说训练集得分低于测试集存在过拟合（难道不是欠拟合？）
+
+用 train_test_split  得到的评估得分则提升明显：
 
 ```python
 from sklearn.model_selection import train_test_split
 X_train,X_test,y_train,y_test = train_test_split(housing_prepared,housing_labels)
-print('Train score:{:.3f}'.format(forest_reg.score(X_train, y_train)))
-print('Test score:{:.3f}'.format(forest_reg.score(X_test, y_test)))
-#Train score:0.974
-#Test score:0.973
-print('Train score:{:.3f}'.format(lin_reg.score(X_train, y_train)))
-print('Test score:{:.3f}'.format(lin_reg.score(X_test, y_test)))
-#Train score:0.646
-#Test score:0.646
+
+print('Train score:{:.3f}'.format(forest_reg.score(X_train, y_train))) #Train score:0.974
+print('Test score:{:.3f}'.format(forest_reg.score(X_test, y_test))) #Test score:0.973
+
+print('Train score:{:.3f}'.format(lin_reg.score(X_train, y_train))) #Train score:0.646
+print('Test score:{:.3f}'.format(lin_reg.score(X_test, y_test))) #Test score:0.646
 ```
 妥善保存模型，参数和超参数，以及交叉验证的评分和实际预测的结果，这样就能轻松对比不同模型。通过Python的pickel模块或是sklearn.externals.joblib，可以保存sklearn模型，更有效地将大型Numpy数组序列化：
 
@@ -652,20 +665,27 @@ joblib.dump(my_model,"my_model.pkl")
 my_model_loaded = joblib.load("my_model.pkl")
 ```
 
+<br/>
+
 ### 微调模型
-可以用sklearn的GridSearchCV**网格搜索**，只要告诉它要进行实验的超参数是什么，它就会使用交叉验证来评估所有组合：
+
+可以用 sklearn 的 GridSearchCV **网格搜索交叉验证**，使用交叉验证来评估所有组合：
 
 ```python
 from sklearn.model_selection import GridSearchCV
+#创建参数列表，列表由字典组成，字典的键为模型的参数，值为待评估参数值
 param_id = [
     {'n_estimators':[3,10,30],'max_features':[2,4,6,8]},
     {'bootstrap':[False],'n_estimators':[3,10],'max_features':[2,3,4]}
 ]
 forest_reg = RandomForestRegressor()
+
 grid_search = GridSearchCV(forest_reg, param_grid, cv=5, scoring='neg_mean_squared_error')
-grid_search.fit(housing_prepared, housing_labels)
+grid_search.fit(housing_prepared, housing_labels) #还有fit，predict，score 等方法
 ```
-**sklearn.model_selection**模块的**GridSearchCV**类接受模型对象、字典组成的参数列表、折数cv、评估方法scoring，实现fit，predict，score等方法。Grid search with cross validation，先评估传入列表中第一个dict中n_estimators和max_features的3X4种超参数组合，再尝试第二个dict中2X3种组合且bootstrap为False。grid_search.best_params_输出 {'max_features': 6, 'n_estimators': 30}，n_estimators的最大值是30，所以可以尝试更高的值看评分是否继续改善，也可以直接得到最好的估算器 grid_search.best_estimator_：
+**sklearn.model_selection**模块的**GridSearchCV**类接受模型对象、字典组成的参数列表、折数cv、评估方法scoring 。
+
+先评估传入列表中第一个 dict 中 n_estimators 和 max_features 的3X4种超参数组合，再尝试第二个dict中2X3种组合且bootstrap为False。**grid_search.best_params** 输出 {'max_features': 6, 'n_estimators': 30}，n_estimators 的待选择参数最大值就是30，所以可以尝试更高的值看评分是否继续改善，也可以直接得到最好的估算器 grid_search.best_estimator_：
 
 ```python
 RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
@@ -682,7 +702,8 @@ RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
 cvres = grid_search.cv_results_
 for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
     print(np.sqrt(-mean_score),params)
-"""
+
+"""mean_test_score即交叉验证得分neg_mean_squared_error
 64224.53778180021 {'max_features': 2, 'n_estimators': 3}
 55615.95389014503 {'max_features': 2, 'n_estimators': 10}
 53354.46171627235 {'max_features': 2, 'n_estimators': 30}
@@ -695,55 +716,27 @@ for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
 ...
 51813.13032113271 {'bootstrap': False, 'max_features': 4, 'n_estimators': 10}"""
 ```
-这里mean_score交叉验证得分scoring是neg_mean_squared_error（MSE的负数）为了得到RMSE需要取负号再开方。50013的得分比默认参数下50539要好一些。
-有些数据准备步骤也能当超参数来处理，例如是否使用转换器CombinedAttributesAdder的超参数add_bedrooms_per_room。网格搜索还能用于自动查找处理异常值、缺失特征与特征选择等问题。
 
-当超参数的搜索范围较大时，通常会选择**随机搜索**RandomizedSearchCV，它的使用与网格搜索相似只是在每次迭代iteration时为每个超参数选择一个随机值，然后对一定数量的随机组合进行评估。还有一种将表现最优的模型组合起来的微调方法，叫作**集成方法**，以后会细讲。
+有些数据准备步骤也能当超参数来处理，例如是否使用转换器 CombinedAttributesAdder 的超参数 add_bedrooms_per_room 。网格搜索还能用于自动查找处理异常值、缺失特征与特征选择等问题。
 
-RandomForestRegressor的网格搜索还可以指出每个属性的相对重要性：
-`
-grid_search.best_estimator_.feature_importances_
-`
+当超参数的搜索范围较大时，通常会选择**随机搜索**RandomizedSearchCV，它的使用与网格搜索相似，只是在每次迭代iteration时为每个超参数选择一个随机值，然后对一定数量的随机组合进行评估。还有一种将表现最优的模型组合起来的微调方法，叫作**集成方法**，以后会细讲。
+
+网格搜索还可以指出每个属性的相对重要性：`grid_search.best_estimator.feature_importances_`，并根据重要性删除一些不太有用的特征。现在在测试集上评估最终的模型 grid_search.best_estimator_ ：
 
 ```python
-extra_attribs = ["rooms_per_hhold","pop_per_hhold","bedrooms_per_room"]
-cat_one_hot_attribs = list(housing_cat_1hot.classes_)
-attributes = num_attribs + extra_attribs + cat_one_hot_attribs
-sorted(zip(feature_importances, attributes),reverse=True)
-#这里的encoder需要重新赋值？
-```
-
-```python
-[(0.36429551902389495, 'median_income'),
- (0.16481242198441456, 'INLAND'),
- (0.10822352423812849, 'pop_per_hhold'),
- (0.084131574436137, 'rooms_per_hhold'),
- (0.07338186135523198, 'longitude'),
- (0.06924900711955442, 'latitude'),
- (0.04077900321697338, 'housing_median_age'),
- (0.02543631663431409, 'bedrooms_per_room'),
- (0.014793303558073727, 'total_bedrooms'),
- (0.014790510756069453, 'population'),
- (0.014465165531602157, 'total_rooms'),
- (0.013983492630388885, 'households'),
- (0.005343149930523917, '<1H OCEAN'),
- (0.004175517190766886, 'NEAR OCEAN'),
- (0.0020439918957843575, 'NEAR BAY'),
- (9.564049814187357e-05, 'ISLAND')]
-```
-有了这些信息，就能删除一些不太有用的特征。现在在测试集上评估最终的模型：
-```python
- final_model = grid_search.best_estimator_
+ final_model = grid_search.best_estimator_ #根据最佳参数确定的估计器
  
  X_test = strat_test_set.drop("median_house_value",axis=1)
  y_test = strat_test_set["median_house_value"].copy()
 
- X_test_prepared = full_pipeline.transform(X_test)
+ X_test_prepared = full_pipeline.transform(X_test) #不需要再fit了
  final_predictions = final_model.predict(X_test_prepared)
 
  final_mse = mean_squared_error(y_test, final_predictions)
  final_rmse = np.sqrt(final_mse)#47611.75169361235
 ```
+
+
 <br/>
 
 ## 分类 Classification
@@ -753,11 +746,7 @@ sorted(zip(feature_importances, attributes),reverse=True)
 ```python
 from sklearn.datasets import fetch_openml
 mnist = fetch_openml('mnist_784', version='active')
-#要好久...
-```
-或者
-
-```python
+#要好久...或者下面这种也可以导入
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 ```
@@ -767,7 +756,7 @@ X, y = mnist["data"], mnist["target"]
 X.shape #(70000, 784)
 y.shape #(70000,)
 ```
-共7万张图片，每张图片784个特征(28X28)，使用Matplotlib的imshow()函数将其显示出来：
+共7万张图片，每张图片784个特征(28X28)，使用 Matplotlib 的 imshow() 函数将其显示出来：
 
 ```python
 import matplotlib
@@ -811,10 +800,11 @@ np.where(y_test_5 == True) #随便选几个，X_test[8],X_test[15],X_test[23]
 sgd_clf.predict(X_test[8].reshape(1,-1)) #array([ False])
 sgd_clf.predict(X_test[15].reshape(1,-1)) #array([ True])
 sgd_clf.predict(X_test[23].reshape(1,-1)) #array([ True])
+#有对有错
 ```
-有对有错，接下来评估模型性能。
+<br/>
 
-### 性能评估指标
+### 混淆矩阵、P-R图与ROC
 
 评估分类器比评估回归器要困难，这里还是使用交叉验证。**implementing Cross-Validation** 为了在交叉验证过程中获得更多控制，比如分层，这里手工实现交叉验证:
 
@@ -837,14 +827,14 @@ for train_index, test_index in skfolds.split(X_train,y_train_5):
     n_correct = sum(y_pred == y_test_fold)
     print(n_correct / len(y_pred)) #0.9276 0.9616 0.9634
 ```
-每个折叠由StratifiedKFold执行分层抽样产生，每个迭代会创建一个分类器副本，训练后用测试集进行预测，最后计算正确预测的次数并输出准确率。接下来用cross_val_score()函数评估SGDClassifier模型，采用K-fold交叉验证(3折)。
+每个折叠由StratifiedKFold执行分层抽样产生，每个迭代会创建一个分类器副本，训练后用测试集进行预测，最后计算正确预测的次数并输出准确率。接下来用 cross_val_score() 函数评估 SGDClassifier 模型，采用K-fold交叉验证(3折)。
 
 ```python
 from sklearn.model_selection import cross_val_score
 cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")
 #array([0.95655, 0.96465, 0.96325])
 ```
-接下来随意定义一个分类器，将每张图都分类为"非5":
+看起来精度都很高，接下来随意定义一个常数分类器，将每张图都分类为"非5":
 
 ```python
 from sklearn.base import BaseEstimator
@@ -854,24 +844,24 @@ class Never5Classifier(BaseEstimator):
         pass
     def predict(self, X):
         return np.zeros((len(X),1),dtype=bool)
-```
-测试精准度:
-
-```python
+    
 never_5_clf = Never5Classifier()
 cross_val_score(never_5_clf, X_train, y_train_5, cv=3, scoring="accuracy")
-#array([0.90895, 0.9099 , 0.9101 ])
+#array([0.90895, 0.9099 , 0.9101 ])，精度同样很高
 ```
-这说明准确率通常无法成为分类器的首要性能指标，特别是在处理偏斜数据集时。
+说明精度通常无法成为分类器的首要性能指标，特别是在处理偏斜数据集时。
+
+
 
 **混淆矩阵** Confusion Matrix
+
 计算混淆矩阵，需要先有一组预测才能将其与实际目标比较，这里使用 **cross_val_predict()** 函数，传入模型、数据集、标签以及折数cv。
 
 ```python
 from sklearn.model_selection import cross_val_predict
 y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
 ```
-与cross_val_score()函数一样，cross_val_predict()函数同样执行K-fold交叉验证，但返回的是每个折叠的预测，在这里是布尔数组。sklearn.metrics模块的confusion_matrix()函数根据正类标签和决策结果（实际分类和预测分类）得到混淆矩阵：
+与 cross_val_score() 函数一样，cross_val_predict() 函数同样执行K-fold交叉验证，但返回的是每个折叠的预测，在这里是布尔数组。sklearn.metrics 模块的confusion_matrix() 函数根据正类标签和决策结果（实际分类和预测分类）得到混淆矩阵：
 
 ```python
 from sklearn.metrics import confusion_matrix
@@ -880,13 +870,13 @@ confusion_matrix(y_train_5, y_train_pred)
 array([[52125,  2454],
        [  764,  4657]])"""
 ```
-**混淆矩阵**的行是正确的类别，列是预测类别，二元分类的右下角对应的行是正类，列为预测的正类。上例第一行表示所有非5，即所有负类。它们中有52125个被正确地分为非5(真负类true negatives)，而2454张被错误地划分为5(假正类false positives)。第二行表示所有的5，即所有正类。有764张被错误的分为非5类(false negatives)，4657张被正确地分类在5类(true positives)。完美的分类器应该只存在真正类和真负类，即混淆矩阵的对角线。接下来介绍评估函数：**precision_score()**, **recall_score()** 和 **f1_score()**，参数都是正类标签和决策结果，在这里即两组布尔数组。
+混淆矩阵的行是正确的类别，列是预测类别，二元分类的右下角对应的行是正类，列为预测的正类。上例第一行表示所有非5，即所有负类。它们中有52125个被正确地分为非5(真负类true negatives)，而2454张被错误地划分为5(假正类false positives)。第二行表示所有的5，即所有正类。有764张被错误的分为非5类(false negatives)，4657张被正确地分类在5类(true positives)。完美的分类器应该只存在真正类和真负类，即混淆矩阵的对角线。接下来介绍评估函数：**precision_score()** , **recall_score()** 和 **f1_score()**，参数都是正类标签和决策结果，在这里即两组布尔数组。
 
-正类预测的准确率，精度**Precision**
+正类预测的准确率 **Precision**，也叫查准率
 
 $precision=\frac{TP}{TP+FP}$
 
-精度会忽略正类实例以外的信息，通常我们还需要召回率**Recall**来衡量，也称为灵敏度(sensitivity)或者真正类率TPR
+召回率**Recall**，也称查全率
 
 $recall=\frac{TP}{TP+FN}$
 
@@ -895,8 +885,7 @@ from sklearn.metrics import precision_score, recall_score
 precision_score(y_train_5, y_train_pred) #0.6549 即4192/(4192+2153)
 recall_score(y_train_5, y_train_pred) #0.8591 即4657/(4657+764)
 ```
-这两个指标已不像准确率那么高了，当它说一张图片是5时，只有65.49%的时候是准确的，并且只有85.91%的数字5被识别出来。
-我们将精度与召回率合成一个单一指标，称为 **$F_1$分数**，即两者的调和平均数，只有在两者都很高时才能得到较高分数:
+这两个指标已不像准确率那么高了，当它说一张图片是5时，预测只有65.49%的时候是准确的，并且只有85.91%的数字5被识别出来。将精度与召回率合成一个单一指标，称为 **$F_1$分数**，即两者的调和平均数，只有在两者都很高时才能得到较高分数:
 
 $F_1=\frac{2}{\frac{TP+FP}{TP}+\frac{TP+FN}{TP}}$
 
@@ -904,7 +893,11 @@ $F_1=\frac{2}{\frac{TP+FP}{TP}+\frac{TP+FN}{TP}}$
 from sklearn.metrics import f1_score
 f1_score(y_train_5, y_train_pred) #0.7432
 ```
-SGDClassifier的分类决策：对于每个实例，基于决策函数计算出一个分值，如果该值大于阈值则判为正类。sklearn不允许直接设置阈值，但是可以通过调用分类器的decision_function()方法返回单个实例的**决策分数**，通过这些分数设置阈值即得到预测结果(：
+
+
+**决策分数与P-R 图**
+
+如何知道模型调整中的查准率P和查全率R之间的动态关系？SGDClassifier 对于每个实例，基于决策函数计算出一个决策分数，再根据与阈值的大小关系判为正类或负类，所以基于不同的阈值查全率和查准率此消彼长。sklearn不允许直接设置阈值，但是可以通过调用分类器的decision_function()方法返回**单个决策分数**，通过这些分数设置阈值即得到预测结果：
 
 ```python
 y_scores = sgd_clf.decision_function([some_digit])
@@ -912,23 +905,27 @@ y_scores #array([-7202.31479923])
 threshold = -7500
 y_some_digit_pred = (y_scores > threshold)
 y_some_digit_pred #array([ True])
-```
 
-```python
 threshold = 7000 #提高阈值
 y_some_digit_pred = (y_scores > threshold)
 y_some_digit_pred #array([False])
 ```
-即提高阈值会降低召回率，那么如何确定阈值？先使用 **cross_val_predict()** 函数获取训练集中**所有实例的决策分数** y_scores，参数方法选择 **decision_function**:
+
+
+
+如何得到阈值与查全率、查准率之间的关系？
+
+先使用 **cross_val_predict()** 交叉验证预测函数得到训练集中所有实例的**决策分数 y_scores**，参数为模型、数据集、折数和方法，这里方法选择 **decision_function**:
 
 ```python
 y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3, method="decision_function")
 ```
-再对正类标签 y_train_5 与全部决策分数 y_scores 调用 **precision_recall_curve()** 函数返回所有可能阈值的精度和召回率:
+
+
+再调用 **precision_recall_curve()** 即P-R曲线函数，参数为正类标签 y_train_5 与全部决策分数 y_scores，返回所有可能的精度和召回率及对应的阈值:
 
 ```python
 from sklearn.metrics import precision_recall_curve
-
 precision, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
 #注意precision和recalls的 array,shape = [n_thresholds + 1]，分别多了1和0
 ```
@@ -960,7 +957,7 @@ y_train_pred_90 = (y_scores > -700)
 precision_score(y_train_5, y_train_pred_90) #0.8069
 recall_score(y_train_5, y_train_pred_90) #0.7037
 ```
-得到一个折中的选择器，此时有80%精度和70%的召回率，我们还能绘制**P-R图**:
+得到一个折中的选择器，此时有80%精度和70%的召回率，我们绘制**P-R图**:
 
 ```python
 def plot_pr_sgd():
@@ -974,15 +971,17 @@ plot_pr_sgd()
 ```
 ![avatar](images/PR.svg)
 
+
+
 **ROC曲线**
 ROC曲线绘制的是真正类率TPR（被正确分为正类的正类实例占比，即召回率$\frac{TP}{TP+FN}$）与假正类率FPR（被错误分为正类的负类实例占比，$\frac{FP}{FP+TN}$)。FPR等于1-真负类率TNR，即1-特异度。
-要绘制ROC曲线，首先要使用 **roc_curve()** 函数计算多种阈值的TPR和FPR:
+要绘制ROC曲线，首先要使用 **roc_curve()** 函数计算多种阈值的FPR、TPR以及阈值，参数依然是**正类标签**与**决策分数**:
 
 ```python
 from sklearn.metrics import roc_curve
 fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)#正类标签与决策分数
 ```
-使用Matplotlib绘制FPR对TPR的曲线：
+ROC曲线横轴为FPR假正类率，纵轴为TPR真正类率，使用Matplotlib绘制FPR对TPR的曲线：
 
 ```python
 def plot_roc_curve(fpr, tpr, label=None):
@@ -1140,7 +1139,10 @@ cross_val_score(forest_clf, X_train_scaled, y_train, cv=3, scoring="accuracy")
 #array([0.9655, 0.9662, 0.964 ]) 好吧几乎没区别...
 ```
 
+<br/>
+
 ### 错误分析
+
 假设已经找到一个有潜力的模型，现在希望找到一些方法对其进一步改进，其中一种就是**错误分析**。
 首先来看混淆矩阵，使用cross_val_predict()函数进行预测，然后调用confusion_matrix()函数:
 
@@ -1572,4 +1574,4 @@ $J(\theta)=MSE(\theta)+\alpha\frac{1}{2}\sum^n_{i=1}\theta^2_i$
 
 与线性模型一样，也可以计算执行梯度下降时的 $\hat\theta$ 值：
 
-$\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y$
+$\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y
