@@ -1284,7 +1284,8 @@ $\hat{y}=\theta_0+\theta_1x_1+\theta_2x_2+...+\theta_nx_n$
 $\hat{y}=h_\theta(X)=\theta^T{\cdot}X$
 
 $h_\theta$ 是使用模型参数$\theta$的假设函数，转置后的 $\theta$ 由列向量变成行向量，$x$ 是实例特征向量 $x_0$ 到 $x_n$ 其中 $x_0$ 为 1 。
-回归模型最常见的性能指标是均方根误差（RMSE），而在实践中求均方误差（MSE）也叫成本函数更加简单而且效果相同:
+
+回归模型最常见的性能指标是均方根误差（RMSE），而在实践中均方误差（MSE）也叫**成本函数**:
 
 $MSE(X, h_\theta)=\frac{1}{m}\sum^m_{i=1}(\theta^T{\cdot}X^{(i)}-y^{(i)})^2$
 
@@ -1591,7 +1592,7 @@ plot_learning_curves(polynomial_regression, X, y)
 
 超参数$\alpha$控制的是对模型进行正则化的程度，如果$\alpha$为0那么岭回归就是线性模型，如果$\alpha$非常大则所有权重都非常接近零，即$\alpha$越大正则化越强：
 
-$J(\theta)=MSE(\theta)+\alpha{cdot}\frac{1}{2}\sum^n_{i=1}\theta^2_i$
+成本函数：$J(\theta)=MSE(\theta)+\alpha{cdot}\frac{1}{2}\sum^n_{i=1}\theta^2_i$
 
 注意，这里的偏置项$\theta_0$没有正则化；正则化用到了权重向量的**$l_2$范数**。和大多数正则化模型类似，岭回归对输入特征的大小非常敏感，必须进行**数据缩放**，比如 **StandardScaler**。有时需要使用多项式特征 PolynomialFeatures (degree=d) 对数据进行扩展，再用 StandardScaler 进行缩放，最后将岭回归模型用于结果特征。
 
@@ -1633,3 +1634,50 @@ lasso_reg = Lasso(alpha=0.1)
 lasso_reg.fit(X, y)
 lasso_reg.predict([[1.5]]) #array([4.66017283])
 ```
+
+
+
+**弹性网络**
+
+弹性网络是岭回归与 Lasso 回归之间的中间地带，其正则项是两者正则项的混合，比例通过 r 来控制。r=0 时即等于岭回归，r=1 即相当于 Lasso 回归。
+
+成本函数：$J(\theta)=MSE(\theta)+r\alpha\sum^n_{i=1}+\frac{1-r}{2}\alpha\sum^n_{i=1}\theta^2_i$
+
+
+平时使用线性模型的一般情况下，应该避免纯线性回归，试一试岭回归，如果只要少数特征则用 Lasso 回归或弹性网络。一般而言，弹性网络优于 Lasso 回归，因为当特征数量超过训练实例数量或几个特征强相关时，Lasso 回归的表现可能非常不稳定。
+
+
+```python
+from sklearn.linear_model import ElasticNet
+elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5)
+#默认 alpha=1.0, l1_ratio=0.5
+elastic_net.fit(X, y)
+elastic_net.predict([[1.5]]) #array([4.70826201])
+```
+
+
+
+**早期停止法**
+
+对于梯度下降这一类迭代学习算法，还有一个办法可以避免过拟合，即在验证误差达到最小值时立刻停止训练（或发现验证误差不再下降时回滚到最小值的位置）
+
+
+```python
+from sklearn.base import clone
+sgd_reg = SGDRegressor(n_iter=1, warm_start=True, penalty=None, learning_rate="constant", eta=0.0005)
+
+minimum_val_error = float("inf")
+best_epoch = None
+best_model = None
+
+for epoch in range(1000):
+    sgd_reg.fit(X_train_poly_scaled, y_train)
+    y_val_predict = sgd_reg.predict(X_val_poly_scaled)
+    val_error = mean_squared_error(y_val_predict, y_val)
+    if val_error < minimum_val_error:
+        minimum_val_error = val_error
+        best_epoch = epoch
+        best_model = clone(sgd_reg)
+#没跑起来？看文档SGDRegressor有改动
+```
+注意，当 warm_start=True 时，调用 fit() 方法，会从停下单地方继续开始训练而不是重新开始。
