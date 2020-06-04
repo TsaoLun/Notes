@@ -80,6 +80,8 @@ print(lin_reg_model.predict(X_new)) # outputs
 ```
 <br/>
 
+
+
 ## 回归 Regression
 
 构建一个可以预测加州任何地区房价中位数的模型，以给后续Pipeline中的投资模型提供数据。
@@ -217,7 +219,7 @@ test_set["income_cat"].value_counts()/len(test_set)
 5.0    0.109496
 1.0    0.040213
 ```
-可见在分层抽样下，训练集、测试集与完整数据分布基本一致，而随机的train_test_split则稍有偏差。在 train_test_split() 中加入**stratify参数**，比如stratify=y,这里是housing["income_cat"]
+可见在分层抽样下，训练集、测试集与完整数据分布基本一致，而随机的train_test_split则稍有偏差。在 train_test_split() 中加入**stratify参数**，比如 stratify=y ,这里是 housing["income_cat"]
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -552,7 +554,7 @@ RMSE$(X,h)=\sqrt{{1\over m}\sum_{i=1}^m(h(x^{(i)})-y^{(i)})^2}\,$
 MAE$(X,h)={1\over m}\sum_{i=1}^m|h(x^{(i)})-y^{(i)}|\,$
 
 > RMSE对应欧几里得范数，L2范数写作$\parallel . \parallel _2$
-> MAE对应曼哈顿范数，L1范数写作$\parallel . \parallel _1$
+> MAE对应曼哈顿范数，L1范数写作$\parallel . \parallel_1$
 > L0表示向量中非0元素的个数，Lp则是 $\parallel v \parallel _p=(|v_0|^p+|v_1|^p+...+|v_n|^p)^{1\over p}$
 
 
@@ -736,8 +738,9 @@ for mean_score, params in zip(cvres["mean_test_score"],cvres["params"]):
  final_rmse = np.sqrt(final_mse)#47611.75169361235
 ```
 
-
 <br/>
+
+
 
 ## 分类 Classification
 
@@ -887,7 +890,7 @@ recall_score(y_train_5, y_train_pred) #0.8591 即4657/(4657+764)
 ```
 这两个指标已不像准确率那么高了，当它说一张图片是5时，预测只有65.49%的时候是准确的，并且只有85.91%的数字5被识别出来。将精度与召回率合成一个单一指标，称为 **$F_1$分数**，即两者的调和平均数，只有在两者都很高时才能得到较高分数:
 
-$F_1=\frac{2}{\frac{TP+FP}{TP}+\frac{TP+FN}{TP}}$
+$F_1=\frac{2}{\frac{1}{precision}+\frac{1}{recall}}=\frac{2}{\frac{TP+FP}{TP}+\frac{TP+FN}{TP}}$
 
 ```python
 from sklearn.metrics import f1_score
@@ -913,7 +916,7 @@ y_some_digit_pred #array([False])
 
 
 
-如何得到阈值与查全率、查准率之间的关系？
+如何得到查准率、查全率与阈值之间的关系？
 
 先使用 **cross_val_predict()** 交叉验证预测函数得到训练集中所有实例的**决策分数 y_scores**，参数为模型、数据集、折数和方法，这里方法选择 **decision_function**:
 
@@ -1003,7 +1006,7 @@ roc_auc_score(y_train_5, y_scores) #0.9652601846998695
 ```
 >经验法则：当正类非常少见，或者更关注假正类时，应该选择PR曲线，反之则是ROC曲线。上例中PR曲线更能显示出分类器还有改进空间。
 
-接下来训练一个RandomForestClassifier分类器，并比较它和SGDClassifier分类器的ROC曲线和ROC AUC分数。首先用函数 **cross_val_predict()** 获取所有实例的决策分数，因为工作方式不同，RandomForestClassifier类没有decision_function()方法，而是sklearn中的另一种方法：**predict_proba()**，即 **method="predict_proba"** 。它会返回一个数组，每行为一个实例，每列为一个类别，即给定实例属于某类别的概率:
+接下来训练一个RandomForestClassifier分类器，并比较它和SGDClassifier分类器的ROC曲线和ROC AUC分数。首先用函数 **cross_val_predict()** 获取所有实例的决策分数，因为工作方式不同，RandomForestClassifier 类没有 decision_function() 方法，而是sklearn中的另一种方法：**predict_proba()**，即 **method="predict_proba"** 。它会返回一个数组，每行为一个实例，每列为一个类别，即给定实例属于某类别的概率:
 
 ```python
 from sklearn.ensemble import RandomForestClassifier
@@ -1047,18 +1050,21 @@ plt.legend(loc="bottom left")
 ```
 ![avatar](images/pr_rfc.svg)
 
-**多类别分类器**
-随机森林或者朴素贝叶斯可以直接处理多分类，但支持向量机或线性分类器只支持二元分类。二元分类器的解决多分类问题，可以用一对多策略OvA，针对每个类别训练一个二元分类器并获得每个实例的决策分数，最后根据最高分归类。这是大多数二元分类器使用的方法。
+<br/>
+
+### 多类别分类器
+
+随机森林或者朴素贝叶斯可以直接处理多分类，但支持向量机或线性分类器只支持二元分类。二元分类器解决多分类问题，可以用一对多策略OvA，针对每个类别训练一个二元分类器并获得每个实例的决策分数，最后根据最高分归类。这是大多数二元分类器使用的方法。
 
 另一种方法是为每一对类别训练一个二元分类器，一对一策略OvO，统计哪个类别获胜最多。如果存在N个类别需要训练$N(N-1)/2$个分类器，会很麻烦，但是优点是每个分类器训练时只需用到部分训练集，很适合支持向量分类器这样训练数据集规模较小的分类器。
 
-Scikit-Learn可以检测到你尝试用二分类算法进行多类别分类，自动运行OvA(SVM除外，会使用OvO)，尝试一下SGDClassifier：
+Scikit-Learn 可以检测到你尝试用二分类算法进行多类别分类，自动运行 OvA (SVM除外，会使用OvO)，尝试一下 SGDClassifier：
 
 ```python
 sgd_clf.fit(X_train, y_train)
 sgd_clf.predict([some_digit]) #array(['4'], dtype='<U1')，实际是y[36000]='9'
 ```
-在sklearn内部训练了10个二元分类器，我们调用decision_function()方法返回这10个决策分数:
+在 sklearn 内部训练了10个二元分类器，我们调用 **decision_function()** 方法返回这10个决策分数:
 
 ```python
 some_digit_scores = sgd_clf.decision_function([some_digit])
@@ -1072,7 +1078,7 @@ sgd_clf.classes_
 #array(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], dtype='<U1')
 sgd_clf.classes_[4] #'4'
 ```
-也可以强制Scikit-Learn使用一对一或一对多策略，使用OneVsOneClassifier或OneVsRestClassifier类。需创建一个实例，再将二元分类器传给其构造函数。
+也可以强制 Scikit-Learn 使用一对一或一对多策略，使用 OneVsOneClassifier 或 OneVsRestClassifier 类。需创建一个实例，再将二元分类器传给其构造函数。
 
 ```python
 from sklearn.multiclass import OneVsOneClassifier
@@ -1229,7 +1235,7 @@ def plot_digits(instances, images_per_row=10, **options):
 <br/>
 
 **多标签分类**
-当一个实例中有多个类别（多标签），我们就需要用到多标签分类系统multilabel：
+当一个实例中有多个类别（多标签），我们就需要用到多标签分类系统 multilabel：
 
 ```python
 from sklearn.neighbors import KNeighborsClassifier
@@ -1263,6 +1269,8 @@ f1_score(y_train, y_train_knn_pred, average="macro") #问题：运行时间超�
 ```
 <br/>
 
+
+
 ## 训练模型
 
 ### 线性回归
@@ -1287,11 +1295,12 @@ $\hat\theta=(X^T{\cdot}X)^{-1}{\cdot}X^T{\cdot}y$
 
 $y$ 是 $y^{(1)}$ 到 $y^{(m)}$ 即目标值向量。最终的多元线性回归模型为：
 
-$\hat{y}=\hat{x}{\cdot}\hat{\theta}$
+$\hat{y}=\hat{x}{\cdot}\hat{\theta}$ ，其中 $\hat{x}=(x_i;1)$
 
-其中 $\hat{x}=(x_i;1)$，我们通过生成一些数据来测试这个公式:
+
 
 ```python
+#生成一些数据来测试公式:
 import numpy as np
 
 X = 2 * np.random.rand(100, 1) #rand()根据给定维度生成[0,1）间的数据
@@ -1329,6 +1338,8 @@ plt.show()
 ```
 ![avatar](images/l&p.svg)
 
+
+
 Scikit-Learn的**LinearRegression**等效代码如下：
 
 ```python
@@ -1342,8 +1353,9 @@ lin_reg.predict(X_new)
 array([[ 3.8503802 ],
        [10.25716528]])"""
 ```
-计算复杂度：标准方程求逆的矩阵$X^TX$是一个 n x n 矩阵（n是特征数量），对这种矩阵求逆的计算复杂度通常为 $O(n^{2.4})$ 到 $O(n^{3})$ 之间。
-线性模型一经完成训练，预测速度就非常快，计算复杂度相对于实例与特征数量来说都是线性的。
+计算复杂度：标准方程求逆的矩阵$X^TX$是一个 n x n 矩阵（n是特征数量），对这种矩阵求逆的计算复杂度通常为 $O(n^{2.4})$ 到 $O(n^{3})$ 之间。线性模型一经完成训练，预测速度就非常快，计算复杂度相对于实例与特征数量来说都是线性的。
+
+<br/>
 
 ### 梯度下降
 
@@ -1356,6 +1368,8 @@ array([[ 3.8503802 ],
 两个主要挑战：如果随机初始化，算法会可能收敛到一个局部最小值，也可能经过很长时间多次迭代后依然远离最小值（处于高原）。在线性模型中，MSE成本函数是个凸函数即不存在局部最小值，同时它也是连续函数，斜率不会产生陡峭的变化。
 
 但即便成本函数是碗状的，但如果不同特征的尺寸差别巨大使得一侧曲线拉长依旧会形成“高原”，花费大量时间。为保证所有特征值大小比例相近，可以使用Scikit-Learn的StandardScaler类。
+
+
 
 **批量梯度下降**
 
@@ -1474,6 +1488,8 @@ sgd_reg.intercept_, sgd_reg.coef_
 
 **小批量梯度下降**：每一步梯度计算基于一小部分随机的实例集。相比于随机梯度下降，小批量主要优势是可以从矩阵运算的硬件优化中获得性能提升。
 
+<br/>
+
 ### 多项式回归
 
 对于非线性数据，一个简单的方法就是将每个特征的幂次方添加一个新特征，然后在这个拓展过的特征集上训练线性模型。来看一下$y=ax^2+bx+c$ 加上随机噪声。
@@ -1482,7 +1498,7 @@ m = 100
 X = 6 * np.random.rand(m, 1) - 3
 y = 0.5 * X**2 + X + 2 + np.random.randn(m, 1)
 ```
-使用Scikit-Learn的PolynomialFeatures类来对训练数据进行转换，将每个特征的平方作为新特征加入训练集：
+使用Scikit-Learn的 PolynomialFeatures 类来对训练数据进行转换，将每个特征的平方作为新特征加入训练集：
 
 ```python
 from sklearn.preprocessing import PolynomialFeatures
@@ -1491,7 +1507,7 @@ X_poly = poly_features.fit_transform(X)
 X[0] #array([-2.63025418])
 X_poly[0] #array([-2.63025418,  6.91823707])
 ```
-X_poly现在包含原本的特征X和该特征的平方。现在对这个拓展后的训练集匹配一个LinearRegression模型：
+X_poly现在包含原本的特征X和该特征的平方。将多项式特征与线性回归模型一起使用，可以得到**多项式回归(polynomial regression)模型**，现在对这个拓展后的训练集匹配一个LinearRegression模型：
 
 ```python
 lin_reg = LinearRegression()
@@ -1501,8 +1517,10 @@ lin_reg.intercept_, lin_reg.coef_
 ```
 估计模型为 $\hat{y}=0.47x^2_1+0.91x_1+2.02$ 而实际上为 $y=0.5x^2_1+1.0x_2+2.0+g$ , g 为高斯噪声。
 
-注意，当存在多个特征时，多项式回归能发现特征和特征之间的关系，因为PolynomialFeatures会在给定阶数degree下添加所有特征组合。比如，特征a和b在degree=3下会添加特征$a^2$、$a^3$、$b^2$和 $b^3$，还会添加组合$ab$、$a^2b$、$ab^2$ 。
+注意，当存在多个特征时，多项式回归能发现特征和特征之间的关系，因为 PolynomialFeatures 会在给定阶数degree下添加所有特征组合。比如，特征a和b在degree=3下会添加特征$a^2$、$a^3$、$b^2$和 $b^3$，还会添加组合$ab$、$a^2b$、$ab^2$ 。
 >PolynomialFeatures(degree=d)可以将一个包含n个特征的数组转换为包含$\frac{(n+d)!}{d!n!}$个特征的数组，要小心特征组合的数量爆炸。
+
+
 
 **学习曲线**
 
@@ -1519,7 +1537,6 @@ def plot_learning_curves(model, X, y):
         model.fit(X_train[:m], y_train[:m])
         y_train_predict = model.predict(X_train[:m])
         y_val_predict = model.predict(X_val)
-        #这里用validation而不是test?
 
         train_errors.append(mean_squared_error(y_train_predict, y_train[:m]))
         val_errors.append(mean_squared_error(y_val_predict, y_val))
@@ -1556,9 +1573,15 @@ plot_learning_curves(polynomial_regression, X, y)
 方差导致的误差主要由高自由度或过于复杂（敏感）的模型导致，很容易对训练模型过拟合。可对模型正则化以降低复杂度。
 不可避免误差：主要是数据噪声所致，减少方法是清理数据（修复或检测移出异常值）
 
+<br/>
+
+
+
 ### 正则化线性模型
 
 为避免过拟合，将多项式模型正则化的简单方法就是降低多项式阶数。而多线性模型来说，正则化通常是通过约束模型的权重来实现。接下来介绍岭回归(Ridge Regression)、Lasso 回归以及弹性网络(Elastic Net)。
+
+
 
 **岭回归**
 
@@ -1568,10 +1591,45 @@ plot_learning_curves(polynomial_regression, X, y)
 
 超参数$\alpha$控制的是对模型进行正则化的程度，如果$\alpha$为0那么岭回归就是线性模型，如果$\alpha$非常大则所有权重都非常接近零，即$\alpha$越大正则化越强：
 
-$J(\theta)=MSE(\theta)+\alpha\frac{1}{2}\sum^n_{i=1}\theta^2_i$
+$J(\theta)=MSE(\theta)+\alpha{cdot}\frac{1}{2}\sum^n_{i=1}\theta^2_i$
 
-注意，这里的偏置项$\theta_0$没有正则化；正则化用到了权重向量的$l_2$范数。和大多数正则化模型类似，岭回归对输入特征的大小非常敏感，必须对数据进行缩放。
+注意，这里的偏置项$\theta_0$没有正则化；正则化用到了权重向量的**$l_2$范数**。和大多数正则化模型类似，岭回归对输入特征的大小非常敏感，必须进行**数据缩放**，比如 **StandardScaler**。有时需要使用多项式特征 PolynomialFeatures (degree=d) 对数据进行扩展，再用 StandardScaler 进行缩放，最后将岭回归模型用于结果特征。
 
 与线性模型一样，也可以计算执行梯度下降时的 $\hat\theta$ 值：
 
-$\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y
+$\hat\theta=(X^T{\cdot}X+\alpha{A})^{-1}{\cdot}X^T{\cdot}y$
+
+```python
+#岭回归演示，利用Cholesky矩阵因式分解法
+from sklearn.linear_model import Ridge
+ridge_reg = Ridge(alpha=1, solver="cholesky")
+ridge_reg.fit(X, y)
+ridge_reg.predict([[1.5]]) #array([[4.7151488]])
+
+#对比随机梯度下降
+from sklearn.linear_model import SGDRegressor
+sgd_reg = SGDRegressor(penalty="l2")
+sgd_reg.fit(X, y.ravel())
+sgd_reg.predict([[1.5]]) #array([4.67525709])
+```
+
+
+
+**Lasso 回归**
+
+与岭回归类似，Lasso 回归也是向成本函数增加一个正则项，但增加的是权重向量 $l1$ 范数，不是 $l2$ 范数平方的一半，同时它的 $\alpha$ 相对较小。
+
+> Lp则是 $\parallel v \parallel _p=(|v_0|^p+|v_1|^p+...+|v_n|^p)^{1\over p}$
+
+成本函数： $J(\theta)=MSE(\theta)+\alpha{\cdot}\sum^n_{i=1}|\theta_i|$
+
+Lasso 回归的重要特点是，它倾向于完全消除掉最不重要的特征，即将这些特征的权重系数设置为0。
+
+
+```python
+#Lasso 回归演示
+from sklearn.linear_model import Lasso
+lasso_reg = Lasso(alpha=0.1)
+lasso_reg.fit(X, y)
+lasso_reg.predict([[1.5]]) #array([4.66017283])
+```
