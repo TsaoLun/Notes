@@ -1,6 +1,8 @@
-# Python随笔
+# Python 随笔
 
-### 函数
+## 入门
+
+#### 函数
 
 + 局部作用域不能使用其他局部作用域内的变量
 
@@ -108,7 +110,7 @@ try:
 except ValueError:
     print("Not an integer!")
 ```
-### 列表
+#### 列表
 
 利用列表保存猫的名字
 
@@ -141,7 +143,7 @@ size, color, disposition = cat
 #变量的数目和列表的长度必须严格相等，否则会给出ValueError
 ```
 
-### 方法
+#### 方法
 
 方法和函数是一回事，只是它是调用在一个值上的。方法部分跟在这个值后面，以一个句点分隔。每种数据类型都有自己的一组方法，例如列表有一系列用来查找、添加、删除或操作列表中的值。
 
@@ -218,7 +220,7 @@ list('Hello world!')
 #['H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!']
 ```
 
-###引用
+#### 引用
 
 在变量保存可变数据类型的值时，例如列表和字典，Python就使用引用，此时修改数据所有变量都会改变。
 对于不可变的数据类型的值，例如字符串、整数或元组，Python就保存值本身。此时改数据只会改变直接赋值的变量。
@@ -301,10 +303,11 @@ for i in grid:
         print (j,end='')
     print(i[5])
  ```
-### 字典
+#### 字典
 
 在字典中，键值对输入的顺序并不重要，也不能像列表那样进行切片。
 字典有3个方法返回类似列表的值，分别对应于字典的键、值和键值对：keys(),values(),items()。返回的数据类型分别是dict_keys、dict_values和dict_items，可以用于for循环。
+
 ```python
 spam = {'color':'red','age':42}
 spam #dict_values(['red', 42])
@@ -345,7 +348,7 @@ for character in message:
 #{'I': 1, 't': 6, ' ': 13, 'w': 2, 'a': 4, 's': 3, 'b': 1, 'r': 5, 'i': 6, 'g': 2, 'h': 3, 'c': 3, 'o': 2, 'l': 3, 'd': 3, 'y': 1, 'n': 4, 'A': 1, 'p': 1, ',': 1, 'e': 5, 'k': 2, '.': 1}
 ```
 
-导入pprint模块，使用pprint()和pformat()函数实现漂亮打印
+导入 pprint 模块，使用 pprint() 和 pformat() 函数实现漂亮打印
 
 ```python
 import pprint
@@ -497,7 +500,7 @@ Inventory:
 1 ruby
 Total number of items: 48
 
-### 字符串
+#### 字符串
 
 + 转义符：`\'单引号, \"双引号, \t制表符, \n换行符, \\倒斜杠`
 + 在字符串开始的引号之前加上r，使它成为原始字符串，忽略所有转义。
@@ -528,7 +531,7 @@ Bob"""
 spam.split('\n')
 ```
 
-rjust()，ljust()和center()用于对齐文本,第一个参数是整数长度，第二个可选参数用于填充字符，取代空格。如果需要打印表格式数据，留出正确的空格，这些方法就特别有用：
+rjust()，ljust() 和 center() 用于对齐文本,第一个参数是整数长度，第二个可选参数用于填充字符，取代空格。如果需要打印表格式数据，留出正确的空格，这些方法就特别有用：
 
 ```python
 #定义一个方法，接受一个信息字典与左右列宽度参数，利用center()、ljust()和rjust()，以干净对齐的表格形式显示这些信息
@@ -553,7 +556,7 @@ spam = 'SpamBaconSpamEggsSpamSpam'
 spam.rstrip('mSpa')
 #'SpamBaconSpamEggs'注意传入的顺序不重要
 ```
-pyperclip模块的copy()和paste()函数用于拷贝与粘贴字符串
+pyperclip 模块的 copy() 和 paste() 函数用于拷贝与粘贴字符串
 
 ```python
 import pyperclip
@@ -607,7 +610,7 @@ cherries Carol moose
 banana   David goose
 ```
 
-### 正则表达式
+#### 正则表达式
 
 ```python
 import re
@@ -680,9 +683,9 @@ mo = lanRegex.search('673Go1952C0Python123java1314C++1314131456')
 mo.group() #'C'
 #花括号后加问号表非贪心匹配
 ```
-Regex对象的findall()方法，直接返回包含需查找字符串所有匹配的列表，不需要在调用search()方法后再对结果调用group()。针对未分组对象会返回字符串列表，针对已分组的则返回元组列表。
+Regex 对象的 findall() 方法，直接返回包含需查找字符串所有匹配的列表，不需要在调用 search() 方法后再对结果调用 group() 。针对未分组对象会返回字符串列表，针对已分组的则返回元组列表。
 
-Regex对象的sub()方法用于替换字符串，需要传入两个参数，第一个参数是用于取代发现匹配的字符串，第二个即待匹配的字符串，sub()方法返回完成后的字符串
+Regex 对象的 sub() 方法用于替换字符串，需要传入两个参数，第一个参数是用于取代发现匹配的字符串，第二个即待匹配的字符串，sub() 方法返回完成后的字符串
 
 ```python
 """补充:
@@ -695,29 +698,29 @@ spam$意为字符从spam结束
 .匹配所有字符，换行符除外"""
 ```
 
-### 读写文件
+#### 读写文件
 
-os.path.join()函数用于返回完整的路径+文件名
+os.path.join() 函数用于返回完整的路径+文件名
 
 ```python
 import os
 print(os.path.join('home/lun','test.txt'))#ome/lun/test.txt
 #可以创建一个文件名列表，利用for循环创建多个文件
 ```
-+ os.getcwd()函数获得当前路径
-+ os.chdir()函数改变当前路径
++ os.getcwd() 函数获得当前路径
++ os.chdir() 函数改变当前路径
 + .\代表当前路径..\是上一级路径
-+ .\spam.txt和spam.txt指的是同一文件
++ .\spam.txt 和 spam.txt 指的是同一文件
 
-os.makedirs()函数创建新文件夹
+os.makedirs() 函数创建新文件夹
 
 ```python
 import os
 os.makedirs('/home/lun/practice/waffles')
 ```
-os.path.dirname(path)返回path参数中最后一个斜杠之前的内容
-os.path.basename(path)返回path参数中最后一个斜杠之后的内容
-os.path.split(path)返回这两个字符串组成的元组
+os.path.dirname(path) 返回 path 参数中最后一个斜杠之前的内容
+os.path.basename(path) 返回 path 参数中最后一个斜杠之后的内容
+os.path.split(path) 返回这两个字符串组成的元组
 
 ```python
 path = '/home/lun/Documents/gopl-zh.pdf'
@@ -727,13 +730,13 @@ os.path.split(path) #('/home/lun/Documents', 'gopl-zh.pdf')
 #返回由每个目录构成的列表
 path.split(os.path.sep) #['', 'home', 'lun', 'Documents', 'gopl-zh.pdf']
 ```
-os.path.getsize()函数查看文件大小
+os.path.getsize() 函数查看文件大小
 
 ```python
 path = '/home/lun/Documents/gopl-zh.pdf'
 os.path.getsize(path) #4347440(字节)
 ```
-os.listdir()函数查看文件夹下的文件名
+os.listdir() 函数查看文件夹下的文件名
 
 ```python
 path='/home/lun/Documents'
@@ -748,7 +751,7 @@ os.listdir(path)
  'gopl-zh.pdf',
  'handson-ml-master']"""
 ```
-查看文件夹下所有内容的总大小,注意getsize()函数不计算目录下内容的大小
+查看文件夹下所有内容的总大小,注意 getsize() 函数不计算目录下内容的大小
 
 ```python
 path = '/home/lun/Documents'
@@ -792,10 +795,10 @@ with open('madlibs.txt','w') as f:
 #The silly panda walked to the chandelier and then screamed. A nearby pickup truck was unaffected by these events.
 ```
 
-### 组织文件
+#### 组织文件
 
 shutil模块
-shutil.copy(source,destination)用于将source文件复制到destination处的文件夹。如果destination是一个文件名，它将作为被复制文件的新名字。该函数返回一个字符串，表示被复制文件的路径。
+shutil.copy(source,destination) 用于将 source 文件复制到 destination 处的文件夹。如果 destination 是一个文件名，它将作为被复制文件的新名字。该函数返回一个字符串，表示被复制文件的路径。
 
 ```python
 import shutil, os
@@ -803,10 +806,10 @@ os.chdir('/home/lun/Documents')
 shutil.copy('DOCX.docx','/home/lun/practice/test.docx')
 #'/home/lun/practice/test.docx'
 ```
-shutil.copytree()与shutil.copy()类似，只不过复制整个文件夹以及它包含的文件
-shutil.move(source, destination)将路径source处的文件移动到destination，并返回新位置的绝对路径。注意如果destination不存在，会将原文件改名，这个过程要注意。
-os.unlink(path)删除path处的文件，os.rmdir(path)删除path处的空文件夹
-shutil.rmtree(path)将删除path处的文件夹及其包含的文件
+shutil.copytree() 与 shutil.copy() 类似，只不过复制整个文件夹以及它包含的文件
+shutil.move(source, destination) 将路径 source 处的文件移动到 destination，并返回新位置的绝对路径。注意如果 destination 不存在，会将原文件改名，这个过程要注意。
+os.unlink(path) 删除 path 处的文件，os.rmdir(path) 删除 path 处的空文件夹
+shutil.rmtree(path) 将删除 path 处的文件夹及其包含的文件
 
 ```python
 #注意os.unlink()的使用要谨慎
@@ -821,7 +824,7 @@ DOCX.docx
 """
 #在确定待删除的文件后，再去掉注释运行（删除不可恢复）
 ```
-用send2trash模块实现安全删除
+用 send2trash 模块实现安全删除
 
 ```python
 import send2trash
@@ -831,7 +834,8 @@ baconFile.close() #起保存作用
 send2trash.send2trash('bacon.txt')
 ```
 遍历目录树
-os.walk()函数被传入文件夹路径的字符串，返回3个值组成的generator迭代器:(str,list,list)，和for循环结合实现遍历目录树：
+os.walk() 函数被传入文件夹路径的字符串，返回3个值组成的 generator 迭代器:(str,list,list)，和 for 循环结合实现遍历目录树：
+
 1. 当前文件夹名称的字符串 
 2. 当前文件夹中子文件夹的字符串列表 
 3. 当前文件夹中文件的字符串列表
@@ -923,7 +927,7 @@ for foldname,subfolders,filenames in os.walk('/home/'):
         if os.path.getsize(os.path.join(foldname,filename))>102400:
             bigfiles.append()
 ```
-### 调试
+#### 调试
 
 **raise语句**
 + raise关键字
@@ -1177,7 +1181,7 @@ logging.debug('End of program')
 2020-05-12 21:18:53,082-DEBUG-End of program
 ```
 
-### Web信息抓取
+#### Web信息抓取
 
 **webbrowser**的open()函数启动浏览器打开指定URL
 
@@ -1375,12 +1379,11 @@ while not url.endswith('#'):
     url = 'http://xkcd.com' + prevLink.get('href')
 print('Done.')
 ```
-
 <br/>
 
-# 实战
+## 实战
 
-### 简单实践一
+#### 简单实践一
 
 从 windows 上将之前的 markdown 笔记拖到 Ubuntu 上了，还合并了一个 images 文件夹，里面有很多笔记里没出现的多余图片，想要一张张区分开来很难搞。
 
@@ -1434,3 +1437,104 @@ for fl in pnglist:
 ```
 
 好了，检查一下，发现刚刚的系统截图给误移除了，放回去，其他的框起来删掉就行（是的，没有用 os.unlink)
+
+<br/>
+
+
+
+## 进阶
+
+### 整洁之道
+
+<br/>
+
+#### 断言
+
+Python内置的断言 assert 语句是一种调试工具，用来测试某个断言条件。如果为真就正常执行，为假则会引发 AssertionError 异常并报错。
+
+```python
+def apply_discount(product, discount):
+
+    price = int(product['price'] * (1.0 - discount))
+    assert 0 <= price <= product['price']
+    #确保折后价不低于0也不会高于产品原价
+
+    return price 
+
+#测试
+shoes = {'name':'Fancy Shoes','price':14900}
+apply_discount(shoes, 0.25) #11175
+apply_discount(shoes, 2.0)
+"""报错
+AssertionError                            Traceback (most recent call last)
+ in 
+----> 1 apply_discount(shoes, 2.0)
+ in apply_discount(product, discount)
+      2 
+      3     price = int(product['price'] * (1.0 - discount))
+----> 4     assert 0 <= price <= product['price']"""
+```
+通过这种方法可以快速得知断言报错的位置，加快了调试工作的速度，也更易于维护。断言与 if 语句作用不同，它用于程序内部自检，如声明一些代码中不可能出现的条件，如果触发这些条件即意味着程序存在 bug ，换句话说，断言是用来帮助程序员找到 bug 的，不能用于程序逻辑判断。
+
+> 断言会给应用程序带来安全风险和bug ；容易形成语法怪癖，编写无用断言
+
+
+
+两个注意点：
+
+1. 不要使用断言验证数据
+命令行中使用 -O 或 -OO 标识或修改 CPython 环境变量就会全局禁用断言，而禁用断言可能会引发错误和安全漏洞，如下例所示：
+
+```python
+def delete_product(prod_id, user):
+    assert user.is_admin(), 'Must be admin'
+    assert store.has_product(prod_id), 'Unkown product'
+    store.get_product(prod_id).delete()
+```
+这里的问题是使用断言检查管理员限权，一旦禁用后任意用户都可以删除产品，即引发安全问题。另一个问题是跳过了 has_product() 检查以对无效产品ID进行操作，最糟的情况会导致 DoS 攻击。所以在验证(操作）数据时使用常规的 if 语句，绝对不要使用断言：
+
+```python
+def delete_product(product_id, user):
+    if not user.is_admin():
+        raise AuthError('Must be admin to delete')
+    if not store.has_product(product_id):
+        raise ValueError('Unkown product id')
+    store.get_product(product_id).delete()
+```
+
+2. 不要使用恒真断言
+    错误地在 assert 后面添加括号形成元组，而非空元组恒真，故永不触发异常，比如：
+
+```python
+assert (
+    counter == 10,
+    "It should have counted all the items'
+)
+
+```
+
+<br/>
+
+#### 逗号
+
+将列表、字典或集合常量分割成多行有助于提高可读性并更容易维护，此时为了避免在列表末尾添加移除内容而导致混乱，可以在每一项包括最后一项的后面添加逗号。
+
+```python
+names = [
+    'Alice',
+    'Bob',
+    'Dilbert',
+]
+#避免了拼接特性引发bug
+```
+
+<br/>
+
+#### with 语句
+
+with 语句有助于简化一些通用资源管理模式，抽象出其中的功能并将其分解重用：
+
+```python
+with open('hello.txt', 'w') as f:
+    f.write('hello, world!')
+```

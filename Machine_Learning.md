@@ -1678,6 +1678,11 @@ for epoch in range(1000):
         minimum_val_error = val_error
         best_epoch = epoch
         best_model = clone(sgd_reg)
-#没跑起来？看文档SGDRegressor有改动
+#没跑起来？看文档，SGDRegressor有改动
 ```
 注意，当 warm_start=True 时，调用 fit() 方法，会从停下单地方继续开始训练而不是重新开始。
+
+<br/>
+
+### 逻辑回归
+
