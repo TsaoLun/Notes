@@ -1381,9 +1381,8 @@ print('Done.')
 ```
 <br/>
 
-## 实战
 
-#### 简单实践一
+#### 简单实践
 
 从 windows 上将之前的 markdown 笔记拖到 Ubuntu 上了，还合并了一个 images 文件夹，里面有很多笔记里没出现的多余图片，想要一张张区分开来很难搞。
 
@@ -1439,8 +1438,6 @@ for fl in pnglist:
 好了，检查一下，发现刚刚的系统截图给误移除了，放回去，其他的框起来删掉就行（是的，没有用 os.unlink)
 
 <br/>
-
-
 
 ## 进阶
 
@@ -1537,4 +1534,299 @@ with 语句有助于简化一些通用资源管理模式，抽象出其中的功
 ```python
 with open('hello.txt', 'w') as f:
     f.write('hello, world!')
+```
+打开的文件描述符在程序执行离开with语句的上下文后关闭，和下面的代码等效：
+
+```python
+f = open('hello.txt', 'w')
+try:
+f.write('hello, world!')
+finally:
+    f.close()
+```
+再看一下 with 语句在 threading.Lock 类中的使用：
+
+```python
+some_lock = threading.Lock()
+
+#有问题
+some_lock.acquire()
+try:
+    #执行某些操作...
+finally:
+    some_lock.release()
+
+#改进
+
+with some_lock:
+    #执行某些操作...
+```
+两个例子中 with 语句都抽象出大部分资源处理逻辑，不必每次都显式地写try...finally语句，在代码更易读的同时实现自动的资源释放。
+
+> 上下文管理器：context manager，简单的协议（或接口），自定义对象需要遵循这个接口来支持 with 语句。如果想要将一个对象作为上下文管理器，需要向其中添加__enter__和__exit__方法，Python将在资源管理周期的适当时间调用这两种方法。
+
+接下来定义一个 ManagedFile 类实现原来的 open() 上下文管理器：
+
+```python
+class ManagedFile:
+    def __init__(self, name):
+        self.name = name
+
+    def __enter__(self):
+        self.file = open(self.name, 'w')
+        return self.file
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file:
+            self.file.close()
+
+#运行测试
+
+with ManagedFile('hello.txt') as f:
+    f.write('hello, world!')
+    f.write('bye now')
+```
+
+当执行流程进入 with 语句上下文时，Python 会调用 `__enter__` 获取资源，离开 with 上下文时，Python 会调用 `__exit__` 释放资源。
+
+除了基于上下文管理器来支持 with 语句外，标准库中的 contextlib 模块在上下文管理器基本协议的基础上提供了更多抽象：例如，contextlib.contextmanager 装饰器能够为资源定义一个基于生成器的工厂函数，该函数自动支持 with 语句。接下来用这种技术重写 ManagedFile 上下文管理器：
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+
+def managed_file(name): 
+    try:
+        f = open(name, 'w')
+        yield f
+    finally:
+        f.close()
+
+with managed_file('hello.txt') as f:
+    f.write('hello, world!')
+    f.write('bye now')
+```
+这里的 managed_file() 是生成器，先获取资源再暂停执行并产生资源以供调用者使用，当离开 with 上下文时生成器继续执行剩余的清理步骤，并将资源释放回系统。基于类的实现和基于生成器的实现基本是等价的。
+
+上下文管理器非常灵活，巧妙使用 with 语句能够为模块和类定义方便的 API ：
+
+```python
+with Indenter() as indent:
+    indent.print('hi!')
+    with indent:
+        indent.print('hello')
+        with indent:
+            indent.print('bonjour')
+    indent.print('hey')
+
+"""
+hi!
+        hello
+            bonjour
+    hey
+"""
+```
+多次进入并离开相同的文本管理器，以更改缩进级别。接下来用基于类的上下文管理器来实现该方法：
+
+```python
+class Indenter:
+    def __init__(self):
+        self.level = 0
+    
+    def __enter__(self):
+        self.level += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.level -= 1
+    
+    def print(self, text):
+        print('    ' * self.level + text)
+```
+<br/>
+要点：
+
++ with 语句通过在所谓的上下文管理器中封装 try...finally 语句的标准用法来简化异常处理。
+
++ with 语句一般用来管理系统资源的安全获取和释放。资源首先由 with 语句获取，并在执行离开 with 上下文时自动释放。
+
++ 有效地使用 with 有助于避免资源泄露的问题，让代码更易于阅读。
+
+<br/>
+
+#### 下划线
+
+介绍五种带下划线的变量名或方法名：`_var`，`var_`，`__var`，`__var__`，`_`
+
+**前置单下划线**：`_var`，PEP 8约定以单下划线开头的变量或方法只能在内部使用，但事实上 Python 没有私有和公共变量的严格区别：
+
+```python
+class Test:
+    def __init__(self):
+        self.foo = 11
+        self._bar = 23
+
+#此时尝试访问_bar
+t = Test()
+t._bar #23，并没有阻止我们访问
+```
+从模块中导入名称时，前置下划线会有影响（除非模块定义了 `__all__` 列表覆盖）：
+
+```python
+# my_module.py:
+
+def external_func():
+    return 23
+def _internal_func():
+    return 42
+```
+使用通配符导入这个模块的所有名称（一般不推荐用）：
+
+```python
+from my_module import *
+external_func() #23
+_internal_func() #not defined
+```
+<br/>
+
+**后置单下划线**：`var_`，一般某个最合适的名称已被 Python 的关键字占用时使用：
+
+```python
+#class是Python关键字
+#直接用会报错SyntaxError:"invalid syntax"
+def make_object(name, class_):
+    pass
+```
+<br/>
+
+**前置双下划线**：`__var`，在类环境中触发改写，会让 Python 解释器重写属性名称，以避免子类中的命名冲突。
+
+```python
+class Test:
+
+    def __init__(self):
+        self.foo = 11
+        self._bar = 23
+        self.__baz = 42 
+        #__baz被改名为_Test__baz
+
+#接着用内置的dir()函数查看这个对象的属性
+t = Test()
+dir(t)
+
+"""
+['_Test__baz', #__bar
+ '__class__',
+ '__delattr__',
+ '__dict__',
+ '__dir__',
+ '__doc__',
+ '__eq__',
+ '__format__',
+ '__ge__',
+ '__getattribute__',
+ '__gt__',
+ '__hash__',
+ '__init__',
+ '__init_subclass__',
+ '__le__',
+ '__lt__',
+ '__module__',
+ '__ne__',
+ '__new__',
+ '__reduce__',
+ '__reduce_ex__',
+ '__repr__',
+ '__setattr__',
+ '__sizeof__',
+ '__str__',
+ '__subclasshook__',
+ '__weakref__',
+ '_bar',
+ 'foo']
+ """
+```
+其中 _Test__baz 是 Python 解释器应用名称改写之后的属性名称，可以防止子类覆盖这些变量。
+
+接着创建另一个类来扩展 Test 类，并尝试覆盖之前构造函数中添加到属性：
+
+```python
+class ExtendedTest(Test):
+    def __init__(self):
+        super().__init__()
+        self.foo = 'overridden'
+        self._bar = 'overridden'
+        self.__bar = 'overridden'
+
+t2 = ExtendedTest()
+t2.__baz 
+#"'ExtendedTest' object has no attribute '__baz'"
+```
+
+即该对象不存在`__baz`属性，只有`_ExtendedTest__baz`以及原来的`_Test__baz`
+
+```python
+class ManglingTest:
+    def __init__(self):
+        self.__mangled = 'hello'
+    
+    def get_mangled(self):
+        return self.__mangled
+
+ManglingTest().get_mangled() #'hello'
+ManglingTest().__mangled #AttributeError
+
+class MangledMethod:
+    def __method(self):
+        return 42
+    def call_it(self):
+        return self.__method()
+
+MangledMethod().__method() #AttributeError
+MangledMethod().call_it() #42
+
+_MangledGlobal__mangled = 23
+class MangledGlobal:
+    def test(self):
+        return __mangled
+    
+MangledGlobal().test() #23
+```
+
+最后一个例子通过声明全局变量并赋值，并成功改变了`MangledGlobal().test()`，说明名称改写不专门与类属性绑定，而是能够应用于类环境中所有以双下划线开头的名称。
+
+<br/>
+
+**前后双下划线**：`__var__`，前后由双下划线包围的变量不受 Python 解释器影响，但一般是类似于`__init__`，`__call__`这样有特殊用途的：
+
+```python
+class PrefixPostfixTest:
+    def __init__(self):
+        self.__bam__ = 42
+```
+
+<br/>
+
+**单下划线**：`_`，用作临时或无关紧要的变量名称。
+
+```python
+for _ in range(32):
+    print("Hello, World.")
+
+car = ('red', 'auto', 12, 3812.4)
+color, _, _, mileage = car
+#这里只需要用到color和mileage
+```
+
+在解释器会话中 `_` 可以获得先前的结果或对象
+
+```python
+list() #[]
+
+_.append(1)
+_.append(2)
+_.append(3)
+
+_ #[1, 2, 3]
 ```
