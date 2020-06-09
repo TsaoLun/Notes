@@ -1830,3 +1830,125 @@ _.append(3)
 
 _ #[1, 2, 3]
 ```
+
+<br/>
+
+#### 字符串格式化
+
+1. 通过 % 操作符进行位置格式化，类似C语言中的 printf 风格（转换说明）:
+
+```python
+errno = 50159747054
+name = 'Bob'
+
+"Hello, %s" % name #'Hello, Bob'
+"%x" % errno #'badc0ffee',将int转换为十六进制
+
+"Hey %s, there is a 0x%x error!" % (name,errno)
+#'Hey Bob, there is a 0xbadc0ffee error!' 注意和C的区别
+
+#还能按名称替换变量
+"Hey %(name)s, there is a 0x%(errno)x error!" % {"name":name, "errno":errno}
+#'Hey Bob, there is a 0xbadc0ffee error!'
+```
+2. format() 函数
+
+```python
+"Hello, {}".format(name) #'Hello, Bob'
+
+#还能用别名排序，并且不必修改格式参数
+"Hey {name}, there is 0x{errno:x} error!".format(name=name, errno=errno)
+#'Hey Bob, there is 0xbadc0ffee error!' 十六进制符号后缀
+```
+3. 字符串字面值 3.6+
+
+```python
+f"Hello, {name}!" #'Hello, Bob!'
+
+a = 5
+b = 10
+f"Five plus ten is {a+b} and not {2 * (a + b)}."
+#'Five plus ten is 15 and not 30.'
+```
+本质上，格式化字符串字面值是 Python 解释器的功能，将 f 字符串转换为一系列字符串常量和表达式，然后合并起来构建最终的字符串。
+
+字符串字面值也支持 str.format() 方法：
+
+```python
+f"Hey {name}, there's a {errno:#x} error!"
+#"Hey Bob, there's a 0xbadc0ffee error!"
+
+f"Hey {name}, there's a 0x{errno:x} error!"
+#"Hey Bob, there's a 0xbadc0ffee error!"
+```
+4. 模板字符串 template string
+
+```python
+from string import Template
+t = Template('Hey, $name!')
+t.substitute(name=name)
+#'Hey, Bob!'
+
+#模板字符串不能使用格式说明符，只能手动转换十六进制
+templ_string = 'Hey $name, there is a $error error!'
+Template(templ_string).substitute(name=name,error=hex(errno))
+#'Hey Bob, there is a 0xbadc0ffee error!'
+#模板字符串本身无法访问任何变量，比其他格式化字符串更安全
+```
+<br/>
+
+**Python 之禅**
+
+美丽好过丑陋，
+
+浅显好过隐晦，
+
+简单好过复合，
+
+复合好过复杂，
+
+扁平好过嵌套，
+
+稀疏好过密集，
+
+可读性最重要，
+
+即使祭出实用性为理由，特例也不可违背这些规则。
+
+不应默认包容所有错误，得由人明确地让它闭嘴！
+
+面对太多的可能，不要尝试猜测，应该有一个直白的解决方法。
+
+当然，找到这个方法不是件容易的事，谁叫你不是荷兰人呢！
+
+但是，现在就做永远比不做要好。
+
+若实现方案很难解释，那么它就不是一个好方案；反之也成立！
+
+名称空间是一个绝妙想法——现在就来共同共同体验和增进这些吧！
+
+<br/>
+
+**The Zen of Python, by Tim Peters**
+
+```python
+Beautiful is better than ugly.
+Explicit is better than implicit.
+Simple is better than complex.
+Complex is better than complicated.
+Flat is better than nested.
+Sparse is better than dense.
+Readability counts.
+Special cases aren't special enough to break the rules.
+Although practicality beats purity.
+Errors should never pass silently.
+Unless explicitly silenced.
+In the face of ambiguity, refuse the temptation to guess.
+There should be one-- and preferably only one --obvious way to do it.
+Although that way may not be obvious at first unless you're Dutch.
+Now is better than never.
+Although never is often better than *right* now.
+If the implementation is hard to explain, it's a bad idea.
+If the implementation is easy to explain, it may be a good idea.
+Namespaces are one honking great idea -- let's do more of those!
+```
