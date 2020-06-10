@@ -984,6 +984,7 @@ postfixEval("7 8 + 3 2 + /") #3.0
 假设队列的尾部在列表的位置 0 处，可以使用 insert 函数向队列的尾部添加新元素，pop() 则可用于移除队列头部的元素。这意味着添加操作的时间复杂度为 $O(n)$ ，移除操作则是 $O(1)$ 。
 
 ```python
+#dsm.py
 class Queue:
     def __init__(self):
         self.items = []
@@ -1020,4 +1021,117 @@ def hotPotato(namelist, num):
 #测试
 hotPotato(["Bill","David","Susan","Jane","Kent","Brad"],7)
 #'Susan'
+```
+模拟：打印任务
+
+```python
+#每小时10个学生，最多打印两次，每次1-20页不等
+#差不多180s一个任务，每分钟低质量10页高质量5页，求平均等待时间
+#创建3个类：Printer、Task、PrintQueue 模拟打印机、打印任务和队列
+import random
+
+class Printer:
+
+    def __init__(self, ppm):
+        self.pagerate = ppm
+        self.currentTask = None
+        self.timeRemaining = 0
+    
+    def tick(self):
+        if self.currentTask != None:
+            self.timeRemaining = self.timeRemaining-1
+            if self.timeRemaining <= 0:
+                self.currentTask = None
+    
+    def busy(self):
+        if self.currentTask != None:
+            return True
+        else:
+            return False
+    
+    def startNext(self, newtask):
+        self.currentTask = newtask
+        self.timeRemaining = newtask.getPages()*60/self.pagerate
+
+
+class Task:
+
+    def __init__(self, time):
+        self.timestamp = time
+        self.pages = random.randrange(1, 21)
+    
+    def getStamp(self):
+        return self.timestamp
+
+    def getPages(self):
+        return self.pages
+
+    def waitTime(self, currenttime):
+        return currenttime - self.timestamp
+
+
+from dsm import Queue
+
+def simulation(numSeconds, pagesPerMinute):
+    labprinter = Printer(pagesPerMinute)
+    printQueue = Queue()
+    waitingtimes = []
+
+    for currentSecond in range(numSeconds):
+
+        if newPrintTask()：
+            task = Task(currentSecond)
+            printQueue.enqueue(task)
+
+        if (not labprinter.busy()) and (not printQueue.isEmpty()):
+            nexttask = printQueue.dequeue()
+            waitingtimes.append(nexttask.waitTime(currentSecond))
+            labprinter.startNext(nexttask)
+
+        labprinter.tick()
+
+        averageWait = sum(waitingtimes)/len(waitingtimes)
+        print("Average Wait %6.2f secs %3d tasks remaining."\
+            %(averageWait, printQueue.size()))
+        
+        def newPrintTask():
+            num = random.randrange(1, 181)
+            if num == 180:
+                return True
+            else:
+                return False
+```
+
+```python
+for i in range(10):
+    simulation(3600, 5)
+
+"""
+Average Wait 169.15 secs   0 tasks remaining.
+Average Wait 271.48 secs   0 tasks remaining.
+Average Wait  64.06 secs   1 tasks remaining.
+Average Wait 123.55 secs   0 tasks remaining.
+Average Wait 243.35 secs   3 tasks remaining.
+Average Wait  47.11 secs   0 tasks remaining.
+Average Wait  78.62 secs   0 tasks remaining.
+Average Wait  42.88 secs   1 tasks remaining.
+Average Wait 215.57 secs   0 tasks remaining.
+Average Wait 461.30 secs   3 tasks remaining.
+"""
+
+for i in range(10):
+    simulation(3600, 10)
+
+"""
+Average Wait   8.39 secs   0 tasks remaining.
+Average Wait  17.83 secs   0 tasks remaining.
+Average Wait  11.21 secs   0 tasks remaining.
+Average Wait  12.91 secs   0 tasks remaining.
+Average Wait  42.52 secs   0 tasks remaining.
+Average Wait  11.94 secs   0 tasks remaining.
+Average Wait  10.75 secs   2 tasks remaining.
+Average Wait  14.29 secs   0 tasks remaining.
+Average Wait   1.31 secs   0 tasks remaining.
+Average Wait   6.69 secs   0 tasks remaining.
+"""
 ```
