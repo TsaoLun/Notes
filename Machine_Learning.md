@@ -1271,7 +1271,7 @@ f1_score(y_train, y_train_knn_pred, average="macro") #问题：运行时间超�
 
 
 
-## 训练模型
+## 线性训练模型
 
 ### 线性回归
 
@@ -1686,3 +1686,80 @@ for epoch in range(1000):
 
 ### 逻辑回归
 
+逻辑回归模型概率估算 $\hat{p}=h_\theta(X)=\sigma(\theta^T\cdot{X})$
+
+逻辑模型是一个 sigmoid 模型，它的输出为一个0到1之间的数字。
+
+逻辑模型：$\sigma(t)=\frac{1}{1+exp(-t)}$
+
+预测模型：$\hat{y}=\{^{0(\hat{p}<0.5)}_{1(\hat{p}\ge0.5)}$
+
+单个训练实例的成本函数：$c(\theta)=\{^{-log(\hat{p})......y=1}_{-log(1-\hat{p}).......y=0}$
+
+成本函数（log 损失函数）：$J(\theta)=-\frac{1}{m}\sum^m_{i=1}[y^{(i)}log(\hat{p^{(i)}})+(1-y^{(i)})log(1-\hat{p}^{(i)})]$
+
+
+下面仅仅基于鸢尾花花瓣宽度，创建一个分类器：
+
+```python
+from sklearn import datasets
+iris = datasets.load_iris()
+list(iris.keys()) 
+#['data', 'target', 'target_names', 'DESCR', 'feature_names', 'filename']
+#其中iris["data"].shape为(150,4)
+
+X = iris["data"][:,3:]
+y = (iris["target"]==2).astype(np.int)
+
+#接下来训练模型
+from sklearn.linear_model import LogisticRegression
+
+log_reg = LogisticRegression()
+log_reg.fit(X, y)
+
+#来看看花瓣宽度0-3厘米间的鸢尾花的估算概率
+X_new = np.linspace(0, 3, 1000).reshape(-1,1)
+y_proba = log_reg.predict_proba(X_new)
+plt.plot(X_new, y_proba[:,1],"g-",label="Iris-Virginica")
+plt.plot(X_new, y_proba[:,0],"b--",label="Not Iris-Virginica")
+plt.xlabel('Petal width (cm)')
+plt.ylabel('Probability')
+plt.legend()
+```
+![avatar](/images/iris_lr.svg)
+
+Scikit-Learn 中逻辑回归默认 l2 正则，其超参数也不是 alpha ，而是它的逆反 C ，C 越高正则化程度越高。
+
+<br/>
+
+### Softmax 回归
+
+**多元逻辑回归**，原理很简单：对于一个给定的实例 x ，先计算出每个类别 k 的分数 $s_k(x)$，再对这些分数应用 softmax 归一化函数，估算每个类别的概率。
+
+类别 k 的 softmax 分数：$s_k(X)=\theta^T_k\cdot{X}$
+
+实例属于类别 k 的概率：$\hat{p}_k=\sigma(s(X))_k=\frac{exp(s_k(X))}{\sum_{j=1}^K{exp}(s_j(X))}$
+
+交叉熵成本函数：$J(\theta)=-\frac{1}{m}\sum^m_{i=1}\sum^K_{k=1}y_k^{(i)}log(\hat{p}_k^{(i)})$
+
+交叉熵经常被用于衡量一组估算出的类别概率与目标类别的匹配程度（当 K=2 时该成本函数等于逻辑回归的成本函数）。接下来求每个类别的交叉熵梯度向量，使用梯度下降找到最小化成本函数的参数矩阵 $\theta$ 。
+
+
+接下来使用 softmax 回归将鸢尾花分为三类，Scikit-Learn 的 LogisticRegression 默认使用一对多进行多分类，将超参数 **multi_class** 设置为 **"multinomial"** 即切换为 Softmax 回归。还需要指定一个支持 Softmax 回归的求解器，比如 "lbfgs" 求解器。依然是默认 l2 正则，通过超参数 C 进行控制：
+
+```python
+X = iris["data"][:,(2,3)] #花瓣长，花瓣宽
+y = iris["target"]
+
+softmax_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs",C=10)
+softmax_reg.fit(X, y)
+
+softmax_reg.predict([[5, 2]]) #array([2])
+softmax_reg.predict_proba([[5, 2]]) #array([[6.38014896e-07, 5.74929995e-02, 9.42506362e-01]])
+```
+
+<br/>
+
+## 支持向量机
+
+#### 线性 SVM 分类
