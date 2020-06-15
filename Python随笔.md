@@ -1952,3 +1952,67 @@ If the implementation is hard to explain, it's a bad idea.
 If the implementation is easy to explain, it may be a good idea.
 Namespaces are one honking great idea -- let's do more of those!
 ```
+
+<br/>
+
+### 高效函数
+
+<br/>
+
+```python
+def yell(text):
+    return text.upper() + "!"
+
+yell("hello") #'HELLO!'
+```
+
+<br/>
+
+#### 函数是对象
+
+Python 中所有数据都是由对象或对象之间的关系来表示的，字符串、列表和模块都是对象，函数也不例外。
+
+由于 yell 函数是 Python 中的一个对象，因此可以将其分配给另一个变量：
+
+```python
+bark = yell
+bark('woof') #'WOOF!'
+```
+
+函数对象及其名称是相互独立的实体，删除 yell 后 bark 依然指向底层函数：
+
+```python
+del yell
+yell("hello?")
+#NameError: name 'yell' is not defined
+
+bark("hey") # 'HEY!'
+
+#使用__name__属性可以访问Python函数的标识符
+bark.__name__ #'yell'
+```
+函数可以像其他对象一样存储在数据结构中，比如添加到列表：
+
+```python
+funcs = [bark, str.lower, str.capitalize]
+funcs
+
+"""
+[<function __main__.yell(text)>,
+ <method 'lower' of 'str' objects>,
+ <method 'capitalize' of 'str' objects>]
+"""
+
+#像其他类型的对象一样访问
+for f in funcs:
+    print(f, f("hey there"))
+
+"""
+<function yell at 0x7f5130127400> HEY THERE!
+<method 'lower' of 'str' objects> hey there
+<method 'capitalize' of 'str' objects> Hey there
+"""
+
+funcs[0]('heyho') #'HEYHO!'
+```
+

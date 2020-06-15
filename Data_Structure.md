@@ -1135,3 +1135,86 @@ Average Wait   1.31 secs   0 tasks remaining.
 Average Wait   6.69 secs   0 tasks remaining.
 """
 ```
+<br/>
+
+#### 双端队列
+
+双端队列是元素的有序集合，其任何一端都允许添加或移除元素。
++ Deque() 创建一个空的双端队列。
++ addFront(item) 将元素添加到双端队列前端。
++ addRear(item) 将元素添加到双端队列后端。
++ removeFront() 从双端队列前端移除一个元素，并返回。
++ removeRear() 从双端队列后端移除一个元素，并返回。
++ isEmpty() 检查双端队列是否为空。
++ size() 返回双端队列的元素数目。
+
+我们用列表构建双端队列，假设后端是位置0处：
+
+```python
+class Deque:
+    def __init__(self):
+        self.items = []
+    
+    def isEmpty(self):
+        return self.items == []
+
+    def addFront(self, item):
+        self.items.append(item)
+    
+    def addRear(self, item):
+        self.items.insert(0, item)
+
+    def removeFront(self):
+        return self.item.pop()
+    
+    def removeRear(self):
+        return self.items.pop(0)
+
+    def size(self):
+        return len(self.items)
+```
+
+这里前端的操作时间复杂度为$O(1)$，后端则是$O(n)$ 。
+
+**回文检测器**
+
+构建一个程序，接受一个字符串并检测其是否为回文。按从左往右的顺序将字符串中的字符添加到双端队列的后端，再从前后两端开始移除并比较，相等才继续。如果字符数是偶数则全部处理完，为偶数则只剩最后一个元素。
+
+```python
+from dsm import Deque
+
+def palchecker(aString):
+    chardeque = Deque()
+
+    for ch in aString:
+        chardeque.addRear(ch)
+
+    stillEqual = True
+
+    while chardeque.size() > 1 and stillEqual:
+        first = chardeque.removeFront()
+        last = chardeque.removeRear()
+        if first != last:
+            stillEqual = False
+    
+    return stillEqual
+```
+<br/>
+
+#### 列表
+
+列表是元素的集合，其中每个元素都有一个相对其他元素的位置，这种抽象数据类型称为**无序列表**。
++ List() 创建一个空列表。
++ add(item) 假设 item 之前不在列表中，接受 item 且无返回值。
++ remove(item) 假设 item 已经在列表中，移除 item 修改列表。
++ search(item) 在列表中搜索 item，返回布尔值。
++ isEmpty() 检查列表是否为空，不需要参数且返回布尔值。
++ length() 返回列表中元素的个数，不需要参数且返回整数。
++ append(item) 假设元素 item 之前不在列表中，在最后添加元素。
++ index(item) 假设元素 item 已经在列表中，返回该元素的位置（下标）。
++ insert(pos, item) 假设元素 item 不在列表中且 pos 合理，在 pos 处添加该元素。
++ pop() 假设列表不为空，移除其中最后一个元素并返回。
++ pop(pos) 假设指定位置存在元素，移除它并返回。
+
+**链表**
+为实现无序列表，我们需要构建链表。
