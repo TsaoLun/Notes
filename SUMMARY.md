@@ -2,7 +2,7 @@
 
 
 
-+ [一只编程菜鸡的笔记简介](README.md)
++ [一只编程菜鸡的笔记简介](https://github.com/TsaoLun/Notes)
 
 个人学习笔记，目前的板块：Python，C语言，数据结构与算法，机器学习。同时也在学习 Flutter 框架的一些知识。
 
