@@ -1,12 +1,5 @@
 # Machine Learning with Scikit-Learn & TensorFlow
 
-## 学习要点
->机器学习基础与方法论
-
->算法训练与面试技巧
-
->MySQL
-
 <br/>
 
 ## 机器学习分类
