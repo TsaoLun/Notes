@@ -1217,4 +1217,79 @@ def palchecker(aString):
 + pop(pos) 假设指定位置存在元素，移除它并返回。
 
 **链表**
-为实现无序列表，我们需要构建链表。
+为实现无序列表，我们需要构建链表。无序列表需要维持元素间的相对位置，但不需要在连续的内存空间中维护这些相对位置，而是通过链接来传递。
+
+**Node 节点**是构建链表的基本数据结构，每个节点必须包含列表元素即节点的数据变量。其次，节点必须保存指向下一个节点的引用，在 Python 中 Node 的构造方法将 next 初始值设为 None 。构建节点时，需要为其提供初始值，也要包含访问和修改数据的方法:
+
+```python
+class Node:
+    def __init__(self, initdata):
+        self.data = initdata
+        self.next = None
+
+    def getData(self):
+        return self.data
+
+    def getNext(self):
+        return self.next
+    
+    def setData(self, newdata):
+        self.data = newdata
+
+    def setNext(self, newnext):
+        self.next = newnext
+```
+列表本身并不包含任何节点对象，只有指向整个链表结构中第一个节点的引用：
+
+```python
+class UnorderedList:
+    def __init__(self):
+        self.head = None
+    
+    def isEmpty(self):
+        return self.head == None
+        #当且仅当列表没有节点时为真
+    
+    def add(self, item):
+        temp = Node(item)
+        temp.setNext(self.head)
+        self.head = temp
+        #创建新节点并将元素作为其数据，将该新节点的next引用指向当前列表的第一个节点
+        #如果颠倒三四行集先修改列表头节点将导致已有节点丢失
+
+    def length(self):
+        current = self.head
+        count = 0
+        while current != None:
+            count = count + 1
+            current = current.getNext()
+        
+        return count
+
+    def search(self, item):
+        current = self.head
+        found = False
+        while current != None and not found:
+            if current.getData() == item:
+                found = True
+            else:
+                current = current.getNext()
+
+        return found
+
+    def remove(self, item):
+        current = self.head
+        previous = None
+        found = False
+        while not found:
+            if current.getData() == item:
+                found = True
+            else:
+                previous = current
+                current = current.getNext()
+
+        if previous == None:
+            self.head = current.getNext()
+        else:
+            previous.setNext(current.getNext())
+```
