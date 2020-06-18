@@ -351,7 +351,7 @@ print("Test set score:{:.2f}".format(ridge.score(X_test, y_test)))
 
 得到训练集0.89，测试集0.75，泛化性能得到提升。
 
-alpha参数可以控制模型复杂度，越大表示约束越大。这里当alpha=0.1时R^2进一步提升为0.77，最佳取值取决于具体模型，可以通过代码查看不同alpha取值时coef_属性。
+alpha参数可以控制模型复杂度，越大表示约束越大。这里当alpha=0.1时 $R^2$ 进一步提升为0.77，最佳取值取决于具体模型，可以通过代码查看不同alpha取值时coef_属性。
 
 ```python
 X, y = mglearn.datasets.load_extended_boston()

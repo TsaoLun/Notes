@@ -1585,7 +1585,7 @@ plot_learning_curves(polynomial_regression, X, y)
 
 超参数$\alpha$控制的是对模型进行正则化的程度，如果$\alpha$为0那么岭回归就是线性模型，如果$\alpha$非常大则所有权重都非常接近零，即$\alpha$越大正则化越强：
 
-成本函数：$J(\theta)=MSE(\theta)+\alpha{cdot}\frac{1}{2}\sum^n_{i=1}\theta^2_i$
+成本函数：$J(\theta)=MSE(\theta)+\alpha{\cdot}\frac{1}{2}\sum^n_{i=1}\theta^2_i$
 
 注意，这里的偏置项$\theta_0$没有正则化；正则化用到了权重向量的**$l_2$范数**。和大多数正则化模型类似，岭回归对输入特征的大小非常敏感，必须进行**数据缩放**，比如 **StandardScaler**。有时需要使用多项式特征 PolynomialFeatures (degree=d) 对数据进行扩展，再用 StandardScaler 进行缩放，最后将岭回归模型用于结果特征。
 
@@ -1721,7 +1721,7 @@ plt.legend()
 ```
 ![avatar](/images/iris_lr.svg)
 
-Scikit-Learn 中逻辑回归默认 l2 正则，其超参数也不是 alpha ，而是它的逆反 C ，C 越高正则化程度越高。
+Scikit-Learn 中逻辑回归默认 l2 正则，其超参数也不是 alpha ，而是它的逆反 C ，C 越高正则化程度越低。
 
 <br/>
 
@@ -1756,3 +1756,65 @@ softmax_reg.predict_proba([[5, 2]]) #array([[6.38014896e-07, 5.74929995e-02, 9.4
 ## 支持向量机
 
 #### 线性 SVM 分类
+
+SVM 分类器在两种类别之间保持了一条尽可能宽敞的街道，即最大间隔分类。判定边界由街道边缘的样本决定，而这些样本点被称为支持向量。
+
+为了避免异常点的影响，我们一般使用软间隔分类，旨在保持街道尽可能大同时避免间隔违规。在 Scikit-Learn 中可以用 C 超参数控制这种平衡：较小的 C 会导致更宽的街道，但更多的间隔违规。如果 SVM 过拟合，可以尝试减小 C 进行调整。
+
+```python
+import numpy as np
+from sklearn import datasets
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+
+iris = datasets.load_iris()
+X = iris["data"][:,(2, 3)]
+y = (iris["target"] == 2).astype(np.float64)
+
+svm_clf = Pipeline((
+    ("scaler", StandardScaler()),
+    ("linear_svc", LinearSVC(C=1, loss="hinge")),
+))
+
+svm_clf.fit(X_scaled, y)
+
+svm_clf.predict([[5.5, 1.7]]) 
+#array([1.])，不同于Logistic回归分类器，不会输出每个类别的概率
+```
+另一种选择是 `SGDClassifier(loss="hinge", alpha=1/(m*C)) `，尽管不会和 LinearSVC 一样快速收敛但对于处理那些不适合放在内存的大数据集或在线分类时非常有用。
+<br/>
+
+#### 非线性支持向量机分类
+
+对于不是线性可分的数据集，一种处理方法是增加更多特征，例如多项式特征：通过 Scikit-Learn 创建一个 Pipeline 去包含多项式特征 PolynomialFeatures 变换，再进行 StandardScaler 和 LinearSVC :
+
+```python
+from sklearn.datasets import make_moons
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
+
+X, y = make_moons()
+polynomial_svm_clf = Pipeline((
+    ("poly_features", PolynomialFeatures(degree=3)),
+    ("scaler", StandardScaler()),
+    ("svm_clf", LinearSVC(C=10, loss="hinge"))
+))
+
+polynomial_svm_clf.fit(X, y)
+```
+<br/>
+
+#### 多项式核
+
+添加多项式特征很容易实现，但低次数的多项式不能处理非常复杂的数据集，而高次数的多项式却会产生大量的特征使模型变慢。在 SVM 中，可以运用 **核技巧** 取得高次数多项式一样的效果并且避免了维度爆炸。
+
+```python
+from sklearn.svm import SVC
+poly_kernel_svm_clf = Pipeline((
+    ("scaler", StandardScaler()),
+    ("svm_clf",SVC(kernel="poly", degree=3, coef0=1, C=5))
+))
+poly_kernel_svm_clf.fit(X, y)
+```
+如果模型过拟合，可以减小多项式核的阶数。`coef0` 控制了高阶多项式与低阶多项式对模型的影响。这里的 d, c, r 通用的方法是用网格搜索 grid search 找到最优超参数，先粗略搜索再找到最佳值进行更细致的网格搜索。
