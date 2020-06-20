@@ -1,4 +1,4 @@
-# Problem Solving with Algorithms and Data Structures
+#  Problem Solving with Algorithms and Data Structures
 
 ## 导论
 
@@ -1226,6 +1226,7 @@ class Node:
     def __init__(self, initdata):
         self.data = initdata
         self.next = None
+        #两个属性，data和next，next结点接地
 
     def getData(self):
         return self.data
@@ -1236,10 +1237,10 @@ class Node:
     def setData(self, newdata):
         self.data = newdata
 
-    def setNext(self, newnext):
+    def setNext(self, newnext): #next为Node实例self.head(初始为None）
         self.next = newnext
 ```
-列表本身并不包含任何节点对象，只有指向整个链表结构中第一个节点的引用：
+列表本身并不包含任何节点对象，只有指向整个链表结构中第一个节点的引用，其后每个元素都能通过下一个引用找到：
 
 ```python
 class UnorderedList:
@@ -1248,15 +1249,15 @@ class UnorderedList:
     
     def isEmpty(self):
         return self.head == None
-        #当且仅当列表没有节点时为真
+    #检查头结点是否为None，当且仅当列表没有节点时为真
     
     def add(self, item):
         temp = Node(item)
         temp.setNext(self.head)
         self.head = temp
-        #创建新节点并将元素作为其数据，将该新节点的next引用指向当前列表的第一个节点
-        #如果颠倒三四行集先修改列表头节点将导致已有节点丢失
-
+    #从头部添加新结点，把已有元素链接到后面，再修改头结点（先链接使节点不丢失）
+    
+    #实现length,search和remove；会将引用和None进行比较
     def length(self):
         current = self.head
         count = 0
@@ -1265,7 +1266,8 @@ class UnorderedList:
             current = current.getNext()
         
         return count
-
+    
+    #设置found初始值False，跳出条件为找到相符或到达末尾
     def search(self, item):
         current = self.head
         found = False
@@ -1276,7 +1278,8 @@ class UnorderedList:
                 current = current.getNext()
 
         return found
-
+    
+    #与search类似，找到元素后需将前面结点中的next引用指向current之后的节点
     def remove(self, item):
         current = self.head
         previous = None
@@ -1287,9 +1290,70 @@ class UnorderedList:
             else:
                 previous = current
                 current = current.getNext()
-
+        
+    #被移除元素正好是第一个元素时修改头节点而不是previous
         if previous == None:
             self.head = current.getNext()
         else:
             previous.setNext(current.getNext())
+            
+            
+    #练习：实现append,insert,index和pop
+    def append(self, item):
+        current = self.head
+        previous = None
+        while current != None: #找到列表尾部
+            previous = current
+            current = current.getNext()
+        temp = Node(item) #创建新的Node节点
+        previous.setNext(temp) #将尾部指向该节点
+    
+    def insert(self, n, item):
+        i = 0
+        current = self.head
+        previous = None
+        while i != n and current != None:
+            previous = current
+            current = current.getNext()
+            i += 1
+
+        temp = Node(item)
+        if previous != None:
+            temp.setNext(current)
+            previous.setNext(temp)
+        else:
+            temp.setNext(self.head)
+            self.head = temp
+            
+    def index(self, item):
+        current = self.head
+        found = False
+        i = 0
+        while current != None and not found:
+            i += 1
+            if current.getData() == item:
+                found = True
+            else:
+                current = current.getNext()
+
+        return i
+    
+    def pop(self, pos=length):
+        current = self.head
+        previous = None
+        i = 0
+        while current.getNext() != None and i != pos: 
+            previous = current
+            current = current.getNext()
+            i += 1
+        if previous != None:
+            previous.setNext(current.getNext())
+        else:
+            self.head = current.getNext()
+        return current.getData()
+
 ```
+
+**有序列表**
+
+在有序列表中，元素的相对位置取决于它们的基本特征，假设元素可以比较的前提下通常为升序或者降序，操作则与无序列表相同。
