@@ -1357,3 +1357,83 @@ class UnorderedList:
 **有序列表**
 
 在有序列表中，元素的相对位置取决于它们的基本特征，假设元素可以比较的前提下通常为升序或者降序，操作则与无序列表相同。
+
+```python
+class OrderedList:
+    def __init__(self):
+        self.head = None
+    
+    #isEmpty,length和remove实现方法不变
+    def isEmpty(self):
+        return self.head == None
+    
+    def length(self):
+        current = self.head
+        count = 0
+        while current != None:
+            count += 1
+            current = current.getNext()
+
+    def remove(self,item):
+        current = self.head
+        previous = None
+        found = False
+        while not found:
+            if current.getData() == item:
+                found = True
+            else:
+                previous = current
+                current = current.getNext()
+        if previous == None:
+            self.head = current.getNext()
+        else:
+            previous.getNext(current.getNext())
+
+    #search方法可以利用元素有序排列这一特性尽早结束
+    def search(self, item):
+        current = self.head
+        found = False
+        stop = False
+        while current != None and not found and not stop:
+            if current.getData() == item:
+                found = True
+            elif current.getData() > item:
+                stop = True
+            else:
+                current = current.getNext()
+
+        return found
+
+    #add方法需要遍历链表来确定新元素插入的位置
+    def add(self,item):
+        current = self.head
+        previous = None
+        stop = False
+        while current != None and not stop:
+            if current.getData() > item:
+                stop = True
+            else:
+                previous = current
+                current = current.getData()
+        
+        temp = Node(item)
+        if previous == None:
+            temp.setNext(self.head)
+            self.head = temp
+        else:
+            temp.setNext(current)
+            previous.setNext(temp)
+
+    #练习，实现index和pop
+    def index(self,item):
+        current = self.head
+        count = 0
+        found = False
+        while not found:
+            if current.getData != item:
+                count += 1
+                current = current.getNext()
+            else:
+                found = True
+        return count
+```

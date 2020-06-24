@@ -665,34 +665,210 @@
 // }
 // // T为标识符，用来作为泛型进行占位，实际类型会在运行时确定
 
-//约束泛型，控制灵活性
-main() {
-  var my = MyClass<Teacher>(new Teacher());
-  my.sayHi();
-}
+// //约束泛型，控制灵活性
+// main() {
+//   var my = MyClass<Teacher>(new Teacher());
+//   my.sayHi();
+// }
 
-class MyClass<T extends People> {
-  T data;
-  MyClass(this.data);
-  sayHi() {
-    this.data.sayHi();
-  }
-}
+// class MyClass<T extends People> {
+//   T data;
+//   MyClass(this.data);
+//   sayHi() {
+//     this.data.sayHi();
+//   }
+// }
 
-class People {
-  sayHi() {
-    print("Hello");
-  }
-}
+// class People {
+//   sayHi() {
+//     print("Hello");
+//   }
+// }
 
-class Teacher extends People {
-  sayHi() {
-    print("Hi,I'm teacher");
-  }
-}
+// class Teacher extends People {
+//   sayHi() {
+//     print("Hi,I'm teacher");
+//   }
+// }
 
-class Student extends People {
-  sayHi() {
-    print("Hi");
-  }
-}
+// class Student extends People {
+//   sayHi() {
+//     print("Hi");
+//   }
+// }
+
+// // 泛型函数
+// main() {
+//   var my = MyClass<Student>(new Student());
+//   var res = getData<Student>(my);
+//   res.sayHi();
+// }
+
+// class MyClass<T extends People> {
+//   T data;
+//   MyClass(this.data);
+// }
+
+// class People {
+//   sayHi() {
+//     print("Hello");
+//   }
+// }
+
+// class Student extends People {
+//   sayHi() {
+//     print("Hi,I'm student");
+//   }
+// }
+
+// T getData<T extends People>(MyClass<T> People) {
+//   T data = People.data;
+//   return data;
+// }
+// //函数名后面尖括号用来指定泛型的类型，该类型可以在函数的返回值、参数类型甚至参数类型的泛型以及函数体中使用
+
+// //异步编程
+// //async与await关键字
+
+// main() {
+//   getData();
+//   print("继续执行...");
+// }
+
+// getData() {
+//   print("获取数据");
+// }
+
+// //假设getData()需要耗时，且需要该步返回的数据
+// main() {
+//   getData();
+//   print("继续执行...");
+// }
+
+// getData() async {
+//   var data = await "数据";
+//   print(data);
+// }
+// //getData函数虽然在print语句前面执行，但数据输出却滞后了
+// //需要被异步执行的函数需要使用async关键字修饰，其中需滞后处理的语句用await修饰
+
+// //异步与回调 callback
+// //在应用程序中，网络请求往往是一个耗时的任务，请求完成后将数据渲染到界面上
+// //通常将网络请求封装为一个函数，并在数据请求完成后通过回调函数将数据传递到调用方
+// main() {
+//   getData((data) => print("获取到数据：${data}"));
+//   print("继续执行...");
+// }
+
+// getData(callback) async {
+//   var data = await "HelloWorld";
+//   callback(data);
+// }
+
+// //不使用箭头，将复杂函数作为回调函数
+// main() {
+//   getData(renderUI);
+//   print("继续执行...");
+// }
+
+// renderUI(data) {
+//   print("进行UI渲染");
+// }
+
+// getData(callback) async {
+//   var data = await "HelloWorld";
+//   callback(data);
+// }
+
+// // 使用Future对象
+// // 调用任意一个async函数都会返回一个Future对象
+// // Future是一种抽象，表示对象封装的数据是未来的，即对应前面的异步
+// main() {
+//   var future = getData();
+//   print(future);
+//   print("继续执行...");
+// }
+
+// getData() async {
+//   var data = await "HelloWorld";
+// }
+
+// //我们可以通过执行Future对象的then方法来设置回调函数
+// main() {
+//   var future = getData();
+//   future.then((data) {
+//     print("获得数据:${data}");
+//     renderUI();
+//   });
+//   print("继续执行...");
+// }
+
+// renderUI() {
+//   print("进行UI渲染");
+// }
+
+// getData() async {
+//   var data = await "HelloWorld";
+//   return data;
+// }
+
+// // 异步函数的返回值会作为Future对象设置回调的参数
+// // 因此在编写异步函数getData时开发者不需要再考虑数据的处理问题，直接返回即可
+// // 如果有多个异步任务有依赖，使用Future可以非常方便地进行依赖关系处理
+
+// main() {
+//   var future = getDataOne();
+//   future.then((data){
+//     print("获得数据${data}");
+//     return getDataTwo();
+//   }).then((data){
+//     print("获得数据${data}");
+//     renderUI();
+//   })
+//   print("继续执行...");
+// }
+// renderUI(){
+//   print("进行UI渲染");
+// }
+// getDataOne() async{
+//   var data = await "Hello";
+//   return data;
+// }
+// getDataTwo() async{
+//   var data = await "World";
+//   return data;
+// }
+// //使用Future对象的链式操作可以非常轻松地处理异步任务间的依赖关系
+
+/////////
+//模块//
+//////
+//新建pri.dart文件
+
+// import "./pri.dart" show other;
+
+// main() {
+//   other();
+// }
+
+// // 命名冲突
+// import "./pri.dart";
+// import './pri2.dart' as pri2;
+
+// main() {
+//   pri();
+//   pri2.pri();
+// }
+
+// //可调用类，将类定义为像函数一样可调用
+// main() {
+//   var cls = MyClass();
+//   var res = cls("Hello", "World");
+//   print(res);
+// }
+
+// class MyClass {
+//   call(a, b) {
+//     return [a, b];
+//   }
+// }
