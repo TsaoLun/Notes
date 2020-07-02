@@ -331,3 +331,412 @@ Container 常用属性
 |margin|容器外边距|EdgeInsetsGeometry 对象|
 |padding|容器内边距|EdgeInsetGeometry 对象|
 |transform|容器形状变换属性|Matrix4 对象|
+
+其中 BoxDecoration 对象可配置属性如下：
+|属性名|用途|值类型|
+|-----|-----|-----|
+|color|容器背景色|Color 对象|
+|image|背景图片|DecorationImage|
+|border|容器的边框|Border 对象|
+|boxShadow|容器阴影|BoxShadow List|
+|borderRadius|容器的圆角|BorderRadius|
+|gradient|渐变背景|Linear/Radial/Sweep-Gradient|
+|backgroundBlendMode|渲染时的混合模式|BlendMode 枚举|
+|shape|背景形状|BoxShape(rectangle, circle)|
+
+```dart
+decoration: BoxDecoration(
+  color: Colors.amber,
+  image: DecorationImage(
+    image: AssetImage("assets/iconImg.png")
+  ),
+  border: Border(
+    top: BorderSide(
+      color: Colors.lightGreenAccent,
+      width: 4,
+      style: BorderStyle.solid,
+    )
+  ),
+  borderRadius: BorderRadius.all(Radius.circular(10)),
+  boxShadow:[
+    BoxShadow(
+      color: Colors.black26,
+      offset: Offset(20, 20)
+    ),
+    BoxShadow(
+      color: Colors.brown,
+      offset: Offset(-20,-20)
+    )
+  ],
+  gradient:LinearGradient(
+    colors: [
+      Colors.lightBlue,
+      Colors.orange
+    ],
+    stops:[
+      0,0.5
+    ]
+  ),
+  shape: BoxShape.rectangle
+)
+```
+
+gradient 属性常用的渐变背景有3个，LinearGradient 用来创建线性渐变，RadialGradient 以中心为原点、以半径为轴向外渐变，SweepGradient扫描式渐变。
+
+在 Container 容器属性中另一个重要属性 transform，可以对 Container 容器的展示进行变化，transform 属性需要设置为 Matrix4 对象即4维矩阵，在 Flutter 中提供了现成构造方法，可以平移、旋转、缩放、镜像和扭曲，以围绕z轴旋转为例：
+
+```dart
+Matrix4.rotationZ(-.2)
+```
+
+**Padding** 组件是简化的 Container 组件，只能有一个子组件且不需要设置内边距：
+
+```dart
+Padding(
+  child: Container(
+    color: Colors.red,
+  ),
+  padding: EdgeInsets.all(20),
+)
+```
+
+**Center** 组件是一种特殊的 Padding 组件，只有一个子组件且布局在容器中心：
+
+```dart
+Center (
+  child: Container(
+    color: Colors.red,
+    width: 200,
+    height: 200,
+  ),
+)
+```
+
+**Align** 组件一般布局在边缘，通过 alignment 属性进行控制：
+
+```dart
+Align (
+  child: Container(
+    color: Colors.red,
+    width: 200,
+    height: 200,
+  ),
+  alignment: Alignment.bottomRight,
+)
+```
+>**FittedBox** 组件会自动根据容器大小适配尺寸，通过 alignment 和 fit 对布局控制；
+**AspectRatio** 组件用来创建宽高比固定的容器；
+**ConstrainedBox** 组件对其内部布局的子组件进行宽高约束，constraints 属性设置组件宽度范围和高度范围；
+**LimitedBox** 容器限制组件的尺寸；
+**Offstage** 容器可以通过设置 offstage 属性控制组件是否显示；
+**OverflowBox** 容器支持其子组件尺寸超出容器且不被截断，通过设置 maxWidth 和 maxHeight 属性来控制允许子组件的最大尺寸；
+**SizeBox** 将子组件的尺寸设置为固定的尺寸；
+**Transform** 容器组件与 trandform 属性类似，也是对容器进行变换，而且可以设置 alignment 变换参照的坐标系。
+
+<br/>
+
+#### 多组件布局容器
+
+多组件布局容器允许一次布局多个子组件，行布局组件、列布局组件以及复杂的网络组件与列表组件都属于多组件布局容器。
+
+**Row 与 Column**
+Row 容器进行行布局，其中可以设置一组子组件并以水平方向布局：
+
+```dart
+child: Row(
+  children: <Widget>[Text("组件1"),Text("组件2"),Text("组件3")],
+  textDirection: TextDirection.rtl,
+)
+```
+其中，textDirection 属性用来设置布局的方向，如从左往右还是从右往左，还可以通过 mainAxisAlignment, mainAxisSize, crossAxisAlignment 属性设置对齐方式、主轴尺寸、垂直对齐方式。
+
+Column 组件与 Row 类似只是布局方向为竖直，主轴垂直次轴水平，常用配置属性也一致。
+
+```dart
+child: Column(
+  children: <Widget>[Text("组件1"),Text("组件2"),Text("组件3")],
+)
+```
+
+**Flex 与 Expanded**
+
+Column 和 Row 都继承自 Flex 组件，Flex 通过设置 direction 属性来设置水平还是竖直布局，Expanded 组件专门用来作为 Flex 组件的子组件，通过设置 Flex 权重值来创建有比例关系的一组组件：
+
+```dart
+Row(
+  children: <Widget>[
+    Expanded(
+      child: Container(
+        color: Colors.red,
+        child: Text("组件1"),
+        height: 100,
+      ),
+      flex: 1,
+    ),
+    Expanded(
+      child: Container(
+        color: Colors.blue,
+        child: Text("组件2"),
+        height: 100,
+      ),
+      flex: 2,//权重值
+    ),
+    Expanded(
+      child: Container(
+        color: Colors.green,
+        child: Text("组件3"),
+        height: 100,
+      ),
+      flex: 1,
+    ),
+  ],
+  textDirection: TextDirection.rtl,
+)
+```
+
+**Stack 与 Positioned**
+Stack 组件是 Flutter 中用来进行绝对布局的一个容器组件，Positioned 组件通常会作为 Stack 组件的子组件使用，设置绝对位置和尺寸：
+
+```dart
+Stack(
+  children:<Widget>[
+    Positioned(
+      child: Container(
+        color: Colors.orange,
+      ),
+      left: 100,
+      right: 100,
+      top: 250,
+      height: 100,
+    )
+  ],
+)
+```
+Positioned 组件可以通过设置 left, top, right 和 bottom 来设置距离父容器4条边的距离，也可以通过设置 width 和 height属性来确定尺寸。
+
+**IndexedStack**
+基本与 Stack 一致但只会对其中一个子组件进行渲染，由 index 属性控制：
+
+```dart
+IndexedStack(
+  children:<Widget>[
+    Positioned(
+      child: Container(
+        color: Colors.orange,
+      ),
+      left: 100,
+      right: 100,
+      top: 250,
+      height: 100,
+    ),
+    Positioned(
+      child: Container(
+        color: Colors.orange,
+        ),
+        left: 0,
+        right: 100,
+        top: 0,
+        height: 100,
+    ),
+  ],
+  index: 0,//跳过渲染
+)
+```
+
+**Wrap 容器组件**
+Wrap 容器组件的作用与 Row, Column 组件类似，但更为强大，当一行或一列布局不下时，Wrap 组件会自动进行换行或换列：
+
+```dart
+Wrap(
+  children: <Widget>[
+    Container(
+      color: Colors.red,
+      width: 100,
+      height: 100,
+    ),
+    Container(
+      color: Colors.blue,
+      width: 100,
+      height: 100,
+    ),
+    Container(
+      color: Colors.grey,
+      width: 100,
+      height: 100,
+    ),
+    Container(
+      color: Colors.green,
+      width: 100,
+      height: 100,
+    ),
+    Container(
+      color: Colors.orange,
+      width: 100,
+      height: 100,
+    ),
+  ],
+  direction: Axis.horizontal,
+  alignment: WrapAlignment.end,
+  spacing: 20,
+  runAlignment: WrapAlignment.start,
+  runSpacing: 20,
+  crossAxisAlignment: WrapCrossAlignment.center,
+  textDirection: TextDirection.rtl,
+)
+```
+
+<br/>
+
+### 组件进阶
+
+#### 表单组件
+表单组件是 Flutter 中用来进行用户输入、提交用户输入信息的组件，在使用表单组件时需要将其放入表单容器中。
+
+**表单容器**的作用是组合表单组件，例如一个应用程序的登录界面需要用户输入用户名和密码，即需要提供两个输入框组件，用 Form 组件来进行组合：
+
+```dart
+Form(child: Column(
+  children:<Widget>[
+    Text("用户名"),
+    TextFormField(),
+    Text("密码"),
+    TextFormField(),
+  ],
+))
+```
+Form 组件中的属性可以统一对输入框进行配置，autovalidate 决定是否每次输入都进行有效性检查(bool 对象)，onChanged 设置回调函数。
+
+**TextFormField** 用来创建表单中进行文本输入的输入框组件，除了可以接收和保存用户输入外，还提供输入提示、有效性校验等功能：
+
+```dart
+TextFormField(
+  decoration: InputDecoration(
+    labelText:"你的用户名"
+  ),
+  validator: (string) {
+    if(string.length<3){
+      return "用户名过短";
+    }
+    return null;
+  },
+)
+```
+decoration 属性用来设置输入的提示文本，InputDecoration 类的相关用法后面会介绍，validator 属性用来设置有效性校验逻辑，非法则返回字符串结束校验，合法则返回 null 。TextFormField 还有一个 controller 属性可以配置，这个属性用来管理文本框编辑信息。
+
+```dart
+var controller = TextEditingController();
+Form(child: Column(
+    children: <Widget>[
+      Text("用户名"),
+      TextFormField(
+        decoration: InputDecoration(
+          labelText:"你的用户名"
+        ),
+        validator: (string){
+          if(string.length<3){
+            return "用户名过短";
+          }
+          return null;
+        },
+        controller: controller,
+      ),
+      Text("密码"),
+      TextFormField()
+    ],
+  ),autovalidate:true,onChanged: (){
+    print("输入框文本发生变化:"+controller.text);
+  },
+)
+```
+其中 TextEditingController 用来控制输入框中的文本，调用其 clear 方法可以清空输入框的文本，其中的 text 属性用来存储输入框中的文本，selection 属性用来存储输入框中选中的内容区域。
+
+**InputDecoration** 用来进行输入框提示视图的设置，一般是对输入框组件界面上的修饰。
+
+**DropdownButtonFormField** 即下拉选择框组件，提供一组选项供用户进行选择：
+
+```dart
+Text("兴趣爱好"),
+DropdownButtonFormField(items: [
+  DropdownMenuItem(child: Text("篮球")),
+  DropdownMenuItem(child: Text("足球")),
+  DropdownMenuItem(child: Text("排球")),
+])
+```
+
+<br/>
+
+#### 布局技术
+
+**Container** 组件是非常方便的单组件布局容器，如果其子组件尺寸小于 Container 本身就可以使用 alignment 属性控制其子组件的对齐方式。
+
+在使用 alignment 属性控制组件对齐的前提下，可以设置 padding 属性来实现子组件相对 Container 边缘的边距调整，例如将 padding 属性设置如下:
+
+```dart
+padding: EdgeInsets.only(left: 20,top: 60, right: 100)
+```
+
+若要对整个 Container 组件进行三维变换布局，则可以对其 transform 属性进行设置，例如：
+
+```dart
+transform: Matrix4.rotationZ(3.14/16)
+```
+
+**Padding** 组件是简化版的 Container 组件，其中只有一个子组件，通过设置 padding 属性来约束其内边距
+
+```dart
+Padding(padding: EdgeInsets.only(left:20,top:60),child:Text("Container",style:TextStyle()));
+```
+
+**Center** 组件是简化版的 Container 组件，其将内部组件直接进行居中布局，例如：
+
+```dart
+Center(child: Text("Container"),);
+//widthFactor和heightFactor属性分别设置组件宽度和高度是子组件的多少倍
+```
+**FittedBox** 组件通过 alignment 和 fit 管理其子组件的对齐模式和缩放模式。
+
+**ConstrainedBox** 布局也是一种特殊的 Container 组件，可以对子组件进行尺寸约束：
+
+```dart
+return new Center(
+  child: new ConstrainedBox(
+    constraints: BoxConstraints(maxWidth:100,maxHeight:100),
+    child: Container(
+      color: Colors.red,
+    ),
+  ),
+);
+```
+
+**抽屉布局** 之前学到可以通过 Scaffold 脚手架添加抽屉视图，即使用 Column 布局创建抽屉视图。在 Flutter 组件库中还提供了一个 Drawer 组件，与 ListView 组件组合进行使用：
+
+```dart
+drawer: Drawer(
+  child: ListView(
+    children:<Widget>[
+      Text("列表选项1"),
+      Text("列表选项2"),
+      Text("列表选项3"),
+    ],
+  ),
+)
+````
+
+<br/>
+
+#### 用户交互
+
+**Checkbox 复选按钮**
+
+```dart
+bool selected = true;
+Center(
+  child: Column(
+    children: <Widget>[
+      Checkbox(value: selected, onchanged:(select)){
+        print(select)；
+        
+      }
+    ]
+  )
+)

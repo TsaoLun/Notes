@@ -1,5 +1,7 @@
 #  Problem Solving with Algorithms and Data Structures
 
+<br/>
+
 ## 导论
 
 在面向对象编程语言中，类都是对数据的构成（状态）与行为的描述，数据项被称为对象，一个对象就是类的一个实例。
@@ -407,7 +409,10 @@ Enter Pin B: G2--->1
 """
 ```
 
+<br/>
+
 ## 算法分析
+
 #### 大$O$记法
 常见大O函数排序：常数、对数、线性、对数线性、平方、立方、指数
 $T(n)=3n^2+2n+4$
@@ -639,9 +644,13 @@ for i in range(10000, 1000001, 20000):
 
 小结：算法分析师一种独立于实现的算法度量方法，大$O$记法使得算法可以根据随问题规模增长而起主导作用的部分进行归类
 
+<br/>
+
 ## 基本数据结构
 
 线性数据结构：有序的数据集合，其元素的顺序取决于添加顺序或移除顺序，如栈、队列、双端队列和列表。区分它们的是元素的添加方式和移除方式，尤其是添加操作和移除操作发生的位置。
+
+<br/>
 
 #### 栈
 
@@ -970,6 +979,8 @@ def doMath(op, op1, op2):
 #测试
 postfixEval("7 8 + 3 2 + /") #3.0
 ```
+
+<br/>
 
 #### 队列
 
@@ -1414,7 +1425,7 @@ class OrderedList:
                 stop = True
             else:
                 previous = current
-                current = current.getData()
+                current = current.getNext()
         
         temp = Node(item)
         if previous == None:
@@ -1430,10 +1441,116 @@ class OrderedList:
         count = 0
         found = False
         while not found:
-            if current.getData != item:
+            if current.getData() != item:
                 count += 1
                 current = current.getNext()
             else:
                 found = True
         return count
+    
+    def pop(self,pos=length):
+        current = self.head
+        previous = None
+        i = 0
+        while current.getNext() != None and i != pos: 
+            previous = current
+            current = current.getNext()
+            i += 1
+        if previous != None:
+            previous.setNext(current.getNext())
+        else:
+            self.head = current.getNext()
+        return current.getData()
 ```
+
+**链表分析**
+
+以有 n 个节点的链表为例，isEmpty 方法的时间复杂度为 $O(1)$ ，这是因为它只需要执行一步操作即检查 head 引用是否为 None 。length 方法则总是需要执行 n 步操作，时间复杂度为 $O(n)$ 。向无序列表中添加元素是 $O(1)$ ，因为只是简单地将新节点放在第一位。但有序列表的 search、remove 和 add 都需要进行遍历操作，即时间复杂度为 $O(n)$ 。
+
+这种链表实现方法在性能上和 Python 列表有差异，因为 Python 列表是通过数组实现的。
+
+<br/>
+
+## 递归
+
+#### 递归基础
+
+递归是解决问题的一种方法，它将问题不断分成更小的子问题，直到子问题可以用普通方法解决。通常情况下，递归会使用一个不停调用自己的函数。
+
+**计算数列之和**
+
+假设需要计算数字列表 [1, 3, 5, 7, 9] 的和：
+
+```python
+def listsum(numList):
+    theSum = 0
+    for i in numList:
+        theSum = theSum + i
+    return theSum
+```
+
+假设暂时没有 while 循环和 for 循环，数字列表 numList 的总和等于列表中的第一个元素 numList[0] 加上其余元素 numList[1:] 之和：
+
+$listSum(numList)=first(numList)+listSum(rest(numList))$
+
+```python
+def listsum(numList):
+    if len(numList) == 1:
+        return numList[0]
+        #函数的退出语句
+    else:
+        return numList[0] + listsum(numList[1:])
+        #递归函数调用自己
+```
+每次递归调用都是在解决一个更小的问题，直到问题本身不能再简化时，开始拼接所有子问题的答案，以解决最初的问题。
+
+**递归三原则**
+>1. 递归算法必须有基本情况，即停止递归的条件。
+
+>2. 递归算法必须改变其状态并向基本情况靠近。
+
+>3. 递归算法必须递归地调用自己。
+
+listsum 算法的基本情况就是列表长度为1；改变状态是指修改算法所用的某些数据，通常意味着数据以某种方式变小，这里即列表长度向1靠近；最后一条算法必须对自身调用在这里也满足。
+
+注意，递归通过调用自己来解决问题的逻辑并不是循环，而是将问题分解为更小、更容易解决的子问题。
+
+**将整数转换成任意进制的字符串**
+
+很多算法都能解决这个问题，但递归的方式非常巧妙。假设有一个字符序列对应前 base 个数，若要将一个小于 base 的数字转换成其对应的字符串，只需在序列中查找对应数字即可。一个很好的基本情况就是数字小于base 。
+
+1. 将原来的整数分成一系列仅有单数位的数；
+2. 通过查表将单数位的数转换成字符串；
+3. 连接得到的字符串，从而形成结果。
+
+接下来需要设法改变状态并向基本情况靠近，依然用整除 base 取余的方法，直到得到的商 n 小于 bast 取 n 。接下来实现将整数转换成 2~16 为进制基数的字符串。
+
+```python
+def toStr(n, base):
+    convertString = "0123456789ABCDEF"
+    if n < base:
+        return convertString[n]
+        #跳出函数
+    else:
+        return toStr(n//base, base) + convertString[n%base]
+```
+
+因为函数先进行递归再拼接余数，先得到的余数放在最后，得到的数顺序正确。
+
+#### 栈帧
+
+假设不拼接递归调用 toStr 的结果和 convertString 的查找结果，而是在进行递归调用之前把字符串压入栈中，如下所示：
+
+```python
+rStack = Stack()
+
+def toStr(n, base):
+    convertString = "0123456789ABCDEF"
+    if n < base:
+        rStack.push(convertString[n])
+    else:
+        rStack.push(convertString[n % base])
+        toStr(n//base, base)
+```
+
+当调用函数时，Python 分配一个栈帧来处理该函数的局部变量，当函数返回时，返回值就在栈的顶端，以供调用者访问。
