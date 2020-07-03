@@ -193,7 +193,7 @@ Scaffold 作用像是一个功能强大的布局容器，定义好了导航栏�
 | ----------------------- | ---------------- | ----------- |
 | appBar                  | 导航栏           | AppBar 对象 |
 | backgroundColor         | 组件背景颜色     | Color 对象  |
-| body                    | 组件内容         | Widget 对象 |
+| body                    | 设置组件内容         | Widget 对象 |
 | bottomNavigationBar     | 底部导航栏       | Widget 对象 |
 | bottomSheet             | 持久底部抽屉     | Widget 对象 |
 | drawer                  | 左侧抽屉         | Widget 对象 |
@@ -724,7 +724,7 @@ drawer: Drawer(
 
 <br/>
 
-#### 用户交互
+#### 高级用户交互
 
 **Checkbox 复选按钮**
 
@@ -733,10 +733,470 @@ bool selected = true;
 Center(
   child: Column(
     children: <Widget>[
-      Checkbox(value: selected, onchanged:(select)){
+      Checkbox(value: selected, onChanged:(select){
         print(select)；
-        
-      }
-    ]
-  )
+        setState((){
+          selected = select;
+        });
+      }),
+      Checkbox(value: true, onChanged: null),
+      Checkbox(value: false, onChanged: null),
+    ],
+  ),
+),
+```
+
+**Radio 单选按钮**
+
+```dart
+var radioValue = 1;
+Column(
+  children: <Widget>[
+    Radio(activeColor: Colors.red,value:1,groupValue:this.radioValue,
+    onChanged:(value){
+      setState((){
+        radioValue = value;
+      });
+    }),
+    Radio(value:2,groupValue: this.radioValue,onChanged:(value){
+      setState((){
+        radioValue = value;
+      });
+    }),
+    Radio(value:3,groupValue: this.radioValue,onChanged:(value){
+      setState((){
+        radioValue = value;
+      });
+    }),
+  ],
 )
+```
+
+**Switch 切换按钮**
+
+```dart
+import 'package:flutter/material.dart';
+class SwitchView extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return _SwitchViewState();
+  }
+}
+class _SwitchViewState extends State<SwitchView> {
+  bool selected = true;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Switch 组件"),
+      ),
+      body: Switch(value: selected, onChanged: (value){
+        setState((){
+          selected = value;
+        });
+      },)
+    );
+  }
+}
+```
+
+需要注意，只要是可进行用户交互的组件，都需要将其封装为状态，StatefulWidget 组件是只可以通过用户交互改变状态的组件。Switch 组件常用属性有 activeColor 开关开启的颜色，activeTrackColor 轨道颜色等等。
+
+**Slider 滑块按钮**
+
+```dart
+class _SliderViewState extends State<SliderView> {
+  double sliderValue = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(,
+      appBar: AppBar(
+        title: Text("Slider 组件")
+      ),
+      body: Slider(onChanged: (v){
+        setState((){
+          sliderValue = v;
+        });
+      },value:sliderValue)
+    );
+  }
+}
+```
+
+**日期时间选择弹窗**
+
+```dart
+import 'package:flutter/material.dart';
+
+class DatePickerView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("DatePicker 组件"),
+      ),
+      body: RaisedButton(child: Text("点我"),
+      onPressed: (){
+        showDatePicker(context: context, initialDate: DateTime.now(),
+        firstDate: DateTime(2009,5,1,11,21,33),
+        lastDate:DateTime(2029,5,1,11,21,33)).then((DateTime val) {print(val);
+        });
+        //showTimePicker(context: context,initialTime: TimeOfDay.now());
+        //弹出时间选择弹窗。
+      },)
+    );
+  }
+}
+```
+
+上面代码创建了一个功能按钮，当单击按钮时弹出日期选择组件，showDatePicker 方法将返回一个 Future 对象用来进行异步编程，当用户选择了一个日期后将会回调 then 方法中定义的回调函数。showDatePicker 方法中参数的意义：context 页面构建上下文，initialDate 初始化选中日期，first/lastDate 组件起始/结束日期，initialDatePickerMode 组件的 day, year 选择模式，locale 本地化设置。
+
+**弹窗组件**
+
+SimpleDialog 组件是 Flutter 提供的自定义弹窗组件，当用户触发了某些交互时间时，使用 showDialog 方法弹出窗口：
+
+```dart
+RaisedButton(
+  child: Text("弹出弹窗"),
+    onPressed: (){
+      showDialog(context: context,
+      child:
+      SimpleDialog(
+        contentPadding: EdgeInsets.all(10.0),
+        title: Text('我是标题'),
+        children:<Widget>[
+          Text('内容1’)，
+          Text('内容2'),
+          Text('内容3'),
+        ]
+      ));
+    }
+)
+```
+
+Flutter 专门封装了一个警告弹窗组件 AlertDialog :
+
+```dart
+RaisedButton(
+  child: Text("弹出窗口"),
+  onPressed: (){
+    showDialog(context: context,
+    child:
+    AlertDialog(
+      title: Text("警告"),content: Text("未满18岁禁止入内"),
+      actions:<Widget>[RaisedButton(child: Text("按钮1")),
+      RaisedButton(child: Text("按钮2"))],
+    ),);
+  }
+)
+```
+
+showModalBottomSheet 方法在当前页面中弹出自定义的底部抽屉视图：
+
+```dart
+RaisedButton(
+  child: Text("弹出窗口"),
+  onPressed: (){
+    showModalBottomSheet(
+      context: context,
+      builder:(BuildContext context) {
+        return Container(
+          height: 300.0,
+          child: Text("底部抽屉"),
+        );
+      },
+    ).then((val) {
+      print("收起");
+    });
+  }
+)
+```
+
+SnackBar 组件弹出底部通知栏，在默认情况下通知栏显示一段时间后自动消失:
+
+```dart
+Scaffold(
+  appBar: AppBar(
+    title: Text(widget.title),//?
+  ),
+  body: Builder(builder: (BuildContext context){
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children:<Widget>[
+          RaisedButton(child: Text("通知"),onPressed:(){
+            final snackBar = SnackBar(content: Text("这是一个 SnackBar"));
+            Scaffold.of(context).showSnackBar(snackBar);
+          },),
+        ],
+      ),
+    );
+  })
+);
+```
+
+**拓展/折叠面板**
+可以随用户的交互折叠或展开，通常会组合使用 ExpansionPanel 和 ExpansionPanelList：
+
+```dart
+ExpansionPanelList(
+  children:[
+    ExpansionPanel(
+      headerBuilder: (BuildContext context, bool isExpanded) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Text("拓展列表"),
+        );
+      },
+      body: Container(
+        padding: EdgeInsets.all(16),
+        width: double.infinity,
+        child: Text("选项A"),
+      ),
+      isExpanded: true //用来设置当前是否展开
+    ),
+    ExpansionPanel(
+      headerBuilder:(BuildContext context,bool isExpanded) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Text("拓展列表"),
+        );
+      },
+      body: Container(
+        padding: EdgeInsets.all(16),
+        width: double.infinity,
+        child: Text("选项A"),
+      ),
+      isExpanded: false
+    )
+  ],
+)
+```
+
+**Card 组件**
+
+```dart
+Card(
+  child: Container(
+    width: MediaQuery.of(context).size.width - 60,
+    height: 300,
+  ),
+  color :Colors.red,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(10)),
+    ),
+    borderOnForeground: false,
+    margin: EdgeInsets.all(30),
+    elevation: 15,
+)
+```
+
+```dart
+Card(
+    child: Container(
+      child: Text("捏脚",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              color: Colors.white, fontSize: 20, height: 3.5)),
+      width: MediaQuery.of(context).size.width - 80,
+      height: 100,
+    ),
+    color: Colors.blue[200],
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(10)),
+    ),
+    borderOnForeground: false,
+    margin: EdgeInsets.all(30),
+    elevation: 15,
+  ),
+  Card(
+    child: Container(
+      child: Text("捏腿",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              color: Colors.white, fontSize: 20, height: 3.5)),
+      width: MediaQuery.of(context).size.width - 80,
+      height: 100,
+    ),
+    color: Colors.orange[200],
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(10)),
+    ),
+    borderOnForeground: false,
+    margin: EdgeInsets.all(30),
+    elevation: 15,
+  ),
+  Card(
+    child: Container(
+      child: Text("敲背",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              color: Colors.white, fontSize: 20, height: 3.5)),
+      width: MediaQuery.of(context).size.width - 80,
+      height: 100,
+    ),
+    color: Colors.red[200],
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(10)),
+    ),
+    borderOnForeground: false,
+    margin: EdgeInsets.all(30),
+    elevation: 15,
+  )
+```
+
+通常情况下卡片会配合列表使用，并可以用 Divider 创建分割线。
+
+```dart
+Divider(
+  height: 2,
+  indent: 30,
+  endIndent: 30,
+  color: Colors.black26,
+),
+```
+
+**ToolTip** 组件：为其他组件或某个功能提供提示、解释。
+
+```dart
+Tooltip(
+  child: Text("工具提示"),
+  message: "提示信息",
+)
+```
+
+进度条组件有两种，分别是线形和圆形，并且可以配上动画渐变：
+
+```dart
+Column(
+  children: <Widget>[
+    LinearProgressIndicator(
+      backgroundColor: Colors.red,
+      value: 0.1,
+    ),
+    CircularProgressIndicator(
+      backgroundColor: Colors.red,
+      value: 0.2,
+      strokeWidth: 3,
+    )
+  ],
+)
+```
+
+<br/>
+
+#### 绘制组件
+
+实际开发中需要对组件的渲染进行特殊绘制或修饰，例如透明度、裁剪等等。
+
+**Opacity 组件**
+
+控制渲染内容的透明度，通过 opacity 属性设置透明度比例，取值范围 0~1 。
+
+```dart
+Opacity(
+  child: Image.asset("assets/iconImg.png"),
+  opacity: 0.5,
+)
+```
+
+#### 可滚动组件
+
+GridView 组件是非常强大的二维流式布局滚动视图，下面的代码实现了一个简单的 GridView 二维布局：
+
+```dart
+GridView.builder(itemCount: 10,gridDelegate:
+SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:4,mainAxisSpacing:10,
+childAspectRatio:1,crossAxisSpacing:10),itemBuilder:(BuildContext context,int index){
+  return Container(
+    color: Colors.red,
+    child: Text("第${index}个元素"),
+  );
+})
+```
+
+**Table 组件**：创建表格视图
+
+```dart
+Table(
+  border: TableBorder.all(
+    color: Colors.grey,
+    width: 2,
+    style: BorderStyle.solid,
+  ),
+  children: [
+    TableRow(children:[
+      TableCell(
+        child: Text("姓名"),
+      ),
+      TableCell(
+        child: Text("课程"),
+      )
+    ]),
+    TableRow(children:[
+      TableCell(
+        child: Text("超仑"),
+      ),
+      TableCell(
+        child: Text("Flutter 教程"),
+      )
+    ])
+  ]
+)
+```
+
+**Flow 流式布局组件**
+
+Flow 流式布局组件是一种更加灵活的布局组件，其允许开发者根据需要自行控制其子组件的布局位置：
+
+```dart
+import 'package:flutter/material.dart';
+
+class FlowView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Flow 组件"),
+      ),
+      body: Flow(
+        children: <Widget>[
+          Container(child: Text("Item1"),color:Colors.red[150],width:100,height:100,),
+          Container(child: Text("Item2"),color:Colors.orange[150],width:100,height:100),
+          Container(child: Text("Item3"),color:Colors.blue[150],width:100,height:100),
+        ],
+        delegate: _MyDelegate(),
+      )
+    );
+  }
+}
+
+class _MyDelegate extends FlowDelegate {
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    var x = 0.0;
+    var y = 100.0;
+    for (int i = 0; i < context.childCount; i++) {
+      var w = context.getChildSize(i).width + x;
+      if (w < context.size.width) {
+        context.paintChild(i,
+        transform: Matrix4.translationValues(x,y,0.0));
+        x = w;
+        y += 100;
+      }else {
+        x = 0;
+        y += context.getChildSize(i).height;
+        context.paintChild(i,
+        transform: Matrix4.translationValues(x,y,0.0));
+        x += context.getChildSize(i).width;
+      }
+    }
+  }
+  @override
+  bool shouldRepaint(FlowDelegate oldDelegate) {
+    return true;
+  }
+}
+```
+
+Flow 组件通过其 delegate 属性来控制布局，delegate 属性需要设置为继承于 FlowDelegate 类的实例对象。在 FlowDelegate 的子类中，通过重写 paintChildren 方法来灵活对布局进行控制十分方便。
