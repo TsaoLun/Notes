@@ -992,57 +992,97 @@ Card(
 ```
 
 ```dart
-Card(
-    child: Container(
-      child: Text("捏脚",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: Colors.white, fontSize: 20, height: 3.5)),
-      width: MediaQuery.of(context).size.width - 80,
-      height: 100,
-    ),
-    color: Colors.blue[200],
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(10)),
-    ),
-    borderOnForeground: false,
-    margin: EdgeInsets.all(30),
-    elevation: 15,
-  ),
-  Card(
-    child: Container(
-      child: Text("捏腿",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: Colors.white, fontSize: 20, height: 3.5)),
-      width: MediaQuery.of(context).size.width - 80,
-      height: 100,
-    ),
-    color: Colors.orange[200],
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(10)),
-    ),
-    borderOnForeground: false,
-    margin: EdgeInsets.all(30),
-    elevation: 15,
-  ),
-  Card(
-    child: Container(
-      child: Text("敲背",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: Colors.white, fontSize: 20, height: 3.5)),
-      width: MediaQuery.of(context).size.width - 80,
-      height: 100,
-    ),
-    color: Colors.red[200],
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(10)),
-    ),
-    borderOnForeground: false,
-    margin: EdgeInsets.all(30),
-    elevation: 15,
-  )
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title:'Dolphin 按摩室',
+    home:TutorialHome(),
+  ));
+}
+
+class TutorialHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //Scaffold是Material中的主要布局组件
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.menu),
+          tooltip: 'Navigation menu',
+          onPressed: null,
+        ),
+        title: Text('Dolphin 按摩室'),
+        actions: <Widget>[
+          IconButton(
+          icon: Icon(Icons.search),
+          tooltip: 'Search',
+          onPressed: null,
+          ),
+        ],
+      ),
+      //body占屏幕的大部分
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Card(
+              child: Container(
+                child: Text("捏脚",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 20, height: 3.5)),
+                width: MediaQuery.of(context).size.width - 80,
+                height: 100,
+              ),
+              color: Colors.blue[200],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              borderOnForeground: false,
+              margin: EdgeInsets.all(30),
+              elevation: 15,
+            ),
+            Card(
+              child: Container(
+                child: Text("捏腿",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 20, height: 3.5)),
+                width: MediaQuery.of(context).size.width - 80,
+                height: 100,
+              ),
+              color: Colors.orange[200],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              borderOnForeground: false,
+              margin: EdgeInsets.all(30),
+              elevation: 15,
+            ),
+            Card(
+              child: Container(
+                child: Text("敲背",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 20, height: 3.5)),
+                width: MediaQuery.of(context).size.width - 80,
+                height: 100,
+              ),
+              color: Colors.red[200],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              borderOnForeground: false,
+              margin: EdgeInsets.all(30),
+              elevation: 15,
+            )
+          ],
+        ),
+        ),
+      );
+  }
+}
 ```
 
 通常情况下卡片会配合列表使用，并可以用 Divider 创建分割线。
@@ -1200,3 +1240,367 @@ class _MyDelegate extends FlowDelegate {
 ```
 
 Flow 组件通过其 delegate 属性来控制布局，delegate 属性需要设置为继承于 FlowDelegate 类的实例对象。在 FlowDelegate 的子类中，通过重写 paintChildren 方法来灵活对布局进行控制十分方便。
+
+<br/>
+
+### Flutter实战
+
+#### 基础 Widget
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'My app',
+    home: MyScaffold(),
+  ));
+}
+
+class MyAppBar extends StatelessWidget {
+  MyAppBar({this.title});
+
+  final Widget title; //Widget子类中的字段常定义为final
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56.0,
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      //padding是简化版Container只能有一个子组件
+      decoration: BoxDecoration(color: Colors.blue[500]),
+      child: Row(
+        //Row是水平线性布局(linear layout)
+        children: <Widget>[
+          //列表项的类型是<Widget>
+          IconButton(
+            icon: Icon(Icons.menu),
+            tooltip: 'Navigation menu', //提供解释
+            onPressed: null, //null会禁用button
+          ),
+          Expanded(
+            //Expanded组件
+            child: title,
+          ),
+          IconButton(
+            icon: Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: null,
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class MyScaffold extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //Material是UI呈现的“一张纸”
+    return Material(
+        //采用垂直线性布局
+        child: Column(
+      children: <Widget>[
+        //能否不被状态栏挡住？
+        MyAppBar(
+          title: Text(
+            'Example title',
+            style: Theme.of(context).primaryTextTheme.headline6,
+          ),
+        ),
+        Expanded(
+            child: Center(
+          child: Text("Hello, world!"),
+        ))
+      ],
+    ));
+  }
+}
+```
+![avatar](images/demo1.png)
+
+使用 Material 组件：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title:'Flutter Tutorial',
+    home:TutorialHome(),
+  ));
+}
+
+class TutorialHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //Scaffold是Material中的主要布局组件
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.menu),
+          tooltip: 'Navigation menu',
+          onPressed: null,
+        ),
+        title: Text('Example title'),
+        actions: <Widget>[
+          IconButton(
+          icon: Icon(Icons.search),
+          tooltip: 'Search',
+          onPressed: null,
+          ),
+        ],
+      ),
+      //body占屏幕的大部分
+      body: Center(
+        child: Text("Hello, world!"),
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Add',
+        child: Icon(Icons.add),
+        onPressed: null,
+      ),
+    );
+  }
+}
+```
+![avatar](images/material.png)
+
+此时即 Material，应用栏有阴影，标题自动继承正确样式，还添加了一个浮动操作按钮。
+
+**处理手势**
+
+创建一个简单的按钮来了解检测输入手势的工作原理：
+
+```dart
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap:(){
+        print('MyButton was tapped!');
+      },
+      child: Container(
+        height: 36.0,
+        padding: const EdgeInsets.all(8.0),
+        margin: const EdgeInsets.symmetric(horizontal:8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5.0),
+          color: Colors.lightGreen[500],
+        ),
+        child: Center(
+          child: Text('Engage'),
+        ),
+      ),
+    );
+  }
+}
+```
+
+GestureDetector 组件检测用户做出的手势，当用户点击 Container 时会调用它的 onTap 回调。IconButton, RaisedButton, FloatingActionButton 都有一个 onPressed 回调可以在用户点击 widget 时被触发。
+
+目前为止我们只使用了无状态 widget，它们从父 widget 接受参数并存储在 final 型成员变量中。当一个 widget 被要求构建时，它使用这些存储的值作为参数来构建 widget。
+
+StatefulWidgets 是特殊的 widget，它知道如何生成 State 对象以保持状态，下面来看一下 RaisedButton：
+
+```dart
+class Counter extends StatefulWidget {
+  @override
+  _CounterState createState() => _CounterState();
+}
+
+class _CounterState extends State<Counter> {
+  int _counter = 0;
+
+  void _increment() {
+    setState(() {
+      _counter++;
+    });
+  }
+  
+  //在 _CounterState 的 build 方法中使用 _counter
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children:<Widget>[
+        RaisedButton(
+          onPressed: _increment,
+          child: Text('Increment'),
+        ),
+        Text('Count: $_counter'),
+      ],
+    );
+  }
+}
+```
+
+StatefulWidget 和 State 是单独的对象，具有不同的生命周期：Widget 是临时对象，用于构建当前状态下的应用程序，而 State 对象在多次调用 build() 之间保持不变，允许它们记住状态信息。
+
+在更复杂的应用程序中，widget 结构层次的不同部分会有不同的职责，例如一个 widget 呈现复杂用户界面，其目的是收集特定信息，另一个 widget 会使用该信息来更改整体的显示。
+
+在 Flutter 中，子 widget 到父 widget 是通过事件通信的，而父 widget 到子 widget 是通过状态，重定向这一流程的共同父元素是 State 。
+
+```dart
+class CounterDisplay extends StatelessWidget {
+  CounterDisplay({this.count}); //显示器组件
+
+  final int count; //定义final整形属性
+
+  @override
+  Widget build(BuildContext context) {
+    return Text('Count: $count'); //调用该属性构建widget
+  }
+}
+
+class CounterIncrementor extends StatelessWidget {
+  CounterIncrementor({this.onPressed}); //计数组件
+
+  final VoidCallback onPressed; //定义回调参数onPressed
+
+  @override
+  Widget build(BuildContext context) {
+    return RaisedButton(
+      onPressed: onPressed, //调用该属性构建widget
+      child: Text('Increment'),
+    );
+  }
+}
+
+class Counter extends StatefulWidget {
+  //创建StatefulWidget子类
+  @override
+  _CounterState createState() => _CounterState();
+  //重写createState()来创建状态对象，构建widget时会用到
+}
+
+class _CounterState extends State<Counter> {
+  //创建State子类
+  int _counter = 0;
+
+  void _increment() {
+    setState(() { //widget状态改变，状态对象调用setState()重绘widget
+      ++_counter;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    //定义build方法
+    return Row(children: <Widget>[
+      CounterIncrementor(onPressed: _increment),
+      CounterDisplay(count: _counter),
+    ]);
+  }
+}
+```
+
+注意我们创建了两个新的无状态 widget 清晰地分离了显示计数器 CounterDisplay 和更改计数器 CounterIncrementor 的逻辑，在前一示例的基础上实现责任分离，将复杂性逻辑封装在各 widget 中的同时保持父项的简单性。
+
+**整合**：一个购物应用程序，显示出售各种产品并维护购物车，先来定义 ShoppingListItem：
+
+```dart
+class Product {
+  const Product({this.name});
+  final String name;
+}
+
+typedef void CartChangedCallback(Product product, bool inCart);
+
+class ShoppingListItem extends StatelessWidget {
+  ShoppingListItem({Product product,this.inCart,this.onCartChanged}):
+  product=product,
+  super(key: new ObjectKey(product));
+  
+  //将构造函数中接收到的值存储在final成员变量中，供build使用
+  final Product product;
+  final bool inCart;
+  final CartChangedCallback onCartChanged;
+
+  Color _getColor(BuildContext context) {
+    return inCart ? Colors.black54:Theme.of(context).primaryColor;
+  }
+
+  TextStyle _getTextStyle(BuildContext context) {
+    if (!inCart) return null;
+
+    return TextStyle(
+      color: Colors.black54,
+      decoration: TextDecoration.lineThrough,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: (){
+        onCartChanged(product, !inCart);
+        //不直接修改inCart而是调用回调函数
+      },
+      leading: CircleAvatar(
+        backgroundColor: _getColor(context),
+        child: Text(product.name[0]),
+      ),
+      title:Text(product.name,style:_getTextStyle(context)),
+    );
+  }
+}
+```
+
+接下来是父 widget 存储可变状态示例：
+
+```dart
+class ShoppingList extends StatefulWidget {
+  ShoppingList({Key key,this.product}) : super(key: key);
+
+  final List<Product> product;
+
+  @override
+  _ShoppingListState createState() => _ShoppingListState();
+}
+
+class _ShoppingListState extends State<ShoppingList> {
+  Set<Product> _shoppingCart = Set<Product>();
+
+  void _handleCartChanged(Product product,bool inCart) {
+    setState((){
+      if (inCart){
+        _shoppingCart.add(product);
+      }else {
+        _shoppingCart.remove(product);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Shopping List'),
+      ),
+      body: ListView(
+        padding: EdgeInsets.symmetric(vertical:8.0),
+        children: widget.product.map((Product product) {
+          return ShoppingListItem(
+            product: product,
+            inCart: _shoppingCart.contains(product),
+            onCartChanged: _handleCartChanged,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+void main() {
+  runApp(MaterialApp(
+    title:'Shopping App',
+    home: ShoppingList(
+      product:<Product>[
+        Product(name:'Eggs'),
+        Product(name:'Flour'),
+        Product(name:'Chocolate chips'),
+      ],
+    ),
+  ));
+}
+```
