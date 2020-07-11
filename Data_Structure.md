@@ -1469,6 +1469,73 @@ class OrderedList:
 
 这种链表实现方法在性能上和 Python 列表有差异，因为 Python 列表是通过数组实现的。
 
+**电梯问题**
+
+```python
+class ele:
+    def __init__(self):
+        self.pos = 1
+        self.t1 = []
+        self.t2 = []
+        self.t3 = []
+    
+    def button(self,start,stop):
+        start = int(start)
+        stop = int(stop)
+        if self.t1 == []:
+            self.t1.append(start)
+            self.t1.append(stop)
+            (self.t1).sort
+        else:
+            if self.pos > start and self.pos > self.t1[-1]:
+                if stop < start:
+                    self.t1.append(start)
+                    self.t1.append(stop)
+                    (self.t1).sort
+                else:
+                    self.t2.append(start)
+                    self.t2.append(stop)
+                    (self.t2).sort
+            if self.pos > start and self.pos < self.t1[0]:
+                if stop < start:
+                    self.t2.append(start)
+                    self.t2.append(stop)
+                    (t2).sort
+                else:
+                    self.t3.append(start)
+                    self.t3.append(stop)
+                    (self.t3).sort
+            if self.pos < start and self.pos < self.t1[0]:
+                if stop > start:
+                    self.t1.append(start)
+                    self.t1.append(stop)
+                    (self.t1).sort()
+                else:
+                    self.t2.append(start)
+                    self.t2.append(stop)
+                    (self.t2).sort()
+            if self.pos < start and self.pos > self.t1[-1]:
+                if stop > start:
+                    self.t2.append(start)
+                    self.t2.append(stop)
+                    (self.t2).sort()
+                else:
+                    self.t3.append(start)
+                    self.t3.append(stop)
+                    (self.t3).sort()
+
+
+    def mov(self):
+        if self.pos > self.t1[-1]:
+            self.pos = self.t1.pop()
+            print("电梯位置: "+str(self.pos))
+        elif self.pos < self.t1[0]:
+            self.pos = self.t1.pop(0)
+            print("电梯位置: "+str(self.pos))
+```
+
+
+
 <br/>
 
 ## 递归

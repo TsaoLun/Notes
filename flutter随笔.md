@@ -2,6 +2,76 @@
 
 <br/>
 
+![avatar](images/complexui.png)
+<br/>
+**计数器 Demo**
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(new MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      //注意此处title参数要用于构造函数
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  _MyHomePageState createState() => new _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text(widget.title),
+      ),
+      body: new Center(
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new Text(
+              'You have pushed the button this many times:',
+            ),
+            new Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: new Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+```
+
 ### 基础组件
 
 #### Image 组件
@@ -78,10 +148,10 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 ```
 
-**File类**：需要导入 Dart 的 io 模块，即在头部添加 `import 'dart:io';`
+**file**：需要导入 Dart 的 io 模块，即在头部添加 `import 'dart:io';`
 
 ```dart
-Image.file(new File("/src/iconImg.jpeg"))
+Image.file(File("/src/iconImg.jpeg"))
 ```
 **network**：使用较多，方式如下
 
@@ -754,6 +824,8 @@ Column(
   children: <Widget>[
     Radio(activeColor: Colors.red,value:1,groupValue:this.radioValue,
     onChanged:(value){
+      //setState方法的作用是通知Flutter框架，有状态发生了改变
+      //Flutter框架收到通知后，会执行build方法来根据新的状态重新构建界面
       setState((){
         radioValue = value;
       });
@@ -1243,14 +1315,321 @@ Flow 组件通过其 delegate 属性来控制布局，delegate 属性需要设�
 
 <br/>
 
-### Flutter实战
+### Flutter 实战
 
 #### 基础 Widget
+
+**Widget 与 Element**
+
+Widget 并不是表示最终绘制在设备屏幕上的显示元素，只是UI元素的配置数据。实际上真正代表屏幕上显示元素的类是 Element ，而 Widget 可以对应多个 Element（同一份配置创建多个实例），Element 是通过 Widget 生成的。
+
+```dart
+@immutable
+abstract class Widget extends DiagnosticableTree {
+//继承自诊断树，提供调试信息
+  const Widget({ this.key });
+  final Key key;
+  //Key：key属性主要作用是在下一次build时复用旧widget
+
+  @protected
+  Element createElement();
+  //构建UI树时调用，生成对应节点的Element对象，属隐式调用
+
+  @override
+  String toStringShort() {
+    return ......
+  }
+
+  ...
+
+  static bool canUpdate(Widget oldWidget,Widget newWidget) {
+    return oldWidget.runtimeType == newWidget.runtimeType 
+    && oldWidget.key == newWidget.key;
+    //静态方法，是否用新widget去更新旧UI树上对应的Element配置
+  }
+}
+```
+注意，为 Widget 显式添加 key 可能会使 UI 在重新构建时变得高效，接下来的例子中，构建列表 UI 时会显式指定 Key 。
+
+**StatelessWidget**
+
+继承自 Widget 类，重写了 createElement() 方法：
+
+```dart
+@override
+StatelessElement createElement()=>StatelessWidget(this);
+```
+StatelessElement 间接继承自 Element 类，与 StatelessWidget 相对应（作为其配置数据）。
+
+StatelessWidget 用于不需要维护状态的场景，通常在 build 方法中通过嵌套其他 Widget 来构建 UI，过程中会递归的构建其嵌套的 Widget 。
+
+```dart
+//举个栗子
+class Echo extends StatelessWidget {
+  const Echo({
+    Key key,
+    @required this.text,
+    this.backgroundColor:Colors.grey,
+  }):super(key:key);
+//命名参数中必要参数要添加@required标注，利于静态代码分析器检查
+//在继承Widget时，第一个参数通常为Key
+//子Widget child,children参数放在参数列表最后
+//Widget属性应尽可能被声明为final防止被意外改变
+
+  final String text;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        color: backgroundColor,
+        child: Text(text),
+      )
+    );
+  }
+}
+```
+
+调用时通过如下方式：
+
+```dart
+Widget build(BuildContext context) {
+  return Echo(text:"hello world");
+}
+```
+
+**Context**
+
+build 方法有一个 context 参数，它是 BuildContext 类的一个实例，表示当前 widget 在 widget 树中的上下文，每个 widget 都会对应一个 context 对象（作为widget树上的节点），context 提供了从当前 widget 开始向上遍历 widget 树以及按照 widget 类型查找父级 widget 的方法。
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(
+  title: "Context test",
+  home:ContextRoute()));
+
+class ContextRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title:Text("Context测试"),
+      ),
+      body: Container(
+        child:Builder(builder:(context){
+          //在Widget树中向上查找最近的父级Scaffold widget
+          Scaffold scaffold = context.findAncestorWidgetOfExactType<Scaffold>();
+          //直接返回AppBar的title，此处实际上是Text("Context测试")
+          return (scaffold.appBar as AppBar).title;
+        })
+      )
+    );
+  }
+}
+```
+**StatefulWidget**
+
+StatefulWidget 也是继承了 Widget 类并重写了 createElement() 方法，但返回的 Element 对象不同；另外 StatefulWidget 类中添加了一个新的接口 createState() 。
+
+```dart
+//定义
+abstract class StatefulWidget extends Widget {
+  const StatefulWidget({Key key}) : super(key:key);
+
+  @override
+  StatefulElement createElement() => StatefulElement(this);
+  
+  @protected
+  State createState();
+}
+```
+StatefulElement 可能会多次调用 createState() 来创建(State)对象。
+
+createState() 用于创建和 StatefulWidget 相关的状态，它在 StatefulWidget 的生命周期中可能会被多次调用。例如当一个 StatefulWidget 同时插入到 widget 树的多个位置时，Flutter framework 就会调用该方法为每个位置生成一个独立的 State 实例，本质上就是一个 StatefulElement 对应一个 State 实例。 
+
+**State**
+
+一个 StatefulWidget 类会对应一个 State 类，State 表示与其对应的 StatefulWidget 要维护的状态，State 中的保存的状态信息可以：
+1. 在 widget 构建时可以被同步读取。
+2. 在 widget 生命周期中可以被改变。当 State 被改变时可以手动调用 setState() 通知 Flutter framework 状态发生改变，framework 收到消息后会重新调用其 build 方法构建 widget 树，从而达到更新 UI 的目的。
+
+State 中有两个常用属性：
+1. widget，它表示与该 State 实例关联的 widget 实例，这种关联并非永久的，因为在应用生命周期中，UI 树上某一个节点的 widget 实例在重新构建时可能会变化.
+2. context，StatefulWidget 对应的 BuidContext ，作用同 StatelessWidget 的 BuildContext 。
+
+**State 生命周期**
+
+通过实现一个计数器 widget 来理解生命周期：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: StateRoute()));
+
+class StateRoute extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return CounterWidget();
+  }
+}
+
+class CounterWidget extends StatefulWidget {
+  const CounterWidget({Key key, this.initValue: 0});
+  //接受initValue整形参数并设置默认值
+  final int initValue;
+
+  @override
+  _CounterWidgetState createState() => _CounterWidgetState();
+  //关联（创建）State对象
+}
+
+class _CounterWidgetState extends State<CounterWidget> {
+  int _counter;
+
+  @override
+  void initState() {
+    super.initState();
+    //初始化状态
+    _counter = widget.initValue;
+    print("initState");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("build");
+    return Scaffold(
+        body: Center(
+            child: FlatButton(
+                child: Text('$_counter'),
+                //点击后计数器自增
+                onPressed: () => setState(
+                      () => ++_counter),
+                )));
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    print("deactive");
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    print("dispose");
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    print("reassemble");
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("didChangeDependencies");
+  }
+}
+
+```
+![avatar](images/statelife.png)
+
+>注意：为什么build方法放在 State 中而不是 StatefulWidget 中？
+
+主要为了提高开发的灵活性，如果将 build() 放在 StatefulWidget 中有两个问题：
++ 状态访问不方便。如果 StatefulWidget 有很多状态，每次改变状态都要调用 build 方法，由于状态是保存在 State 中的，如果 build 方法在 StatefulWidget 中，那么 build 方法和状态分别在两个类中，由于构建用户界面需要依赖 State，所以 build 方法必须加一个 State 参数：
+
+```dart
+Widget build(BuildContext context, State state) {
+  //state.counter
+  ...
+}
+```
+
+这样只能将 State 所有状态声明为公开才能在 State 类外部访问，这也将导致对状态的修改将变得不可控。但如果将 build() 方法放在 State 中，**构建过程不仅可以直接访问状态**，也无需公开私有状态，非常方便。
++ 继承 StatefulWidget 不便：例如 Flutter 中有一个动画 widget 的基类 AnimateWidget ，继承自 StatefulWidget，AnimatedWidget 中引入了一个抽象方法 build(BuildContext context)，继承自 AnimatedWidget 的动画 widget 都要实现这个 build 方法。如果 StatefulWidget 已经有一个 build 方法，此时 **build 方法需要接收一个 state 对象**，意味着 AnimatedWidget 必须将自己的 State 对象提供给其子类，**因为子类需要在其 build 方法中调用父类的 build 方法。**
+
+```dart
+class MyAnimationWidget extends AnimatedWidget {
+  @override
+  Widget build(BuildContext context,State state) {
+    //子类要用到AnimatedWidget的状态对象_animatedWidgetState
+    //所以AnimatedWidget必须通过某种方式将其状态对象暴露给子类
+    super.build(context, _animatedWidgetState)
+  }
+}
+```
+
+这样不合理，因为 AnimatedWidget 的状态对象是 AnimatedWidget 内部实现细节，不应该暴露给外部。而且如果要将父类状态暴露给子类，那么必须得有一种传递机制，而这套机制无意义因为父子类之间状态的传递和子类本身逻辑是无关的。
+
+所以对于 StatefulWidget，将 build 方法放在 State 中可以给开发带来很大的灵活性。
+
+**在 Widget 树中获取 State 对象**
+
+由于 StatefulWidget 具体逻辑都在其 State 中，很多时候需要获取 StatefulWidget 对应的 State 对象来调用一些方法，比如 Scaffold 组件对应的状态类 ScaffoldState 中就定义了打开 SnackBar 的方法。我们有两种方法在子 widget 树中获取父级 State 。
+
+1. **通过 Context 获取**
+
+context 对象有一个 **findAncestorStateOfType()** 方法，可以从当前节点沿着 widget 树向上查找指定类型的 StatefulWidget 对应的 State 对象。
+
+```dart
+Scaffold(
+  appBar: AppBar(
+    title: Text("子树中获取State对象"),
+  ),
+  body: Center(child: Builder(builder: (context) {
+    return RaisedButton(
+      onPressed: () {
+        //查找父级最近的Scaffold对应的Scaffold对象
+        ScaffoldState _state =
+            context.findAncestorStateOfType<ScaffoldState>();
+        //调用ScaffoldState的showSnackBar来弹出SnackBar
+        _state.showSnackBar(SnackBar(
+          content: Text("我是SnackBar"),
+        ));
+      },
+      child: Text("显示SnackBar"),
+    );
+  })));
+```
+
+一般来说，如果 StatefulWidget 状态是私有的我们就不应该直接去获取其 State 对象，在 Flutter 开发中默认的约定：如果 StatefulWidget 的状态是希望暴露出的应当提供一个 of 静态方法来获取其 State 对象，如果不希望暴露则不提供。所以上例的 Scaffold 也提供了一个 of 方法，可以直接调用：
+
+```dart
+ScaffoldState _state = Scaffold.of(context);
+_state.showSnackBar(
+  SnackBar(
+    content: Text("我是SnackBar"),
+  ),
+);
+```
+
+2. 通过 Globalkey
+
+分成两步：先给目标 StatefulWidget 添加 GlobalKey ：
+
+```dart
+//定义一个 globalKey，由于要保持全局唯一性，我们使用静态变量存储
+static GlobalKey<ScaffoldState> _globalKey=GlobalKey();
+...
+Scaffold(
+  key: _globalKey,//设置key
+  ...
+)
+```
+如果当前 widget 是 StatefulWidget ，则可以通过 globalkey.currentState 来获取该 widget 对应的 state 对象。
+
+<br/>
+
+**练手：cookbook**
 
 ```dart
 import 'package:flutter/material.dart';
 
 void main() {
+  //runApp接受一个Widget参数
   runApp(MaterialApp(
     title: 'My app',
     home: MyScaffold(),
@@ -1602,5 +1981,1438 @@ void main() {
       ],
     ),
   ));
+}
+```
+
+**cookbook**
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appName = 'Custom Themes';
+
+    return MaterialApp(
+      title: appName,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.cyan[300],
+        accentColor: Colors.cyan[600],
+      ),
+      home: MyHomePage(
+        title: appName,
+      ),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title; //为什么要定义这个title？
+  final x = '                                 ';
+
+  MyHomePage({Key key, @required this.title}) : super(key: key);
+  //这个不能理解?是继承吗？
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Column(children: <Widget>[
+          Container(
+            alignment: Alignment.center,
+            margin: EdgeInsets.fromLTRB(100, 220, 100, 15),
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).accentColor,
+              borderRadius: BorderRadius.all(Radius.circular(20))),
+            child: Text(
+            'Text with \na background color.',
+            style: Theme.of(context).textTheme.headline6,
+          ),
+        ),
+        Text(x +'One More thing,\n\n'+ x+'I love dolphin.'),
+        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+      floatingActionButton: Theme(
+        data: Theme.of(context),
+        child: FloatingActionButton(
+          onPressed: null,
+          child: Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+```
+
+![avatar](/images/ild.png)
+
+**图片载入**
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var title = 'Cyberpunk 2077';
+
+    return MaterialApp(
+      title: title,
+      theme: ThemeData(
+        brightness: Brightness.dark
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+          backgroundColor: Colors.purple,
+        ),
+        body: Container(
+          child:Column(
+            children:<Widget>[
+        Container(
+        decoration: ShapeDecoration(
+          image: DecorationImage(
+            image: NetworkImage('https://image.gcores.com/3a216a61-c423-4379-84e4-64c1aaf6da15.jpg?'
+          'x-oss-process=image/resize,limit_1,m_lfit,w_1067/quality,q_90'),
+          fit: BoxFit.fitWidth),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomRight: Radius.circular(40),)),
+        ),
+        width: double.maxFinite,
+        height: 200,
+        alignment: Alignment.bottomCenter,
+        ),
+        Expanded(
+          child: Container(
+            color: Colors.grey[600],
+            transform: Matrix4.translationValues(-150,0,0),
+            height: 100,
+          ),
+          flex: 1,
+        ),
+        Expanded(
+          child: Container(
+            child: Text('\n\t\tNightCity Story',style: TextStyle(color: Colors.purple[300],
+            fontWeight: FontWeight.bold,fontSize: 30,),),
+          ),
+          flex: 6,
+        ),
+          Expanded(
+          child: Container(
+            child: Text('\n\n\n\n\n\t\t\t\t\tby Sliver Hand'),
+            transform: Matrix4.translationValues(150,-50,0),
+            width: 300,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+            ),
+            ),
+          flex: 4,)
+        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),),
+      backgroundColor: Colors.yellow,
+      primary: true,)
+    );
+  }
+}
+```
+
+![avatar](/images/cyberimage.png)
+
+接下来用占位符实现图片淡入效果：
+
+```dart
+import 'package:transparent_image/transparent_image.dart';
+//在yaml中添加依赖再flutter package get
+
+Stack( //替代Container，如何实现圆角？
+      children: <Widget>[
+        Center(child: CircularProgressIndicator(),),
+        //一直显示是否影响性能？
+        //组件在实际显示上不居中？设置Size又面临适配问题
+        Center(
+          child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, 
+          image: 'https://image.gcores.com/3a216a61-c423-4379-84e4-64c1aaf6da15.jpg?'
+      'x-oss-process=image/resize,limit_1,m_lfit,w_1067/quality,q_90'),
+        )
+      ],
+    )
+```
+
+设置缓存图片
+
+```dart
+import 'package:cached_network_image/cached_network_image.dart';
+...
+    String url =
+        'https://image.gcores.com/3a216a61-c423-4379-84e4-64c1aaf6da15.jpg?'
+        'x-oss-process=image/resize,limit_1,m_lfit,w_1067/quality,q_90';
+        ...
+        Center(
+                  child: CachedNetworkImage(
+                      placeholder: (context, url) =>
+                          CircularProgressIndicator(),
+                      //注意与flutter中文有区别,CachedNetworkImage的placeholder有变化
+                      //这种方法比在stack中一直搞个圈圈更好
+                      imageUrl:url),
+                ),
+```
+
+**基本 List**
+
+标准 ListView 构造函数适合仅包含少量条目的列表，使用内置 ListTile 来作为列表项：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Basic List';
+
+    return MaterialApp(
+        title: title,
+        home: Scaffold(
+          appBar: AppBar(
+            title: Text(title),
+          ),
+          body: ListView(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.map),
+                title: Text('Map'),
+              ),
+              ListTile(
+                leading: Icon(Icons.photo),
+                title: Text('Album'),
+              ),
+              ListTile(
+                leading: Icon(Icons.phone),
+                title: Text('Phone'),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+}
+```
+
+以上代码如何减少缩进？
+
+```dart
+void main() {
+  runApp(MaterialApp(title: title, home: BasicListHome()));
+}
+
+final title = 'BasicList';
+
+class BasicListHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: ListView(
+        children: <Widget>[
+          ListTile(
+            leading: Icon(Icons.map),
+            title: Text('Map'),
+          ),
+          ListTile(
+            leading: Icon(Icons.photo),
+            title: Text('Album'),
+          ),
+          ListTile(
+            leading: Icon(Icons.phone),
+            title: Text('Phone'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+![avatar](/images/listview.png)
+
+设置 scrollDirection 创建水平滚动的 List
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(title: title, home: BasicListHome()));
+}
+
+final title = 'HorizontalList';
+
+class BasicListHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Container(
+          margin: EdgeInsets.symmetric(vertical: 20.0),
+          height: 200.0,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: <Widget>[
+              Container(
+                width: 160,
+                color: Colors.red,
+              ),
+              Container(
+                width: 160,
+                color: Colors.blue,
+              ),
+              Container(
+                width: 160,
+                color: Colors.green,
+              ),
+              Container(
+                width: 160,
+                color: Colors.yellow,
+              ),
+              Container(
+                width: 160,
+                color: Colors.orange,
+              )
+            ],
+          ),
+        )
+      );
+  }
+}
+```
+
+**Demo**
+
+```dart
+//小象按摩师
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+void main() {
+  runApp(MaterialApp(title: title, home: BasicListHome()));
+}
+
+final title = 'HorizontalList';
+
+class BasicListHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: Colors.grey[800],
+        body: Column(
+          children: <Widget>[
+            Text('\n\t小象按摩室',
+                style: TextStyle(fontSize: 40, color: Colors.grey[300])),
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 20.0),
+              height: 150.0,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: <Widget>[
+                  Container(
+                    child: CustomButton(
+                      btnTitle: '捏脚\t\t\t\t\t',
+                      bcolor: Colors.yellow,
+                      onPressed: () =>
+                          launch("https://www.sohu.com/a/205548701_99960734"),
+                    ),
+                    margin: EdgeInsets.all(5),
+                  ),
+                  Container(
+                    child: CustomButton(
+                      btnTitle: '捏小腿\t\t\t\t\t',
+                      bcolor: Colors.blue,
+                      onPressed: () =>
+                          launch("https://m.sohu.com/a/137934555_734922"),
+                    ),
+                    margin: EdgeInsets.all(5),
+                  ),
+                  Container(
+                    child: CustomButton(
+                      btnTitle: '捏大腿\t\t\t\t\t',
+                      bcolor: Colors.green,
+                      onPressed: () => launch(
+                          "http://www.5201000.com/Memorial/ArticleList/925304041.html"),
+                    ),
+                    margin: EdgeInsets.all(5),
+                  ),
+                  Container(
+                    child: CustomButton(
+                      btnTitle: '敲背\t\t\t\t\t',
+                      bcolor: Colors.red,
+                      onPressed: () =>
+                        launch("https://www.sohu.com/a/31104123_162676"),
+                    ),
+                    margin: EdgeInsets.all(5),
+                  ),
+                  Container(
+                    child: CustomButton(
+                      btnTitle: '脚趾头\t\t\t\t\t',
+                      bcolor: Colors.orange,
+                      onPressed: () =>
+                          launch("https://www.sohu.com/a/140637863_756450"),
+                    ),
+                    margin: EdgeInsets.all(5),
+                  ),
+                ],
+              ),
+            )
+          ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+        )
+      );
+  }
+}
+
+class CustomButton extends StatelessWidget {
+  const CustomButton(
+      {Key key,
+      this.btnTitle = "",
+      this.onPressed,
+      this.width = 160,
+      this.bcolor = Colors.grey,
+      this.height = 130})
+      : super(key: key);
+
+  final String btnTitle; //按钮标题
+  final onPressed; //按钮点击回调
+  final double width; //按钮的宽度
+  final double height; //按钮的高度
+  final bcolor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      width: width,
+      child: FlatButton(
+        child: Text(
+          btnTitle,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+          ),
+        ),
+        onPressed: onPressed,
+      ),
+      decoration: BoxDecoration(
+          color: bcolor, borderRadius: BorderRadius.all(Radius.circular(20))),
+    );
+  }
+}
+
+```
+
+**长列表**
+
+使用 ListView.builder 构造函数，它将在列表项滚动到屏幕上时创建该列表项。
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<String>.generate(10000, (index) => "Item $index"),
+    //使用List.generate构造函数生成10000个字符串的列表
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<String> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+  //构造函数？ Key key? @required? super的是什么？
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Long list';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text('${items[index]}'),
+                //每行显示一个字符串
+              );
+            }),
+      ),
+    );
+  }
+}
+```
+
+**使用不同类型的子项创建列表**
+
+例如，列表中显示一个标题，后面跟着与该标题相关的几个子项，再后面是另一个标题。步骤依然是：
+
+1. 使用不同类型的数据创建数据源
+2. 将数据源转换为 Widget 列表
+
+```dart
+//对不起学到这里有点迷...暂时跳过
+```
+
+**创建 Grid List**
+
+```dart
+import 'package:flutter/material.dart';
+//创建一个包含100个widget的list
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: GridListHome(),
+    );
+  }
+}
+
+class GridListHome extends StatelessWidget {
+  final title = 'final Grid';
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: GridView.count(
+        crossAxisCount: 2,
+        children: List.generate(100, (index) {
+          return Center(
+            child: Text(
+              'Item $index',
+              style: Theme.of(context).textTheme.headline3,
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+```
+
+<br/>
+
+#### 处理 Taps
+
+在 Flutter 中使用 GestureDetector Widget 处理 Taps 
+
+1. 创建一个 button 。
+2. 把它包装在 GestureDector 中并提供 onTap 回调。
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Gesture Demo';
+
+    return MaterialApp(
+      title: title,
+      home: MyHomePage(title: title),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Center(child: MyButton()));
+  }
+}
+
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        final snackBar = SnackBar(
+          content: Text("Tap"),
+        );
+
+        Scaffold.of(context).showSnackBar(snackBar);
+        //呈现在
+      },
+      child: Container(
+        padding: EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+            color: Theme.of(context).buttonColor,
+            borderRadius: BorderRadius.circular(18)),
+            child: Text('My Button'),
+      ),
+    );
+  }
+}
+```
+
+![avatar](images/GD.png)
+
+**添加 Material 触摸水波效果**
+
+Flutter 提供了 InkWell Widget 来管理点击回调和水波动画
+
+1. 创建可点击的 Widget
+2. 包裹在 InkWell 中管理点击回调和水波动画
+
+遇到问题：无法在 InkWell 里设置按钮背景色
+解决方法一：外层套上 Material 以及 Ink 组件
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'InkWell Demo';
+
+    return MaterialApp(
+      title: title,
+      home: MyHomePage(title: title),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: MyButton(),
+      ),
+    );
+  }
+}
+
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Material(child:Ink(
+      child:InkWell(
+      onTap: () {
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text('Tap')));
+      },
+      child: Container(
+        padding: EdgeInsets.all(12.0),
+        child: Text('Falt Button',),
+      ),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    decoration: BoxDecoration(color:Colors.blue, borderRadius: BorderRadius.circular(20)),));
+  }
+}
+```
+
+可以同时实现圆角颜色和水波效果，就是嵌套有点多。其实 Material 自带 button 都有水波效果是因为它们都是对 **RawMaterialButton** 的包装定制，我们直接用这个:
+
+```dart
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return RawMaterialButton(
+      onPressed: () {},
+      child: Container(
+        padding: EdgeInsets.all(12.0),
+        child: Text('Falt Button',),
+      ),
+      fillColor: Colors.blue,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20)),
+    );
+  }
+}
+```
+
+**实现滑动关闭**
+
+1. 创建 item 列表 (类似长列表，将数据源转换为 List )
+2. 将 item 包装在一个 Dismissable Widget 中
+3. 提供滑动背景提示
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<String>.generate(20, (i) => "Item ${i + 1}"),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<String> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Dismissing Items';
+
+    return MaterialApp(
+        title: title,
+        home: Scaffold(
+            appBar: AppBar(
+              title: Text(title),
+            ),
+            body: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Dismissible(
+                    key: Key(item),
+                    onDismissed: (direction) {
+                      items.removeAt(index);
+
+                      Scaffold.of(context).showSnackBar(SnackBar(
+                        content: Text("$item dismissed"),
+                      ));
+                    },
+                    background: Container(color: Colors.red),
+                    child: ListTile(title: Text('$item')));
+              },
+            )
+          )
+        );
+  }
+}
+```
+
+#### 导航 Navigator
+
+使用 Navigator 完成页面跳转。
+
+1. 创建两个页面。
+2. 调用 Navigator.push 导航到第二个页面。
+3. 调用 Navigator.pop 返回第一个页面。
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Navigation Basics',
+    home: FirstScreen(),
+  ));
+}
+
+class FirstScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('First Screen'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Launch'),
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => SecondScreen()));
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Second Screen'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+```
+
+**给新页面传值**
+
+将点击的条目信息传递给新页面，这里我们创建一个 Todo List ，当点击一个 todo 时将导航至待办事项信息的新页面：
+
+1. 定义一个 Todo 类
+2. 显示 Todo List
+3. 创建一个显示待办事项详细的页面
+4. 导航并将数据传递到详情页
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+class Todo {
+  final String title;
+  final String description;
+
+  Todo(this.title, this.description);
+}
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Passing Data',
+    home: TodoScreen(
+        todolist: List.generate(
+            20,
+            (index) => Todo(
+                  'Todo $index',
+                  'A description of what needs to be done for Todo $index',
+                ))),
+  ));
+}
+
+class TodoScreen extends StatelessWidget {
+  final List<Todo> todolist;
+
+  TodoScreen({Key key, @required this.todolist}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: Text('TodoList')),
+        body: ListView.builder(
+          itemCount: todolist.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+                title: Text(todolist[index].title),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              DetailScreen(todo: todolist[index])));
+                });
+          },
+        ));
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  final Todo todo;
+
+  DetailScreen({Key key, @required this.todo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('${todo.title}'),
+        ),
+        body: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('${todo.description}'),
+        ));
+  }
+}
+```
+
+**从新页面返回数据**
+
+使用 Navigator.pop :
+
+1. 定义主页
+2. 添加打开选择页面的按钮
+3. 在选择页面上显示两个按钮
+4. 点击一个按钮时，关闭选择的页面
+5. 弹出 snackbar 以显示用户的选择
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Returning Data',
+    home: HomeScreen(),
+  ));
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Returning Data Demo'),
+      ),
+      body: Center(
+        child: SelectionButton(),
+      ),
+    );
+  }
+}
+
+class SelectionButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return RaisedButton(
+      onPressed: () {
+        _navigateAndDisplaySelection(context);
+      },
+      child: Text('Pick an option.'),
+    );
+  }
+
+  _navigateAndDisplaySelection(BuildContext context) async {
+    final result = await Navigator.push(
+        context, MaterialPageRoute(builder: (context) => SelectionScreen()));
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text('$result'),
+    ));
+  }
+}
+
+class SelectionScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pick an option'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  Navigator.pop(context, 'Yep!');
+                },
+                child: Text('Yep!'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  Navigator.pop(context, 'Nope!');
+                },
+                child: Text('Nope!'),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### 路由管理 Route
+
+路由 Route 在移动开发中通常指页面 Page，Route 在 Android 中页面对应的是 Activity ，在 iOS 中则对应 ViewController 。路由管理通过路由栈的 push 和 pop 进行操作。接下来基于“计数器”修改：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(new MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  _MyHomePageState createState() => new _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text(widget.title),
+      ),
+      body: new Center(
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new Text(
+              'You have pushed the button this many times:',
+            ),
+            new Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            //添加一个按钮
+            FlatButton(
+              child: Text("open new route"),
+              textColor: Colors.blue,
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return NewRoute();
+                }));
+              },
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: new Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+//创建新界面
+class NewRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("New route"),
+        ),
+        body: Center(
+          child: Text("This is new route"),
+        ));
+  }
+}
+```
+
+**MaterialPageRoute**：继承自 PageRoute 类，定义了路由构建，还可以针对不同平台实现不同的页面切换动画。通过 builder 参数进行回调，返回新路由实例。
+
+**Navigator**：路由管理组件，提供了打开和退出路由页的方法，通过一个栈来管理活动路由集合，通常当前页面作为栈顶路由。两种最常用的方法：
+1. Future push(BuildContext,Route route)
+将给定的路由入栈，即打开新页面，返回值是一个 Future 对象，用以接收新路由出栈时返回数据。
+2. bool pop(BuildContext,[result])
+将栈顶路由出栈，result 为页面关闭时返回上一个页面的数据。
+
+```dart
+//Navigator类中第一个参数为context的静态方法都对应一个Navigator的实例方法（以下两种等价）
+Navigator.push(BuildContext context, Route route)
+Navigator.of(context).push(Route route)
+```
+
+**路由传值**
+
+很多时候路由跳转时需要带一些参数，比如商品id，将地址返回到订单页等等。我们创建一个 TipRoute 路由，接受一个提示文本参数负责将传入它的文本显示在页面上，另外 TipRoute 中添加一个“返回”按钮以在返回上一个路由的同时带上返回参数：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: RouterTestRoute(),
+    );
+  }
+}
+
+class RouterTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: Text('首页')),
+        body: Center(
+          child: RaisedButton(
+            onPressed: () async {
+              //打开TipRoute并等待结果
+              var result = await Navigator.push(context,
+                  MaterialPageRoute(builder: (context) {
+                return TipRoute(
+                  text: "提示字符串",
+                );
+              }));
+              print('路由返回值:$result');
+            },
+            child: Text("打开提示页"),
+          ),
+        ));
+  }
+}
+
+class TipRoute extends StatelessWidget {
+  TipRoute({
+    Key key,
+    @required this.text,
+  }) : super(key: key);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("提示"),
+        ),
+        body: Padding(
+            padding: EdgeInsets.all(18),
+            child: Center(
+              child: Column(
+                children: <Widget>[
+                  Text(text),
+                  RaisedButton(
+                    onPressed: () => Navigator.pop(context, "我是返回值"),
+                    child: Text("返回"),
+                  )
+                ],
+              ),
+            )));
+  }
+}
+```
+
+点击返回按钮会有返回值而返回则没有。
+
+```
+I/flutter ( 5913): 路由返回值:null
+I/flutter ( 5913): 路由返回值:我是返回值
+```
+
+**路由表 routing table**
+
+要使用命名路由，必须先注册一个路由表，将名字与路由组件对应，定义如下：
+
+```dart
+Map<String, WidgetBuilder> routes;
+```
+
+它是一个 Map , Key 为路由的名字（字符串），value 是个 builder 回调函数，用于生成相应的路由 widget 。我们在通过路由名字打开新路由时，应用会根据路由名字在路由表中查找到对应的 WidgetBuilder 回调函数，然后调用该回调函数生成路由 widget 并返回。在对应的 onPressed 中只需调用 `Navigator.pushNamed(context, "widget_name");`
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(new MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      initialRoute: "/",
+      //名为"/"的路由作为应用的home(initialRoute即home)
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      routes: {
+        //路由表，首页路由
+        "/": (context) => MyHomePage(title: 'Flutter Demo'), 
+        "new_page": (context) => NewRoute()
+      },
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  _MyHomePageState createState() => new _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text(widget.title),
+      ),
+      body: new Center(
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            FlatButton(
+                child: Text("open new route"),
+                textColor: Colors.blue,
+                onPressed: () {
+                  Navigator.pushNamed(context, "new_page");
+                  //使用Navigator的pushNamed方法通过路由名打开路由页
+                })
+          ],
+        ),
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: new Icon(Icons.add),
+      ), 
+    );
+  }
+}
+
+class NewRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("New route"),
+        ),
+        body: Center(
+          child: Text("This is new route"),
+        ));
+  }
+}
+```
+
+**命名路由参数传递**
+
+先注册路由：
+
+```dart
+routes:{
+  "new_page":(context) => EchoRoute(),
+},
+```
+在路由页通过 RouteSetting 对象获取路由参数：
+
+```dart
+class EchoRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var args = ModalRoute.of(context).settings.arguments
+  }
+}
+```
+打开路由时传递参数
+
+```dart
+Navigator.of(context).pushNamed("new_page",arguments:"hi");
+//Navigator.pushNamed(context,"new_page",arguments:"hi");
+```
+**适配**
+
+将上面的 TipRoute 路由页注册到路由表中，以通过路由名打开它，由于 TipRoute 接受一个 text 参数，在不改变 TipRoute 源码的前提下进行适配：
+
+```dart
+MaterialApp(
+  ...
+  routes:(context){
+    return TipRoute(text: ModalRoute.of(context).settings.arguments);
+  }
+)
+```
+
+**路由生成钩子**
+
+实现打开每个路由页前判断用户的登录状态，需要用到 MaterilaApp 的 onGenerateRoute 属性，当调用 Navigator.pushNamed() 打开命名路由时，如果指定路由名在路由表中已注册，则会调用路由表中的 builder 函数来生成路由组件；如果没注册则调用 onGenerate 生成路由：
+
+```dart
+MaterilaApp(
+  ...
+  onGenerateRoute:(RouteSettings settings){
+    return MaterialPageRoute(builder:(context){
+      String routeName = settings.name;
+    });
+  }
+);
+//onGenerateRoute只会对命名路由生效
+```
+
+最好统一使用命名路由的管理方式，这将会带来如下好处：
+1. 语义化更明确。
+2. 代码更好维护（匿名路由必须在调用 Navigator.push 的地方创建新路由页）
+3. 可以通过 onGenerateRoute 做全局路由跳转的前置处理逻辑。
+
+#### 异常捕获 Error
+
+Java 和 OC 都是多线程模型的编程语言，任意一个线程触发异常且未被捕获时会导致整个进程退出。而 Dart 是单线程模型，以消息循环机制来运行，其中包含两个任务队列，一个是“微任务队列” microtask queue，另一个是“事件队列” event queue ，微任务队列的执行优先级高于事件队列。
+
+![avatar](images/queue.png)
+
+入口 main() 函数执行后，消息循环机制启动。首先会按照先进先出顺序逐个执行微任务队列中的任务，再执行事件任务，完毕后程序退出。在事件任务执行过程中也可以插入新的微任务和事件任务。
+
+在 Dart 中所有外部事件任务都在事件任务队列中，如IO、计时器、点击、以及绘制事件，而微任务通常来自 Dart 内部且非常之少。如果微任务太多，执行时间总和就越久，事件任务延迟也就越久（对 GUI 应用来说就会变卡）。可以通过 Future.microtask() 方法向微任务队列插入一个任务。
+
+在事件循环中当某个任务发生异常并没有被捕获时，程序并不会退出，当前任务的后续代码不会被执行，不会影响其他任务的执行。
+
+当布局发生越界或不合规错误时，Flutter 会弹出一个 ErrorWidget ，通过 FlutterError.reportError 方法上报，其中调用了 onError 回调，即 FlutterError 的一个静态属性，默认处理方法 dumpErrorToConsole 。我们也可以自己上报异常，只需提供一个自定义的错误处理回调即可：
+
+```dart
+void main(){
+  FlutterError.onError = (FlutterErrorDetails details){
+    reportError(details);
+  };
+  ...
+}
+```
+
+Flutter 中还有一些没有为我们捕获的异常，如调用空对象方法异常、Future 中的异常。在 Dart 中异常分为同步异常和异步异常，同步可以通过 trt/catch 捕获，而异步异常比较麻烦，需通过 runZoned() 方法，给执行对象指定一个 Zone (可用于捕获日志输出、Timer创建、微任务调度、未处理异常等等)。
+
+如果开发者提供了 onError 回调或指定了错误回调处理，就可以捕获 Flutter 中全部的错误：
+
+```dart
+void collecting(String line) {
+  ...//收集日志
+}
+
+void reportErrorAndlog(FlutterErrorDetails details) {
+  ...//上报错误和日志逻辑
+}
+
+FlutterErrorDetails makeDetails(Object obj, StackTrace stack) {
+  ...//构建错误信息
+}
+
+void main() {
+  FlutterError.onError=(FlutterErrorDetails details) {
+    reportErrorAndLog(details);
+  };
+  runZoned(
+    ()=>runApp(MyApp()),
+    zoneSpecification: ZoneSpecification(
+      print:(Zone self,ZoneDelegate parent,Zone zone,String line) {
+        collectLog(line);
+      },
+    ),
+    onError:(Object obj,StackTrace) {
+      var details = makeDetails(obj, stack);
+      reportErrorAndLog(details);
+    }
+  );
+}
+```
+<br/>
+
+#### 状态管理
+
+响应式编程永恒的主题——“状态管理”，即 StatefulWidget 的状态应该被谁管理：
++ 如果状态是用户数据，如复选框的选中状态、滑块位置，则状态最好由父 Widget 管理。
++ 如果状态是有关界面外观效果的，例如颜色、动画，那么状态最好由 Widget 本身管理。
++ 如果某一状态是不同 Widget 共享的则最好由他们共同点父 Widget 管理。
+
+在 Widget 内部管理封装状态会好一些，而父 Widget 管理会比较灵活。如果不确定如何管理优先选择灵活一点的父 Widget 管理。
+
+**Widget 管理自身状态**
+
+_TapboxAState 类：
++ 管理 TapboxA 的状态。
++ 定义 _active：确定盒子的当前颜色的布尔值。
++ 定义 _handleTap() 函数，该函数在点击该盒子时更新 _active，并调用 setState() 更新 UI 。
++ 实现 widget 的所有交互式行为。
+
+```dart
+class TapboxA extends StatefulWidget {
+  TapboxA({Key key}) : super(key:key);
+
+  @override
+  _TapboxAState createState() => _TapboxAState();
+}
+
+class _TapboxAState extends State<TapboxA> {
+  bool _active = false;
+
+  void _handleTap(){
+    setState((){
+      _active = !_active;
+    });
+  }
+
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      child: Container(
+        child: Center(
+          child: Text(
+            _active ? 'Active' : 'Inactive',
+            style: TextStyle(fontSize:32.0, color:Colors.white),
+          )
+        ),
+        width:200.0,
+        height:200.0,
+        decoration: BoxDecoration(
+          color: _active ? Colors.lightGreen[700] : Colors.grey[600],
+        )
+      )
+    );
+  }
 }
 ```
