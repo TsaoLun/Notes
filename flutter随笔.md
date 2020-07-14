@@ -3362,7 +3362,7 @@ void main() {
 ```
 <br/>
 
-#### 状态管理
+#### 组件状态管理
 
 响应式编程永恒的主题——“状态管理”，即 StatefulWidget 的状态应该被谁管理：
 + 如果状态是用户数据，如复选框的选中状态、滑块位置，则状态最好由父 Widget 管理。
@@ -3380,6 +3380,7 @@ _TapboxAState 类：
 + 实现 widget 的所有交互式行为。
 
 ```dart
+//Widget管理自身状态
 class TapboxA extends StatefulWidget {
   TapboxA({Key key}) : super(key:key);
 
@@ -3389,8 +3390,10 @@ class TapboxA extends StatefulWidget {
 
 class _TapboxAState extends State<TapboxA> {
   bool _active = false;
+  //与State绑定的属性变量，true时为绿，false为灰
 
   void _handleTap(){
+    //定义方法调用setState()以更新State
     setState((){
       _active = !_active;
     });
@@ -3399,6 +3402,7 @@ class _TapboxAState extends State<TapboxA> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _handleTap,
+      //注意不是_handletap()因为void，这里只要调用方法不需要返回值
       child: Container(
         child: Center(
           child: Text(
@@ -3416,3 +3420,609 @@ class _TapboxAState extends State<TapboxA> {
   }
 }
 ```
+
+**父 Widget 管理子 Widget 状态**
+
+对于父 Widget 来说，管理状态并告诉其子 Widget 何时更新是比较好的方式。下面，TapboxB 通过回调将其状态导出到其父组件，状态由父组件管理，而自身为 StatelessWidget 。
+
+ParentWidgetState 类：
++ 为 TapboxB 管理 _active 状态
++ 实现 _handleTapboxChanged() ，点击盒子时调用
++ 状态改变时，调用 setState() 更新 UI
+
+TapboxB 类：
++ 继承 StatelessWidget 类，因为所有状态都由其父组件处理。
++ 检测到点击时，会通知父组件。
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: TapboxB()));
+
+//------------ParentWidget-------------
+
+class ParentWidget extends StatefulWidget {
+  @override
+  _ParentWidgetState createState() => _ParentWidgetState();
+}
+
+class _ParentWidgetState extends State<ParentWidget> {
+  bool _active = false;
+
+  void _handleTapboxChanged(bool newValue) {
+    setState(() {
+      _active = newValue;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: TapboxB(
+        active: _active,
+        onChanged: _handleTapboxChanged,
+      ),
+    );
+  }
+}
+
+//-------------TapboxB-----------------
+
+class TapboxB extends StatelessWidget {
+  TapboxB({Key key, this.active: false, @required this.onChanged})
+      : super(key: key);
+
+  final bool active;
+  final ValueChanged<bool> onChanged;
+
+  void _handleTap() {
+    onChanged(!active);
+  }
+
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      child: Container(
+        child: Center(
+          child: Text(
+            active ? 'Active' : 'Inactive',
+            style: TextStyle(fontSize: 32.0, color: Colors.white),
+          ),
+        ),
+        width: 200.0,
+        height: 200.0,
+        decoration: BoxDecoration(
+            color: active ? Colors.lightGreen[700] : Colors.grey[600]),
+      ),
+    );
+  }
+}
+//The parameter 'onChanged' is required.？？？
+```
+
+**混合状态管理**
+
+组件自身管理一些内部状态，而父组件管理一些外部（通用）状态，即混合状态管理。
+
+在 TapboxC 中，手指按下时盒子周围会出现深绿色边框（内部状态），抬起时消失。点击完成后盒子颜色改变。TapboxC 将 _active 状态导出到父组件中，但在内部管理 _highlight 状态。此例有两个状态对象 _ParentWidgetState 和 _TapboxCState 。
+
+_ParentWidgetStateC 类：
++ 管理 _active 状态。
++ 实现 _handleTapboxChanged() ，当盒子被点击时调用。
++ 当点击盒子并且 _active 状态改变时调用 setState() 更新 UI 。
+
+_TapboxCState 对象：
++ 管理 _highlight 状态
++ GestureDetector 监听所有 tap 事件。点下时添加深绿色边框高亮，释放时移除。
++ 当按下、抬起、或取消点击时更新 _highlight 状态，调用 setState() 更新 UI 。
++ 点击时将状态改变传递给父组件。
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: TapboxC()));
+
+//------------ParentWidgetC-----------
+
+class ParentWidgetC extends StatefulWidget {
+  @override
+  _ParentWidgetCState createState() => _ParentWidgetCState();
+}
+
+class _ParentWidgetCState extends State<ParentWidgetC> {
+  bool _active = false;
+  //定义并赋值State的参数_active
+
+  void _handleTapboxChanged(bool newValue) {
+    //定义更新State的方法
+    setState(() {
+      _active = newValue;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    //重写build方法，返回子类
+    return Container(
+      child: TapboxC(
+        active: _active,
+        onChanged: _handleTapboxChanged,
+      ),
+    );
+  }
+}
+
+//------------TapboxC------------------
+
+class TapboxC extends StatefulWidget {
+  TapboxC({Key key, this.active: false, @required this.onChanged})
+      : super(key: key);
+  //构造函数，继承wigket时第一个参数通常为key,required为必要参数
+
+  final bool active;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  _TapboxCState createState() => _TapboxCState();
+}
+
+class _TapboxCState extends State<TapboxC> {
+  bool _highlight = false;
+  //定义State参数_highlight
+
+  void _handleTapDown(TapDownDetails details) {
+    //定义更新State的方法I,但details是什么？
+    setState(() {
+      _highlight = true;
+    });
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    //更新State的方法II，疑惑detail参数
+    setState(() {
+      _highlight = false;
+    });
+  }
+
+  void _handleTapCancel() {
+    //更新State的方法III，不需要参数？
+    setState(() {
+      _highlight = false;
+    });
+  }
+
+  void _handleTap() {
+    widget.onChanged(!widget.active);
+    //更新父类State
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    //按下时添加绿色边框，抬起时取消高亮
+    return GestureDetector(
+      //处理按钮事件
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTap: _handleTap,
+      onTapCancel: _handleTapCancel,
+      child: Container(
+        child: Center(
+          child: Text(widget.active ? 'Active':'Inactive',
+            style: TextStyle(fontSize: 32.0,color: Colors.white),),
+        ),
+        width: 200.0,
+        height: 200.0,
+        decoration: BoxDecoration(
+          color: widget.active ? Colors.lightGreen[700]:Colors.grey[600],
+          border: _highlight ? Border.all(color: Colors.teal[700],
+          width: 10.0):null,
+        ),
+      ),
+    );
+  }
+}
+```
+
+实现的时候都存在问题：子类无法调用父类的setState()
+
+
+**单选开关和复选框**
+
+```dart
+class SwitchAndCheckBoxTestRoute extends StatefulWidget {
+  @override
+  _SwitchAndCheckBoxTestRouteState createState() => _SwitchAndCheckBoxTestRouteState();
+}
+
+class _SwitchAndCheckBoxTestRouteState extends State<SwitchAndCheckBoxTestRoute> {
+  bool _switchSelected = true;//维护单选开关状态
+  bool _checkboxSelected = true;//维护复选框状态
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Switch(
+          value: _switchSelected,//当前状态
+          onChanged:(value){
+            //重新构建页面
+            setState((){
+              _switchSelected=value;
+            });
+          }
+        ),
+        Checkbox(
+          value: _checkboxSelected,
+          activeColor: Colors.red,//选中的颜色
+          onChanged:(value){
+            setState((){
+              _checkboxSelected=value;
+            });
+          }
+        )
+      ]
+    );
+  }
+}
+```
+
+通过 Switch 和 Checkbox 看到，它们本身是与状态（是否选中）关联的，但却不是自己来维护状态，而是需要父组件来管理，当用户点击时通过事件通知给父组件。这样是合理的，因为 Switch 和 Checkbox 是否选中本就和用户数据关联，而这些数据也不可能是它们的私有状态。在定义组件时应该思考哪种状态管理方式最合理。
+
+**输入框和表单**
+
+```dart
+//布局
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: Homepage()));
+
+class Homepage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(
+      title: Text('HomePage'),
+    ),
+    body:Center(child:Column(
+      children: <Widget>[
+        TextField(
+          decoration: InputDecoration(
+            labelText: "用户名",
+            hintText: "用户名或邮箱",
+            prefixIcon: Icon(Icons.person)
+          ),
+        ),
+        TextField(
+          decoration: InputDecoration(
+            labelText: "密码",
+            hintText: "您的登录密码",
+            prefixIcon: Icon(Icons.lock)
+          ),
+        )
+      ],
+    )));
+  }
+}
+```
+
+获取输入内容有两种方式：
+1. 定义两个变量，用于保存用户名和密码，在 onChanged 触发时各自保存一下输入内容。
+2. 通过 controller 直接获取。
+
+监听文本变化也有两种方式：
+1. 设置 onChange 回调：
+
+```dart
+TextField(
+  autofocus: true,
+  onChanged:(v){
+    print("onChanged: $v")
+  }
+)
+```
+
+2. 通过 controller 监听:
+
+```dart
+@override
+void initState(){
+  //监听输入改变
+  _unameController.addListener((){
+    print(_unameController.text);
+  });
+}
+```
+
+onChanged 是专门用于监听文本变化的，而 controller 功能多一些，还可以设置默认值、选择文本：
+
+```dart
+//创建一个controller
+TextEditingController _selectionController = TextEditingController();
+//设置默认值，并从第三个字符开始选中
+_selectionController.text = "hello world!";
+_selectionController.selection = TextSelection(
+  baseOffset: 2,
+  extentOffset: _selectionController.text.length
+);
+//设置controller
+TextField(
+  controller: _selectionController,
+)
+```
+
+控制焦点：
+
+```dart
+class FocusTestRoute extends StatefulWidget {
+  @override
+  _FocusTestRouteState createState() => _FocusTestRouteState();
+}
+
+class _FocusTestRouteState extends State<FocusTestRoute> {
+  FocusNode focusNode1 = FocusNode();
+  FocusNode focusNode2 = FocusNode();
+  FocusScopeNode focusScopeNode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(children: <Widget>[
+          TextField(
+            autofocus: true,
+            focusNode: focusNode1,
+            decoration: InputDecoration(labelText: "input1"),
+          ),
+          TextField(
+              focusNode: focusNode2,
+              decoration: InputDecoration(labelText: "input2")),
+          Builder(builder: (ctx) {
+            return Column(children: <Widget>[
+              RaisedButton(
+                child: Text("移动焦点"),
+                onPressed: () {
+                  //将焦点从第一个TextField移到第二个
+                  //FocusScope.of(context).requestFocus(focusNode2);
+                  if (null == focusScopeNode) {
+                    focusScopeNode = FocusScope.of(context);
+                  }
+                  focusScopeNode.requestFocus(focusNode2);
+                },
+              ),
+              RaisedButton(
+                  child: Text("隐藏键盘"),
+                  onPressed: () {
+                    //当所有编辑框都是去焦点时键盘会收起
+                    focusNode1.unfocus();
+                    focusNode2.unfocus();
+                  })
+            ]);
+          })
+        ]));
+  }
+}
+```
+
+**表单 Form**
+
+Form 继承自 StatefulWidget 对象，对应的状态类为 FormState 。
+
+Form 的子孙元素为 FormField 类型，是一个抽象类，FormState内部通过它们来完成操作，FormField 几个属性的定义如下：
+
+```dart
+const FormField({
+  ...
+  FormFieldSetter<T> onSaved,//保存回调
+  FormFieldValidator<T> validator,//验证回调
+  T initialValue,//初始值
+  bool autovalidate = false,//是否自动校验
+})
+```
+
+**FormState**
+
+FormState 为 Form 的 State 类，可以通过 Form.of() 或 GlobalKey 获得，可以通过它来对 Form 的子孙 FormField 进行统一操作。
++ FormState.validate()：此方法会调用 Form 子孙 FormField 的 validate 回调，如果有一个校验失败则返回 false 。
++ FormState.save()：此方法会调用 Form 子孙 FormField 的 save 回调，用于保存表单内容。
++ FormState.reset()：此方法会将 FormField的内容清空。
+
+示例，登录界面提交前校验，用户名不能为空且密码不能小于6位：
+
+```dart
+class FormTestRoute extends StatefulWidget {
+  @override
+  _FormTestRouteState createState() => _FormTestRouteState();
+}
+
+class _FormTestRouteState extends State<FormTestRoute> {
+  TextEditingController _unameController = TextEditingController();
+  TextEditingController _pwdController = TextEditingController();
+  GlobalKey _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title:Text("Form Test"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical:16.0,horizontal:24.0),
+        child:Form(
+          key:_formKey,//设置globalKey用于后面获取FormState
+          autovalidate:true,//开启自动校验
+          child:Column(
+            children:<Widget>[
+              TextFormField(
+                autofocus: true,
+                controller: _unameController,
+                decoration: InputDecoration(
+                  labelText:"用户名",
+                  hintText:"用户名或邮箱",
+                  icon: Icon(Icons.person)
+                ),
+                //校验用户名
+                validator:(v){
+                  return v.trim().length > 0?
+                  null:"用户名不为空";
+                }
+              ),
+              TextFormField(
+                controller: _pwdController,
+                decoration: InputDecoration(
+                  labelText:"密码",
+                  hintText:"您的登录密码",
+                  icon:Icon(Icons.lock)
+                ),
+                obscureText: true,
+                //校验密码
+                validator:(v){
+                  return v.trim().length>5?null:"密码不能小于6位";
+                }
+              ),
+              //登录按钮
+              Padding(
+                padding:const EdgeInsets.only(top:28.0),
+                child:Row(
+                  children:<Widget>[
+                    Expanded(
+                      child:RaisedButton(
+                        padding:EdgeInsets.all(15.0),
+                        child:Text("登录"),
+                        color:Theme.of(context).primaryColor,
+                        textColor:Colors.white,
+                        onPressed:(){
+                        //不能Form.of(context)因为context不对
+                        //通过_formKey.currentState获取FormState后调用validate()校验
+                          if((_formKey.currentState as FormState).validate()){
+                            //验证通过
+                          }
+                        }
+                      )
+                    )
+                  ]
+                )
+              )
+            ]
+          )
+        )
+      )
+    );
+  }
+}
+```
+
+注意，登录按钮的 onPressed 方法不能通过 Form.of(context) 获取，因为此处的 context 为 FormTestRoute 的 context，而Form.of(context) 是根据指定 context 向根去查找，而 FormState 在 FormTestRoute 的子树中。正确的做法是通过 Builder 来构建登录按钮，Builder 会将 widget 节点的 context 作为回调参数。
+
+```dart
+Expanded(
+  //通过Builder来获取RaisedButton所在widget树的真正context(Element)
+  child:Builder(builder:(context){
+    return RaisedButton(
+      ...
+      onPressed:(){
+        //由于本widget也是Form的子代widget，所以通过以下方式获取FormState
+        if(Form.of(context).validate()){
+          //验证通过提交数据
+        }
+      }
+    );
+  })
+)
+```
+其实 context 是操作 Widget 所对应的 Element 的一个接口，由于 Widget 树对应的 Element 都是不同的，所有 context 也不同，在使用时需要注意 of(context) 的 context 是否正确。
+
+#### 布局类组件
+
+Flutter 没有对 Widget 进行分类，这里进行功能区分以方便讨论与记忆。
+
+不同的布局类组件对子组件排版(layout)方式不同，Element 是最终的绘制树，是通过 Widget.createElement() 创建的，Widget 其实就是 Element 的配置数据。
+
+Widget 分为三类，没有子节点的(如Image)，包含一个子Widget（ConstrainedBox)，包含多个子Widget的(一般都有children参数如Row,Column和Stack)。
+
+布局类组件就是直接或间接继承 MultiChildRenderObjectWidget 的 Widget，RenderObjectWidget 的类中定义了创建、更新 RenderObject 的方法，子类必须实现他们。
+
+对于布局类组件来说，布局算法都是通过对应的 RenderObject 对象来实现的，比如 Stack (层叠布局) 对应的 RenderObject 就是 RenderStack ，而层叠布局的实现在 RenderStack 中。
+
+#### 容器类组件
+
+容器类 Widget 和 布局类 Widget 都作用于其子 Widget ，不同的是：
++ 布局类通常接收一个 Widget 数组，直接或间接继承自 MultiChildRenderObjectWidget；而容器类 Widget 一般只需要接收一个子 Widget (直接间接继承或包含 SingleChildRenderObjectWidget)
++ 布局类 Widget 是按照一定排列方式来对其子 Widget 进行排列，而容器类 Widget 一般只包含子 Widget 并对其添加一些修饰、变换或限制。 
+
+#### 滚动组件
+
+
+#### 功能组件
+
+不会影响 UI 布局及外观的 Widget，通常具有一定的功能，如事件监听、数据存储等，比如 FocusScope 焦点控制，PageStorage 数据存储，NotificationListener 事件监听等等。
+
+<br/>
+
+#### 事件处理与通知
+
+Flutter 中的手势系统有两个独立的层，第一层为原始指针事件 pointer，它描述类屏幕上指针（触摸、鼠标和触控笔）的位置和移动。第二层为手势，描述由一个或多个指针移动组成的语义动作，比如拖动、缩放、双击等。
+
+先来介绍原始指针事件(Pointer Event，在移动设备上通常为触摸事件)，在移动端各平台或 UI 系统的原始指针事件模型基本都是一致，即：一次完整的事件分为三个阶段：手指按下、手指移动、手指抬起。
+
+当指针按下时，Flutter 会对应用程序执行命中测试（Hit Test），以确定指针与屏幕接触的位置存在哪些组件，指针按下事件被分发到由命中测试发现的最内部的组件，然后从那里开始，事件会在组件树中向上冒泡，从最内部的组件被分发到组件树根的路径上的所有组件。
+
+Flutter 可以使用 Listener 来监听原始触摸事件，功能性组件 Listener 的构造函数定义：
+
+```dart
+Listener({
+  Key key,
+  this.onPointerDown, //手指按下回调
+  this.onPointerMove, //手指移动回调
+  this.onPointerUp,   //手指抬起回调
+  this.onPointerCancel,//触摸事件取消回调
+  this.behavior = HitTestBehavior.deferToChild,
+  //在命中测试期间如何表现，决定子组件如何相应命中测试
+  Widget child
+})
+```
+来看一下示例：
+
+```dart
+...
+//定义一个状态，保存当前指针位置
+...
+Listener(
+  child: Container(
+    alignment:Alignment.center,
+    color:Colors.blue,
+    width:300.0,
+    height:150.0,
+    child:Text(_event?.toString()??"",style:TextStyle(color:Colors.white)),
+  ),
+  onPointerDown:(PointerDownEvent event)=>setState(()=>_event=event),
+  onPointerMove:(PointerMoveEvent event)=>setState(()=>_event=event),
+  onPointerUp:(PointerUpEvent event)=>setState(()=>_event=event),
+),
+```
+
+这里参数 PointerDownEvent，PointerMoveEvent，PointerUpEvent 都是 PointerEvent 的子类，PointerEvent 类中包括当前指针的一些信息：
++ position：鼠标相对于全局坐标的偏移。
++ delta：两次指针移动事件(PointerMoveEvent)的距离。
++ pressure：按压力度
++ orientation：指针移动方向，角度值
+
+**忽略 PointerEvent**
+假如不想让某个子树响应 PointerEvent ，可以使用 IgnorePointer 和 AbsorbPointer，这两个组件都能阻止子树接受指针事件（AbsorbPointer 本身会参与命中测试，而 IgnorePointer 不会）
+
+```dart
+Listener(
+  child:AbsorbPointer(
+    child:Listener(
+      child:Container(
+        color: Colors.red,
+        width: 200.0,
+        height: 100.0,
+      ),
+      onPointerDown: (event)=>print("in"),
+    ),
+  ),
+  onPointerDown: (event)=>print("up"),
+)
+```
+点击 Container 时，由于它在 AbsorbPointer 子树上故不会响应指针事件，日志不会输出 "in"，但 AbosrbPointer 本身是可以接收指针事件的，所以会输出 "up"，如果换成 IgnorePointer 则两个都不会输出。
+
+#### 手势识别
+
