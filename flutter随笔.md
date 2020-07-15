@@ -735,65 +735,6 @@ DropdownButtonFormField(items: [
 
 <br/>
 
-#### 布局技术
-
-**Container** 组件是非常方便的单组件布局容器，如果其子组件尺寸小于 Container 本身就可以使用 alignment 属性控制其子组件的对齐方式。
-
-在使用 alignment 属性控制组件对齐的前提下，可以设置 padding 属性来实现子组件相对 Container 边缘的边距调整，例如将 padding 属性设置如下:
-
-```dart
-padding: EdgeInsets.only(left: 20,top: 60, right: 100)
-```
-
-若要对整个 Container 组件进行三维变换布局，则可以对其 transform 属性进行设置，例如：
-
-```dart
-transform: Matrix4.rotationZ(3.14/16)
-```
-
-**Padding** 组件是简化版的 Container 组件，其中只有一个子组件，通过设置 padding 属性来约束其内边距
-
-```dart
-Padding(padding: EdgeInsets.only(left:20,top:60),child:Text("Container",style:TextStyle()));
-```
-
-**Center** 组件是简化版的 Container 组件，其将内部组件直接进行居中布局，例如：
-
-```dart
-Center(child: Text("Container"),);
-//widthFactor和heightFactor属性分别设置组件宽度和高度是子组件的多少倍
-```
-**FittedBox** 组件通过 alignment 和 fit 管理其子组件的对齐模式和缩放模式。
-
-**ConstrainedBox** 布局也是一种特殊的 Container 组件，可以对子组件进行尺寸约束：
-
-```dart
-return new Center(
-  child: new ConstrainedBox(
-    constraints: BoxConstraints(maxWidth:100,maxHeight:100),
-    child: Container(
-      color: Colors.red,
-    ),
-  ),
-);
-```
-
-**抽屉布局** 之前学到可以通过 Scaffold 脚手架添加抽屉视图，即使用 Column 布局创建抽屉视图。在 Flutter 组件库中还提供了一个 Drawer 组件，与 ListView 组件组合进行使用：
-
-```dart
-drawer: Drawer(
-  child: ListView(
-    children:<Widget>[
-      Text("列表选项1"),
-      Text("列表选项2"),
-      Text("列表选项3"),
-    ],
-  ),
-)
-````
-
-<br/>
-
 #### 高级用户交互
 
 **Checkbox 复选按钮**
@@ -3941,6 +3882,66 @@ Widget 分为三类，没有子节点的(如Image)，包含一个子Widget（Con
 
 对于布局类组件来说，布局算法都是通过对应的 RenderObject 对象来实现的，比如 Stack (层叠布局) 对应的 RenderObject 就是 RenderStack ，而层叠布局的实现在 RenderStack 中。
 
+<br/>
+
+**Container** 组件是非常方便的单组件布局容器，如果其子组件尺寸小于 Container 本身就可以使用 alignment 属性控制其子组件的对齐方式。
+
+在使用 alignment 属性控制组件对齐的前提下，可以设置 padding 属性来实现子组件相对 Container 边缘的边距调整，例如将 padding 属性设置如下:
+
+```dart
+padding: EdgeInsets.only(left: 20,top: 60, right: 100)
+```
+
+若要对整个 Container 组件进行三维变换布局，则可以对其 transform 属性进行设置，例如：
+
+```dart
+transform: Matrix4.rotationZ(3.14/16)
+```
+
+**Padding** 组件是简化版的 Container 组件，其中只有一个子组件，通过设置 padding 属性来约束其内边距
+
+```dart
+Padding(padding: EdgeInsets.only(left:20,top:60),child:Text("Container",style:TextStyle()));
+```
+
+**Center** 组件是简化版的 Container 组件，其将内部组件直接进行居中布局，例如：
+
+```dart
+Center(child: Text("Container"),);
+//widthFactor和heightFactor属性分别设置组件宽度和高度是子组件的多少倍
+```
+
+**FittedBox** 组件通过 alignment 和 fit 管理其子组件的对齐模式和缩放模式。
+
+**ConstrainedBox** 布局也是一种特殊的 Container 组件，可以对子组件进行尺寸约束：
+
+```dart
+return new Center(
+  child: new ConstrainedBox(
+    constraints: BoxConstraints(maxWidth:100,maxHeight:100),
+    child: Container(
+      color: Colors.red,
+    ),
+  ),
+);
+```
+
+**抽屉布局** 之前学到可以通过 Scaffold 脚手架添加抽屉视图，即使用 Column 布局创建抽屉视图。在 Flutter 组件库中还提供了一个 Drawer 组件，与 ListView 组件组合进行使用：
+
+```dart
+drawer: Drawer(
+  child: ListView(
+    children:<Widget>[
+      Text("列表选项1"),
+      Text("列表选项2"),
+      Text("列表选项3"),
+    ],
+  ),
+)
+````
+
+<br/>
+
 #### 容器类组件
 
 容器类 Widget 和 布局类 Widget 都作用于其子 Widget ，不同的是：
@@ -4024,5 +4025,428 @@ Listener(
 ```
 点击 Container 时，由于它在 AbsorbPointer 子树上故不会响应指针事件，日志不会输出 "in"，但 AbosrbPointer 本身是可以接收指针事件的，所以会输出 "up"，如果换成 IgnorePointer 则两个都不会输出。
 
-#### 手势识别
+**GestureDetector**
 
+GestureDetector 是一个用于手势识别的功能性组件，是指针事件的语义化封装。
+
+我们通过 GestureDetector 对 Container 进行手势识别，触发事件后，在 Container 上显示事件名：
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: HomePage()));
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('手势检测'),
+      ),
+      body: GestureDetectorTestRoute(),
+    );
+  }
+}
+
+class GestureDetectorTestRoute extends StatefulWidget {
+  @override
+  _GestureDetectorTestRoute createState() => _GestureDetectorTestRoute();
+}
+
+class _GestureDetectorTestRoute extends State<GestureDetectorTestRoute> {
+  String _operation = "No Gesture detected!"; //事件名
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        child: Container(
+            alignment: Alignment.center,
+            color: Colors.blue,
+            width: 200.0,
+            height: 100.0,
+            child: Text(
+              _operation,
+              style: TextStyle(color: Colors.white),
+            )),
+        onTap: () => updateText("Tap"), //点击
+        onDoubleTap: () => updateText("DoubleTap"), //双击
+        onLongPress: () => updateText("LongPress"),
+      ), //长按
+    );
+  }
+
+  void updateText(String text) {
+    //更新显示的事件名
+    setState(() {
+      _operation = text;
+    });
+  }
+}
+```
+
+> 当同时监听 onTap 和 onDoubleTap 事件时，当用户触发了 tap 事件，会有 200 毫秒左右的延时，以区分双击事件。如果用户只监听了 onTap 则没有延时。
+
+**拖动 滑动**
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "State", home: HomePage()));
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('手势检测'),
+      ),
+      body: _Drag(),
+    );
+  }
+}
+
+class _Drag extends StatefulWidget {
+  @override
+  _DragState createState() => _DragState();
+}
+
+class _DragState extends State<_Drag> with SingleTickerProviderStateMixin {
+  double _top = 0.0; //距顶部偏移
+  double _left = 0.0; //距左边偏移
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(children: <Widget>[
+      Positioned(
+          top: _top,
+          left: _left,
+          child: GestureDetector(
+              child: CircleAvatar(child: Text("A")),
+              //手指按下时触发
+              onPanDown: (DragDownDetails e) {
+                //打印手指按下的位置
+                print("用户手指按下:${e.globalPosition}");
+              },
+              //手指滑动时会触发此回调
+              onPanUpdate: (DragUpdateDetails e) {
+                //用户手指滑动时，更新偏移，重新构建
+                setState(() {
+                  _left += e.delta.dx;
+                  _top += e.delta.dy;
+                });
+              },
+              onPanEnd: (DragEndDetails e) {
+                //打印滑动结束时在x, y轴上的速度
+                print(e.velocity);
+              }))
+    ]);
+  }
+}
+```
+
+**单一方向拖动**
+
+很多场景下只需要沿一个方向拖动，如垂直方向的列表，即 GestureDetector 只识别特定方向的手势：
+
+```dart
+class _DragVertical extends StatefulWidget {
+  @override
+  _DragVerticalState createState()=> _DragVerticalState();
+}
+
+class _DragVerticalState extends State<_DragVertical> {
+  double _top = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget> [
+        Positioned(
+          top:_top,
+          child:GestureDetector(
+            child:CircleAvatar(child:Text("A")),
+            //垂直方向拖动事件
+            onVerticalDragUpdate: (DragUpdateDetails details) {
+              setState((){
+                _top += details.delta.dy;
+              });
+            }
+          )
+        )
+      ]
+    );
+  }
+}
+```
+横向同理：
+
+```dart
+class _DragVertical extends StatefulWidget {
+  @override
+  _DragVerticalState createState()=> _DragVerticalState();
+}
+
+class _DragVerticalState extends State<_DragVertical> {
+  double _left = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget> [
+        Positioned(
+          left: _left,
+          child:GestureDetector(
+            child:CircleAvatar(child:Text("A")),
+            //垂直方向拖动事件
+            onHorizontalDragUpdate: (DragUpdateDetails details) {
+              setState((){
+                _left += details.delta.dx;
+              });
+            }
+          )
+        )
+      ]
+    );
+  }
+}
+```
+
+**缩放**
+
+GestureDetector 可以监听缩放事件，下面实例演示了简单的图片缩放效果：
+
+```dart
+class _ScaleTestRouteState extends State<_ScaleTestRoute> {
+  double _width = 200.0;//通过修改图片宽度来达到缩放效果
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        //指定宽度，高度自适应
+        child:Image.asset("src/iconImg.jpeg",width:_width),
+        onScaleUpdate:(ScaleUpdateDetails details) {
+          setState((){
+            //缩放倍数在0.8到10之间
+            _width=200*details.scale.clamp(.8,10.0);
+          });
+        }
+      )
+    );
+  }
+}
+```
+
+**GestureRecognizer**
+
+GestureDetector 内部用一个或多个 GestureRecognizer 来识别各种手势，后者是通过 Listener 来将原始指针事件转换为语义手势。GestureRecognizer 是一个抽象类，一种手势的识别器对应一个 GestureRecognizer 的子类。
+
+示例：给一段富文本不同部分添加事件处理器，TextSpan 本身不是 widget ，不能用 GestureDetector ，但是其 recognizer 属性可以接收一个 GestureRecognizer:
+
+```dart
+class _GestureRecognizerTestRoute extends StatefulWidget {
+  @override
+  _GestureRecognizerTestRouteState createState() =>
+      _GestureRecognizerTestRouteState();
+}
+
+class _GestureRecognizerTestRouteState
+    extends State<_GestureRecognizerTestRoute> {
+  TapGestureRecognizer _tapGestureRecognizer = TapGestureRecognizer();
+  bool _toggle = false; //变色开关
+
+  @override
+  void dispose() {
+    //用到GestureRecognizer一定要调用dispose()方法释放资源
+    _tapGestureRecognizer.dispose();
+    super.dispose(); //这是?
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text.rich(TextSpan(children: [
+        TextSpan(text: "Hello World"),
+        TextSpan(
+            text: "change",
+            style: TextStyle(
+                fontSize: 30.0, color: _toggle ? Colors.blue : Colors.red),
+            recognizer: _tapGestureRecognizer
+              ..onTap = () {
+                setState(() {
+                  _toggle = !_toggle;
+                });
+              }),
+              TextSpan(text: '你好世界')
+      ])),
+    );
+  }
+}
+```
+
+**手势竞争**
+
+Flutter 中的手势识别引入了 Arena 竞技场的概念，两个收到监听的手势会竞争事件的处理权。例如有一个 ListView ，子组件也是 ListView ，这时滑动子组件父组件不会动。
+
+以拖动手势为例，同时识别水平和垂直拖动手势：
+
+```dart
+class BothDirectionTestRoute extends StatefulWidget{
+  BothDirectionTestRouteState createState()=>BothDirectionTestRouteState();
+}
+
+class BothDirectionTestRouteState extends State<BothDirectionTestRoute>{
+  double _top = 0.0;
+  double _left = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top:_top,
+          left:_left,
+          child: GestureDetector(
+            child: CircleAvatar(child: Text("A"),),
+            //垂直方向
+            onVerticalDragUpdate:(DragUpdateDetails details){
+              setState(() {
+                _top += details.delta.dy;
+              });
+            },
+            onHorizontalDragUpdate: (DragUpdateDetails details){
+              setState(() {
+                _left +=details.delta.dx;
+              });
+            },
+          ),
+        )
+      ],
+    );
+  }
+}
+```
+此例中的获胜条件为，首次移动时代位移在水平和垂直方向上分量大的获胜。
+
+**手势冲突**
+
+手势竞争可能产生手势竞争，假设有一个可以左右拖动的 widget，我们也想在上面检测按下和抬起事件。
+
+```dart
+class GestureConflictTestRouteState extends State<GestureConflictTestRoute> {
+  double _left = 0.0;
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children:<Widget>[
+        Positioned(
+          left:_left,
+          child:GestureDetector(
+            child:CircleAvatar(child:Text("A")),
+            onHorizontalDragUpdate:(DragUpdateDetails details){
+              setState((){
+                _left += details.delta.dx;
+              });
+            },
+            onHorizontalDragEnd:(details){
+              print("onHorizontalDragEnd");
+            },
+            onTapDown:(details){
+              print("down");
+            },
+            onTapUp:(details){
+              print("up");
+            }
+          )
+        )
+      ]
+    );
+  }
+}
+```
+
+按住 A 拖动，先显示 down 再显示 onHorizontalDragEnd 。按下时拖动手势没有完整语义，TapDown 胜出打印 down ，拖动后当手指抬起时，onHorizontalDragEnd 和 onTapUp 发生冲突，但是因为在拖动的语义中所以前者胜出。
+
+如果我们的代码逻辑强依赖按下和抬起，比如一个轮播组件，其本身已经处理了拖动事件，此时再用 onTapDown 和 onTapUp 来监听是无用的，通过 Listener 监听原始指针事件就行：
+
+```dart
+Positioned(
+  top:80.0,
+  left:_leftB,
+  child:Listener(
+    onPointerDown:(details){
+      print("down");
+    },
+    onPointerUp:(details) {
+      //会触发
+      print("up");
+    },
+    child:GestureDetector(
+      child:CircleAvatar(child:Text("B")),
+      onHorizontalDragUpdate:(DragUpdateDetails details) {
+        setState((){
+          _leftB += details.delta.dx;
+        });
+      },
+      onHorizontalDragEnd:(details){
+        print("onHorizontalDragEnd");
+      }
+    )
+  )
+)
+```
+手势冲突只是手势级别的，而手势是对原始指针的语义化识别，所以在遇到复杂的冲突场景时，通过 Listener 直接识别原始指针事件来解决冲突。
+
+**事件总线**
+
+事件总线可以实现跨页面的事件通知，比如用户登录或注销事件。事件总线通常实现了订阅者模式，包含订阅者和发布者两种角色，通过事件总线来触发事件和监听事件。
+
+```dart
+//订阅者回调签名
+typedef void EventCallback(arg);
+
+class EventBus {
+  //私有构造函数
+  EventBus._internal();
+
+  //保存单例
+  static EventBus _singleton = EventBus._internal();
+
+  //工厂构造函数
+  factory EventBus() => _singleton;
+
+  //保存事件订阅队列，key：事件名(id)，value：对应事件的订阅者队列
+  var _emap = Map<Object, List<EventCallback>>();
+
+  //添加订阅者
+  void on(eventName, EventCallback f) {
+    if (eventName == null||f==null) return;
+    _emap[eventName] ??= List<EventCallback>();
+    _emap[eventNmae].add(f);
+  }
+
+  //移除订阅者
+  void off(eventName,[EventCallback f]) {
+    var list = _emap[eventName];
+    if (eventName == null || list == null) return;
+    if (f == null) {
+      _emap[eventName] = null;
+    } else {
+      list.remove(f);
+    }
+  }
+
+  //触发事件，该事件所有订阅者会被调用
+  void emit(eventName, [arg]) {
+    var list = _emap[eventName];
+    if (list == null) return;
+    int len = list.length - 1;
+    //反向遍历，防止订阅者在回调中移除自身带来的下标错位
+    for (var i = len; i > -1; --i) {
+      list[i](arg);
+    }
+  }
+}
+
+//定义一个top-level全局变量，页面引入该文件后可以直接用bus
+```
