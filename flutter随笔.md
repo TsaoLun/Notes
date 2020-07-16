@@ -1,8 +1,6 @@
 # Flutter 随笔
 
-<br/>
-
-giteea	
+**Complex UI**
 
 ![avatar](images/complexui.png)
 <br/>
@@ -2517,6 +2515,355 @@ RenderObjectWidget 的类中定义了创建、更新 RenderObject 的方法，�
 
 <br/>
 
+##### Row & Column
+
+线性布局组件，继承自弹性布局组件 Flex ，有两个定义对齐方式的枚举类`MainAxisAlignment`和`CrossAxisAlignment`，分别代表主轴对齐和纵轴对齐。
+
+```dart
+//Row定义如下
+Row({
+  ...  
+  TextDirection textDirection,
+  //布局顺序:ltr,rtl
+  MainAxisSize mainAxisSize = MainAxisSize.max,
+  //主轴(水平)占用空间，默认最大无视子组件宽度
+  MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
+  //子组件对其方式:start,end,center
+  VerticalDirection verticalDirection = VerticalDirection.down,
+  //纵轴对齐方向，垂直
+  CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center,
+  //子组件纵方向对齐方式
+  List<Widget> children = const <Widget>[],
+})
+```
+
+示例：
+
+```dart
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  //水平方向左对齐，排除Column默认居中对齐的干扰
+  children:<Widget>[
+    Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children:<Widget>[
+        Text("hello world"),
+        Text("I am Jack "),
+      ],
+    ),
+    Row(
+      mainAxisSize:MainAxisSize.min,
+      //此时Row宽度为两个Text宽度和，下面的对齐无意义
+      mainAxisAlignment:MainAxisAlignment.center,
+      children:<Widget>[
+        Text("hello world"),
+        Text("I am Jack "),
+      ],
+    ),
+    Row(
+      mainAxisAlignment:MainAxisAlignment.end,
+      textDirection:TextDirection.rtl,
+      //子组件从右往左，此时end表示左对齐
+      children:<Widget>[
+        Text("hello world"),
+        Text("I am Jack"),
+      ],
+    ),
+    Row(
+      crossAxisAlignment:CrossAxisAlignment.start,
+      verticalDirection:VerticalDirection.up,
+      //纵轴即垂直方向低向高，此时start即底对齐
+      children:<Widget>[
+        Text("hello world",style:TextStyle(fontSize:30.0),),
+        //字体不一样高度不一样
+        Text("I am back "),
+      ],
+    ),
+  ],
+),
+```
+
+Column 与 Row 类似只是变换了主轴的方向。
+
+```dart
+Column(
+  //没有指定mainAxisSize默认max即垂直方向为屏幕高度
+  crossAxisAlignment: CrossAxisAlignment.center,
+  //子项会在Column的水平方向居中对齐，Column宽度由最宽子项决定
+  children:<Widget>[
+    Text("hi"),
+    Text("world"),
+  ],
+)
+```
+
+实际上，Row 和 Column 都只会在主轴方向占用尽可能大的空间，而纵轴的长度则取决于它们最大子元素的长度。如果想让本例中的文本控件在整个手机屏幕中间对齐，有两种方法：
+
++ 通过 ConstrainedBox 或 SizedBox 将 Column 的宽度指定为屏幕宽度。
+
+```dart
+ConstrainedBox(
+  constraints: BoxConstraints(minWidth: double.infinity),
+  //将minWidth设为double.infinity使宽度占用尽可能多空间
+  child:Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children:<Widget>[
+      Text("hi"),
+      Text("World"),
+    ],
+  ),
+);
+```
++ 使用 Center Widget，后面会介绍。
+
+> 特殊情况：如果 Row 里面嵌套 Row 或者 Column 里嵌套 Column，那么外层组件会占用尽可能大的空间而内层组件占用空间为实际（需要）大小。
+
+<br/>
+
+##### Flex & Expanded
+
+弹性布局允许子组件按照一定比例来分配父容器空间，类似 Android 中的 FlexboxLayout 等。Flutter 中的弹性布局主要通过 Flex 和 Expanded 来配合实现。
+
+```dart
+Flex({
+  ...
+  @required this.direction,
+  //弹性布局方向，Row默认水平，Column为垂直
+  List<Widget> children = const <Widget>[],
+})
+```
+Flex 继承自 MultiChildRenderObjectWidget，对应的 RenderObject 为 RenderFlex ，RenderFlex 中实现了其布局算法。
+
+```dart
+//Expanded
+const Expanded({
+  int flex = 1,
+  @required Widget child,
+})
+```
+
+flex 参数为弹性参数，如果为0或null，则 child 无弹性，不会被扩伸占用的空间。如果大于0，所有的 Expanded 按照其 flex 的比例来分割主轴的全部空闲空间。
+
+```dart
+class FlexLayoutTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: <Widget>[
+      //Flex的两个子widget按1：2来占据水平空间
+      Flex(
+        direction: Axis.horizontal,
+        children: <Widget>[
+          Expanded(
+            flex: 1,
+            child: Container(
+              height: 30.0,
+              color: Colors.red,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              height: 30.0,
+              color: Colors.green,
+            ),
+          ),
+        ],
+      ),
+      Padding(
+          padding: const EdgeInsets.only(top: 20.0),
+          child: SizedBox(
+              height: 100.0,
+              //Flex的三个子widget垂直方向按2:1:1占用100像素的空间
+              child: Flex(direction: Axis.vertical, children: <Widget>[
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 30.0,
+                    color: Colors.red,
+                  ),
+                ),
+                Spacer(
+                  flex: 1
+                ),
+                Expanded(
+                    flex: 1,
+                    child: Container(
+                      height: 30.0,
+                      color: Colors.green,
+                    ))
+              ])))
+    ]);
+  }
+}
+```
+
+其中 Spacer 的功能是占用指定比例的空间，实际上它只是 Expanded 的一个包装类，Spacer 的源码如下：
+
+```dart
+class Spacer extends StatelessWidget {
+  const Spacer({Key key,this.flex = 1})
+    :assert(flex != null),
+     assert(flex > 0),
+     super(key: key);
+
+     @override
+     Widget build(BuildContext context) {
+       return Expanded(
+         flex: flex,
+         child:const SizedBox.shrink(),
+       );
+     }
+}
+```
+
+<br/>
+
+##### Wrap & Flow
+
+在使用 Row 和 Column 时如果子 widget 超出屏幕则会报溢出错误，我们把屏幕显示范围会自动折行的布局称为流式布局，Flutter 中通过 Wrap 和 Flow 来支持该布局
+
+```dart
+//Wrap定义
+Wrap({
+  ...
+  this.direction = Axis.horizontal,
+  this.alignment = WrapAlignment.start,
+  this.spacing = 0.0,
+  //主轴方向子widget间距
+  this.runAlignment = WrapAlignment.start,
+  //纵轴方向对齐方式
+  this.runSpacing = 0.0,
+  //纵轴方向间距
+  this.crossAxisAlignment = WrapCrossAlignment.start,
+  this.textDirection,
+  this.verticalDirection = VerticalDirection.down,
+  List<Widget> children = const <Widget>[],
+})
+```
+示例：
+
+```dart
+class WrapTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing:8.0,//主轴（水平）方向间距
+      runSpacing:4.0,//纵轴（垂直）方向间距
+      alignment: WrapAlignment.start,//沿主轴左侧
+      children: <Widget>[
+        Chip(
+          avatar: CircleAvatar(backgroundColor: Colors.blue,child: Text('A'),),
+          label: Text('Hamilton'),
+        ),
+        Chip(
+          avatar: CircleAvatar(backgroundColor: Colors.blue,child: Text('M'),),
+          label: Text('Lafayette'),
+        ),
+        Chip(
+          avatar: CircleAvatar(backgroundColor: Colors.blue,child: Text('H'),),
+          label: Text('Mulligan'),
+        ),
+        Chip(
+          avatar: CircleAvatar(backgroundColor: Colors.blue,child: Text('J'),),
+          label: Text('Laurens'),
+        ),
+      ],
+    );
+  }
+}
+```
+
+Flow 平时很少会使用，一般优先考虑 Wrap。Flow 主要用于需要自定义布局策略或性能要求较高的场景。
+
+优点：
+
++ 性能好，Flow 是一个对子组件尺寸以及位置调整非常高效的控件，Flow 用转换矩阵在对子组件进行位置调整的时候进行了优化。在 Flow 定位过后，如果子组件的尺寸或位置发生了变化，在 FlowDelegate 中的 paintChildren() 方法中调用 context.paintChild 进行重绘，这个过程中使用了转换矩阵并没有实际调整组件位置。
+
++ 灵活，由于需要自己实现 FlowDelegate 的 paintChildren() 方法，所以需要自己计算每一个组件的位置。
+
+缺点即比较复杂，不能自适应子组件大小，必须通过父容器大小或实现 TestFlowDelegate 的 getSize 返回固定大小。
+
+示例：
+
+```dart
+Flow(
+  delegate:TestFlowDelegat(margin:EdgeInsets.all(10.0)),
+  children:<Widget>[
+    Container(width:80, height:80, color:Colors.red),
+    Container(width:80, height:80, color:Colors.green),
+    Container(width:80, height:80, color:Colors.blue),
+    Container(width:80, height:80, color:Colors.yellow),
+    Container(width:80, height:80, color:Colors.brown),
+    Container(width:80, height:80, color:Colors.purple),
+  ],
+)
+
+class TestFlowDelegate extends FlowDelegate {
+  EdgeInsets margin = EdgeInsets.zero;
+  TestFlowDelegate({this.margin});
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    var x = margin.left;
+    var y = margin.top;
+    //计算每一个子widget的位置
+    for(int i=0;i<context.childCount;i++){
+      var w = context.getChildSize(i).width + x + margin.right;
+      if (w < context.size.width) {
+        context.paintChild(i,transform:Matrix4.translationValues(x,y,0.0));
+        x += context.getChildSize(i).width + margin.left + magin.right;
+      }
+    }
+  }
+
+  @override
+  getSize(BoxConstraints constraints){
+    //指定Flow的大小
+    return Size(double.infinity,200.0);
+  }
+
+  @override
+  bool shouldRepaint(FlowDelegate oldDelegate){
+    return oldDelegate != this;
+  }
+}
+```
+
+##### Stack & Positioned
+
+层叠布局和 Android 中的 Frame 布局是相似的，子组件可以根据父容器四个角度位置来确定自身的位置。绝对定位允许子组件堆叠起来（按代码中的声明顺序），Flutter 中使用 Stack 和 Positioned 这两个组件来配合实现绝对定位。Stack 允许子组件堆叠，而 Positioned 用于根据 Stack 四个角来确定子组件的位置。
+
+**Stack**
+
+```dart
+Stack({
+  this.alignment = AlignmentDirectional.topStart,
+  //对齐没有Positioned(left,right,top,bottom)的子组件
+  this.textDirection,//ltr,rtl
+  this.fit = StackFit.loose,
+  //没有定位的子组件如何适应Stack大小，loose子组件大小expand则扩至Stack
+  this.overflow = Overflow.clip,
+  //用决定如何显示超出Stack空间的子组件，clip为隐藏，visible则不会
+  List<Widget> children = const <Widget>[],
+})
+```
+**Positioned**
+
+```dart
+const Positioned({
+  Key key,
+  this.left,
+  this.top,
+  this.right,
+  this.bottom,
+  //离Stack上下左右四边的距离
+  this.width,
+  this.height,
+  //元素的宽度和高度
+  @required Widget child,
+})
+```
+当指定 left 和 width 时，right 就能自动
+
 ##### Container
 
 Container 组件是非常方便的单组件布局容器，如果其子组件尺寸小于 Container 本身就可以使用 alignment 属性控制其子组件的对齐方式。
@@ -2533,6 +2880,8 @@ padding: EdgeInsets.only(left: 20,top: 60, right: 100)
 transform: Matrix4.rotationZ(3.14/16)
 ```
 
+<br/>
+
 ##### Padding 
 
 Padding 组件是简化版的 Container 组件，其中只有一个子组件，通过设置 padding 属性来约束其内边距
@@ -2540,6 +2889,8 @@ Padding 组件是简化版的 Container 组件，其中只有一个子组件，�
 ```dart
 Padding(padding: EdgeInsets.only(left:20,top:60),child:Text("Container",style:TextStyle()));
 ```
+
+<br/>
 
 ##### Center
 
