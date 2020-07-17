@@ -3067,6 +3067,18 @@ ConstrainedBox(
   ),
 )
 ```
+虽然我们将 Container 高度设为 5 ，但最终却是 50 像素，正是因为 ConstrainedBox 中 BoxConstraints 设置的最小高度限制生效了。
+
+BoxConstraints 用于设置限制条件，定义如下：
+
+```dart
+const BoxConstraints({
+  this.minWidth = 0.0,
+  this.maxWidth = double.infinity,
+  this.minHeight = 0.0,
+  this.maxHeight = double.infinity
+})
+```
 
 ### 滚动组件
 
