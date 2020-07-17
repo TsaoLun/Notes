@@ -2862,79 +2862,126 @@ const Positioned({
   @required Widget child,
 })
 ```
-当指定 left 和 width 时，right 就能自动
+当指定 left 和 width 时，right 就能自动得出，同时指定三个属性则会报错。
 
-##### Container
-
-Container 组件是非常方便的单组件布局容器，如果其子组件尺寸小于 Container 本身就可以使用 alignment 属性控制其子组件的对齐方式。
-
-在使用 alignment 属性控制组件对齐的前提下，可以设置 padding 属性来实现子组件相对 Container 边缘的边距调整，例如将 padding 属性设置如下:
+示例：
 
 ```dart
-padding: EdgeInsets.only(left: 20,top: 60, right: 100)
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar:AppBar(title:Text('Stack')),
+    body:ConstrainedBox(
+        constraints: BoxConstraints.expand(),
+        child: Stack(alignment: Alignment.center, //指定未完全定位的widget对齐方式
+            children: <Widget>[
+              Container(
+                child:
+                    Text("Hello world", style: TextStyle(color: Colors.white)),
+                color: Colors.red,
+              ),
+              Positioned(
+                left: 18.0,
+                child: Text("I am Jack"),
+              ),
+              Positioned(
+                top: 18.0,
+                child: Text("Your friend"),
+              )
+            ])));
+  }
+}
 ```
 
-若要对整个 Container 组件进行三维变换布局，则可以对其 transform 属性进行设置，例如：
+未定位的方向会按 Stack alignment 指定的方式对齐。我们给上例 Stack 指定一个 fit 值，将三个子文本顺序调整一下：
 
 ```dart
-transform: Matrix4.rotationZ(3.14/16)
-```
-
-<br/>
-
-##### Padding 
-
-Padding 组件是简化版的 Container 组件，其中只有一个子组件，通过设置 padding 属性来约束其内边距
-
-```dart
-Padding(padding: EdgeInsets.only(left:20,top:60),child:Text("Container",style:TextStyle()));
-```
-
-<br/>
-
-##### Center
-
-Center 组件是简化版的 Container 组件，其将内部组件直接进行居中布局，例如：
-
-```dart
-Center(child: Text("Container"),);
-//widthFactor和heightFactor属性分别设置组件宽度和高度是子组件的多少倍
-```
-
-##### FittedBox
-
-FittedBox组件通过 alignment 和 fit 管理其子组件的对齐模式和缩放模式。
-
-##### ConstrainedBox
-
-ConstrainedBox 布局也是一种特殊的 Container 组件，可以对子组件进行尺寸约束：
-
-```dart
-return new Center(
-  child: new ConstrainedBox(
-    constraints: BoxConstraints(maxWidth:100,maxHeight:100),
-    child: Container(
-      color: Colors.red,
+Stack(
+  alignment:Alignment.center,
+  fit:StackFit.expand,//未定位widget占满整个空间
+  children:<Widget>[
+    Positioned(
+      left:18.0,
+      child:Text("I am Jack"),
     ),
-  ),
-);
+    Container(
+      child:Text("Hello world",style:TextStyle(color:Colors.white)),
+      color:Colors.red,
+    ),
+    Positioned(
+      top:18.0,
+      child:Text("Your friend"),
+    )
+  ]
+)
 ```
+此时第二个子文本组件没有定位，fit 属性会对其作用占满 Stack ，由于 Stack 子元素是堆叠的，所以第一个子组件被第二个遮住了，而第三个在最上面可以正常显示。
 
-##### Drawer
+##### Align & Center
 
-之前学到可以通过 Scaffold 脚手架添加抽屉视图，即使用 Column 布局创建抽屉视图。在 Flutter 组件库中还提供了一个 Drawer 组件，与 ListView 组件组合进行使用：
+通过 Stack 和 Positioned ，可以指定一个或多个子元素相对于父元素各边的精准偏移，并且可以重叠。但如果我们只想简单地调整一个子元素在父元素中的位置，使用 Align 组件会更简单。 Align 组件可以调整子组件的位置，根据子组件宽高来确定自身宽高，定义如下：
 
 ```dart
-drawer: Drawer(
-  child: ListView(
-    children:<Widget>[
-      Text("列表选项1"),
-      Text("列表选项2"),
-      Text("列表选项3"),
-    ],
-  ),
+Align({
+  Key key,
+  this.alignment = Alignment center,
+  //需要一个 AlignmentGeometry 类型的值，表示子组件在父组件中的起始位置
+  this.widthFactor,
+  this.heightFactor,
+  //组件本身宽高的缩放因子，若为null会占用尽可能多的空间
+  Widget child,
+})
+```
+来看一个简单的例子：
+
+```dart
+Container(
+  height:120.0,
+  width:120.0,
+  color:Colors.blue[50],
+  child:Align(
+    alignment:Alignment.topRight,
+    child:FlutterLogo(
+      size:60,
+    )
+  )
 )
-````
+```
+
+上例我们显式地指定了 Container 的宽高为120，直接指定 widthFactor 和 heightFactor 为 2 也可以达到一样的效果(因为 FlutterLogo 的宽高为60)。
+
+```dart
+Align(
+  widthFactor:2,
+  heightFactor:2,
+  alignment:Alignment.topRight,
+  child:FlutterLogo(
+    size:60,
+  )
+)
+//背景色不同
+```
+
+这里的 Alignment.topRight 定义 `static const Alignment topRight = Alignment(1.0, -1.0)` ，即 Alignment 的一个实例，下面来看一下 Alignment :
+
+```dart
+Alignment(this.x, this.y)
+```
+
+Alignment 继承自 AlignmentGeometry，表示矩形内的一个点，原点为矩阵中心，x、y 两个属性分别表示在水平和垂直方向的偏移，(-1.0,-1.0)为左侧顶点，(1.0,1.0)为右侧底部。**FractionalOffset** 继承自 Alignment ，但坐标原点不同为矩形左侧顶点，FractionOffset(0.2,0.6) 即在矩形内距左侧 0.2，上侧 0.6 。 `Align(alignment:FractionalOffset(0.2,0.6))` 这种的坐标系统更精确且与布局系统一致，在开发中应该优先使用。
+
+Align 与 Stack 的不同：都能用于指定子元素相对父元素的偏移，但 Stack 参考系是矩阵四条边而 Align 先通过 alignment 参数确定坐标原点。Stack 可以有多个元素并且子元素可以堆叠，而 Align 只能有一个子元素不存在堆叠。
+
+**Center**
+
+```dart
+//Center定义
+class Center extends Align {
+  const Center({Key key, double widthFactor, double heightFactor, Widget child})
+    : super(key: key, widthFactor:widthFactor, heightFactor: heightFactor, child: child);
+}
+```
+Center 继承自 Align 只是少了一个 alignment 参数（由于 Align 构造函数中 alignment 值为 center)，可以认为 Center 组件为对齐方式确定了的 Align 。上面说过 widthFactor 和 heightFactor 为 null 时组件宽高会尽可能多占用空间，Center 也是这样。
 
 <br/>
 
@@ -2943,6 +2990,83 @@ drawer: Drawer(
 容器类 Widget 和 布局类 Widget 都作用于其子 Widget ，不同的是：
 + 布局类通常接收一个 Widget 数组，直接或间接继承自 MultiChildRenderObjectWidget；而容器类 Widget 一般只需要接收一个子 Widget (直接间接继承或包含 SingleChildRenderObjectWidget)
 + 布局类 Widget 是按照一定排列方式来对其子 Widget 进行排列，而容器类 Widget 一般只包含子 Widget 并对其添加一些修饰、变换或限制。 
+
+##### Padding
+
+Padding 可以给子节点添加填充，效果和边距类似，来看一下定义：
+
+```dart
+Padding({
+  ...
+  EdgeInsetsGeometry padding,
+  //抽象类，开发中一般使用其子类EdgeInsets，定义了填充方法
+  Widget child,
+})
+```
+**EdgeInsets**
+
++ fromLTRB(double left, double top, double right, double bottom)
++ all(double value)：所有方向以相同数值填充
++ only({left, top, right, bottom})：设置某个/多个方向的填充
++ symmetric({vertical, horizontal})：设置对称方向的填充
+
+示例：
+
+```dart
+class PaddingTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      //上下左右各添加16像素空白
+      padding:EdgeInsets.all(16.0),
+      child:Column(
+        //显式指定对齐方式为左对齐，排除对齐干扰
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children:<Widget>[
+          Padding(
+            //上下各添加8像素补白
+            padding: const EdgeInsets.symmetric(vertical:8.0),
+            child:Text("I am Jack"),
+          ),
+          Padding(
+            //分别指定四个方向的补白
+            padding: const EdgeInsets.fromLTRB(20.0,.0,20.0,20.0),
+            child:Text("Your friend")
+          )
+        ]
+      )
+    );
+  }
+}
+```
+
+##### ConstrainedBox & SizedBox
+
+ConstrainedBox 用于对子组件添加额外约束，比如想让子组件最小高度为 80 像素，可以使用 `const BoxConstraints(minHeight: 80.0)` 作为子组件的约束。
+
+示例：
+
+```dart
+//先定义一个redBox，不指定宽度和高度
+Widget redBox = DecoratedBox(
+  decoration: BoxDecoration(color:Colors.red)
+);
+```
+
+实现一个最小高度为50，宽度尽可能大的红色容器：
+
+```dart
+ConstrainedBox(
+  constraints: BoxConstraints(
+    minWidth: double.infinity,//宽度尽可能大
+    minHeight:50.0
+  ),
+  child:Container(
+    height:5.0,
+    child:redBox
+  ),
+)
+```
 
 ### 滚动组件
 
