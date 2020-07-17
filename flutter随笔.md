@@ -3042,7 +3042,7 @@ class PaddingTestRoute extends StatelessWidget {
 
 ##### ConstrainedBox & SizedBox
 
-ConstrainedBox 用于对子组件添加额外约束，比如想让子组件最小高度为 80 像素，可以使用 `const BoxConstraints(minHeight: 80.0)` 作为子组件的约束。
+限制类容器 ConstrainedBox 用于对子组件添加额外约束，比如想让子组件最小高度为 80 像素，可以使用 `const BoxConstraints(minHeight: 80.0)` 作为子组件的约束。
 
 示例：
 
@@ -3067,7 +3067,7 @@ ConstrainedBox(
   ),
 )
 ```
-虽然我们将 Container 高度设为 5 ，但最终却是 50 像素，正是因为 ConstrainedBox 中 BoxConstraints 设置的最小高度限制生效了。
+虽然我们将 Container 高度设为 5 ，但最终却是 50 像素，正是因为 ConstrainedBox 中 constraints 参数 BoxConstraints 设置的最小高度限制生效了。
 
 BoxConstraints 用于设置限制条件，定义如下：
 
@@ -3079,6 +3079,136 @@ const BoxConstraints({
   this.maxHeight = double.infinity
 })
 ```
+
+**SizedBox** 用于给子元素指定固定的宽高，如：
+
+```dart
+SizedBox(
+  width: 80.0,
+  height: 80.0,
+  child: redBox
+)
+```
+实际上 SizedBox 只是 ConstrainedBox 的一个定制，以上代码等价于：
+
+```dart
+ConstrainedBox(
+  constraints : BoxConstraints.tightFor(width:80.0,height:80),
+  child:redBox,
+)
+```
+其中 `BoxConstraints.tightFor(width:80.0,height:80.0)` 等价于 `BoxConstraints(minHeight:80.0, maxHeight:80.0, minWidth:80.0, maxWidth:80.0)` ，而实际上 ConstrainedBox 和 SizedBox 都是通过 RenderConstrainedBox 渲染的，两者的 createRenderObject() 方法都是返回一个 RenderConstrainedBox 对象：
+
+```dart
+@override
+RenderConstrainedBox createRenderObject(BuildContext context){
+  return RenderConstrainedBox(
+    additionalConstraints:...,
+  );
+}
+```
+**多重限制**：如果某个组件有多个父级 ConstrainedBox 限制，那么最终会是哪个生效？
+
+```dart
+ConstrainedBox(
+  constraints:BoxConstraints(minWidth:60.0,minHeight:60.0),
+  child:ConstrainedBox(constraints:BoxConstraints(minWidth:90.0,minHeight:20.0),
+    child:redBox)
+)
+```
+显示宽 90 高 60 的方块，即对于 minWidth 和 minHeight 来说，取父子相应数值较大的。
+
+##### DecoratedBox
+
+装饰容器 DecoratedBox 可以在其子组件绘制前后绘制一些装饰 Decoration ，如背景、边框、渐变等等。DecoratedBox 定义如下：
+
+```dart
+const DecoratedBox({
+  Decoration decoration,
+  //代表将要绘制的装饰，类型为 Decoration 抽象类，定义了接口 createBoxPainter() 用于绘制装饰
+  DecorationPosition position = DecorationPosition.background,
+  //决定了在哪里绘制 Decoration，接受 DecorationPosition 枚举类型
+  //background 在子组件后绘制背景，foreground 在子组件上绘制前景
+  Widget child
+})
+```
+
+我们会直接使用 **BoxDecoration** 类，它是 Decoration 的子类，实现了常用的装饰元素的绘制：
+
+```dart
+BoxDecoration({
+  Color color,//颜色
+  DecorationImage image,//图片
+  BoxBorder border,//边框
+  BorderRadiusGeometry borderRadius,//圆角
+  List<BoxShadow> boxShadow,//阴影，可以指定多个
+  Gradient gradient,//渐变
+  BlendMode backgroundBlendMode,//背景混合模式
+  BoxShape shape = BoxShape.rectangle,//形状
+})
+```
+
+实现一个背景色渐变的按钮：
+
+```dart
+DecoratedBox(
+  decoration: BoxDecoration(
+    gradient:LinearGradient(colors:[Colors.red, Colors.orange[700]]),//背景渐变
+    borderRadius: BorderRadius.circular(15.0),//15像素圆角
+    boxShadow: [
+      BoxShadow(
+        color:Colors.black54,
+        offset:Offset(2.0,2.0),
+        blurRadius:4.0,
+      )
+    ]
+  ),
+  child: Padding(padding: EdgeInsets.symmetric(horizontal:80, vertical:18.0),
+    child:Text("Login",style:TextStyle(color:Colors.white),),
+  )
+)
+```
+该按钮还不能响应点击事件，后面将会尝试实现标准 GradientButton 。
+
+##### Transform
+
+Transform 可以在其子组件绘制时对其应用一些矩阵变换来实现一些特效。Matrix4 是一个 4D 矩阵，通过它可以实现各种矩阵操作，来看下例：
+
+```dart
+Container(
+  color: Colors.black,
+  child: Transform(
+    alignment:Alignment.topRight,//相对于坐标原点的对齐方式
+    transform:Matrix4.skewY(0.3),//沿y轴倾斜0.3弧度
+    child:Container(
+      padding:const EdgeInsets.all(8.0),
+      color:Colors.deepOrange,
+      child:const Text('Apartment for rent!'),
+    )
+  )
+)
+```
+矩阵变化时发生在绘制时。无需重新布局和构建，所有性能很好。接下来看一下平移吗，Transform.translate 接收一个 offset 参数，可以在绘制时沿 x , y 轴对子组件平移指定的距离。
+
+```dart
+DecorationBox(
+  decoration:BoxDecoration(color:Colors.red),
+  //默认原点为左上角，左移20像素，向上平移5像素
+  child:Transform.translate(
+    offset:Offset(-20.0,-5.0),
+    child:Text("Hello world"),
+  ),
+)
+```
+
+**旋转**
+
+Transform.rotate 可以对子组件进行旋转变换，如：
+
+```dart
+
+```
+
 
 ### 滚动组件
 
