@@ -3206,9 +3206,219 @@ DecorationBox(
 Transform.rotate 可以对子组件进行旋转变换，如：
 
 ```dart
-
+DecoratedBox(
+  decoration:BoxDecoration(color:Colors.red),
+  child:Transform.rotate(
+    //旋转90度
+    angle:math.pi/2,
+    child:Text("Hello world"),
+  ),
+)
 ```
 
+**缩放**
+
+Transform.scale 可以对子组件进行缩小或放大，如:
+
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color:Colors.red),
+  child:Transform.scale(
+    scale:1.5,//放大到1.5倍
+    child:Text("Hello world")
+  )
+)
+```
+
+**注意**：Transform 的变换是应用在绘制阶段，而不是应用在布局(layout)阶段，所以无论子组件应用何种变化，其占用空间的大小和屏幕上的位置都是固定不变的，因为这些是在布局阶段就确定的：
+
+```dart
+Row(
+  mainAxisAlignment:MainAxisAlignment.center,
+  children:<Widget>[
+    DecoratedBox(
+      decoration:BoxDecoration(color:Colors.red),
+      child:Transform.scale(scale:1.5,
+        child:Text("Hello world"))
+    ),
+  Text("你好",style:TextStyle(color:Colors.green, fontSize:18.0))],
+)
+```
+第一个 Text 在绘制时放大后，其占用的空间依然为红色部分，所以与紧挨着红框的第二个 Text 部分的重合。在某些场景下，在 UI 需要变化时可以通过矩阵变化来达到视觉上的 UI 改变，而不是去重新触发 build 流程，这样会节省 layout 开销，性能较好。之前的 Flow 组件就是通过矩阵变换来更新 UI 的，Flutter 动画中也大量使用了 Transform 以提升性能。
+
+**RotatedBox**
+
+RotatedBox 与 Transform.rotate 功能相似，都可以对子组件旋转变换，但变换是在 layout 阶段，会影响子组件的位置和大小。
+
+```dart
+Row(
+  mainAxisAlignment:MainAxisAlignment.center,
+  children:<Widget>[
+    DecoratedBox(
+      decoration:BoxDecoration(color:Colors.red),
+      //将Transform.rotate换成RotatedBox
+      child:RotatedBox(
+        quarterTurns:1,
+        child:Text("Hello world")
+      ),
+    ),
+    Text("你好",style:TextStyle(color:Colors.green,fontSize:18.0))
+  ]
+)
+```
+与 Transform.rotate 不同，因为 decoration 会作用到子组件所占用的空间上，所以红色部分也一起旋转了。
+
+##### Container
+
+Container 组合类容器，本身不对应具体的 RenderObject，是 DecoratedBox, ConstrainedBox, Transform, Padding, Align 等组件组合的一个多功能容器，只需通过一个 Container 组件可以实现同时需要装饰、变换、限制的场景。
+
+```dart
+Container({
+  this.alignment,
+  this.padding,//容器内补白，属于decoration装饰范围
+  Color color,//背景色
+  Decoration decoration,//背景装饰
+  Decoration foregroundDecoration,//前景装饰
+  double width,//容器宽度
+  double height,//容器高度
+  BoxConstraints constraints,//容器大小的限制条件
+  this.margin,//容器外补白，不属于decoration装饰范围
+  this.transform,//变换
+  this.child,
+})
+```
+容器大小可以通过 width, height 属性来指定，也可以通过 constraints 来指定；如果它们同时存在，width 和 height 优先，实际上 Container 内部会根据 width 和 height 生成一个 constraints 。color 和 decoration 是互斥的，同时设置将报错，指定 color 时 Container 内会自动创建一个 decoration 。
+
+```dart
+Container(
+  margin:EdgeInsets.only(top:50.0,left:120.0),//容器外填充
+  constraints:BoxConstraints.tightFor(width:200.0,height:150.0),//卡片大小
+  decoration:BoxDecoration(//背景装饰
+    gradient:RadialGradient(//背景径向渐变
+      colors:[Colors.red,Colors.orange],
+      center:Alignment.topLeft,
+      radius:.98
+      ),
+      boxShadow:[//卡片阴影
+        BoxShadow(
+          color:Colors.black54,
+          offset:Offset(2.0,2.0),
+          blurRadius:4.0
+        )]),
+  transform:Matrix4.rotationZ(.2),//卡片倾斜变换
+  alignment:Alignment.center,//卡片内文字居中
+  child:Text(//卡片文字
+    "5.20",style:TextStyle(color:Colors.white,fontSize:40.0),)
+)
+```
+研究一下 Container 组件 margin 和 padding 属性的区别：
+
+```dart
+...
+Container(
+  margin:EdgeInsets.all(20.0),//容器外补白，margin页边距
+  color:Colors.orange,
+  child:Text("Hello world!")
+),
+Container(
+  padding:EdgeInsets.all(20.0),//容器内补白，padding外层护垫
+  color:Colors.orange,
+  child:Text("Hello world"),
+),
+...
+```
+
+##### Scaffold & TabBar
+
+Material 组件库提供了丰富多彩的组件，可以查看 flutter 源码中 examples 目录下的 Flutter Gallery ，相关示例非常全面。
+
+**Scaffold**
+
+一个完整的路由页包含导航栏、抽屉菜单(Drawer)以及底部 Tab 导航菜单，Flutter Material 组件库提供了一些现成组件，Scaffold 是一个路由页的骨架，使用它可以很容易拼装出一个完整的页面。
+
+示例：实现一个页面，包含导航栏及右侧分享按钮，抽屉菜单，底部导航，右下角悬浮动作按钮：
+
+```dart
+class ScaffoldRoute extends StatefulWidget {
+  @override
+  _ScaffoldRouteState createState() => _ScaffoldRouteState();
+}
+
+class _ScaffoldRouteState extends State<ScaffoldRoute> {
+  int _selectedIndex = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar:AppBar(//导航栏
+        title:Text("App Name"),
+        actions:<Widget>[//导航栏右侧菜单
+          IconButton(icon:Icon(Icons.share),onPressed:(){}),]),
+        drawer:MyDrawer(),//抽屉
+        bottomNavigationBar:BottomNavigationBar(//底部导航
+          items:<BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon:Icon(Icons.home),title:Text('Home')),
+            BottomNavigationBarItem(icon:Icon(Icons.business),title:Text('Business')),
+            BottomNavigationBarItem(icon:Icon(Icons.school),title:Text('School')),
+          ],
+          currentIndex:_selectedIndex,
+          fixedColor:Colors.blue,
+          onTap:_onItemTapped,
+          ),
+          floatingActionButton:FloatingActionButton(//悬浮按钮
+            child:Icon(Icons.add),
+            onPressed:_onAdd)
+    );
+  }
+  void _onItemTapped(int index) {
+    setState((){
+      _selectedIndex = index;
+    });
+  }
+  void _onAdd(){}
+}
+```
+**AppBar**
+
+AppBar 是一个 Material 风格的导航栏，通过它可以设置导航栏标题、导航栏菜单、导航栏底部 Tab 标题等，下面看一下定义：
+
+```dart
+AppBar({
+  Key key,
+  this.leading,//最左侧Widget，常见抽屉或返回
+  this.automaticallyImplyLeading = true,//如果leading为null实现默认leading按钮
+  this.title,//页面标题
+  this.actions,//导航栏右侧菜单
+  this.bottom,//底部菜单，通常为Tab按钮组
+  this.elevation = 4.0,//导航栏阴影
+  this.centerTitle,//标题是否居中
+  this.backgroundColor,
+  ...//其他见源码注释
+})
+```
+如果给 Scaffold 添加了抽屉菜单，默认情况下 Scaffold 会自动将 AppBar 的 leading 设置为菜单按钮，点击它便可打开抽屉菜单。可以手动设置 leading ，如：
+
+```dart
+Scaffold(
+  appBar:AppBar(
+    title:Text("App Name"),
+    leading:Builder(builder:(context){
+      return IconButton(
+        icon:Icon(Icons.dashboard,color:Colors.white),//自定义图标
+        onPressed:(){
+          //打开抽屉菜单
+          Scaffold.of(context).openDrawer();
+        },
+      );
+    }),
+    ...
+  )
+)
+```
+
+**TarBar**
+
+我们通过 "bottom" 属性来添加一个导航栏底部 Tab 按钮组，Materila 组件中提供了一个 TabBar 组件，可以快速生成 Tab 菜单
 
 ### 滚动组件
 
