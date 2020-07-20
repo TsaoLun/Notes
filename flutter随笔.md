@@ -3332,9 +3332,7 @@ Container(
 
 Material 组件库提供了丰富多彩的组件，可以查看 flutter 源码中 examples 目录下的 Flutter Gallery ，相关示例非常全面。
 
-**Scaffold**
-
-一个完整的路由页包含导航栏、抽屉菜单(Drawer)以及底部 Tab 导航菜单，Flutter Material 组件库提供了一些现成组件，Scaffold 是一个路由页的骨架，使用它可以很容易拼装出一个完整的页面。
+**Scaffold**：一个完整的路由页包含导航栏、抽屉菜单(Drawer)以及底部 Tab 导航菜单，Flutter Material 组件库提供了一些现成组件，Scaffold 是一个路由页的骨架，使用它可以很容易拼装出一个完整的页面。
 
 示例：实现一个页面，包含导航栏及右侧分享按钮，抽屉菜单，底部导航，右下角悬浮动作按钮：
 
