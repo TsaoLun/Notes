@@ -1362,7 +1362,8 @@ TapboxB 类：
 ```dart
 import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(title: "State", home: TapboxB()));
+void main() => runApp(MaterialApp(title: "State", home: Center(child:ParentWidget())));
+//注意是调用父widget
 
 //------------ParentWidget-------------
 
@@ -1422,7 +1423,6 @@ class TapboxB extends StatelessWidget {
     );
   }
 }
-//The parameter 'onChanged' is required.？？？
 ```
 
 **混合状态管理**
@@ -1447,7 +1447,7 @@ _TapboxCState 对象：
 ```dart
 import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(title: "State", home: TapboxC()));
+void main() => runApp(MaterialApp(title: "State", home: Center(child:ParentWidgetC())));
 
 //------------ParentWidgetC-----------
 
@@ -3040,7 +3040,7 @@ class PaddingTestRoute extends StatelessWidget {
 }
 ```
 
-##### ConstrainedBox & SizedBox
+##### ConstrainedBox
 
 限制类容器 ConstrainedBox 用于对子组件添加额外约束，比如想让子组件最小高度为 80 像素，可以使用 `const BoxConstraints(minHeight: 80.0)` 作为子组件的约束。
 
@@ -3328,7 +3328,7 @@ Container(
 ...
 ```
 
-##### Scaffold & TabBar
+##### Scaffold
 
 Material 组件库提供了丰富多彩的组件，可以查看 flutter 源码中 examples 目录下的 Flutter Gallery ，相关示例非常全面。
 
@@ -3416,15 +3416,498 @@ Scaffold(
 )
 ```
 
-**TarBar**
+**TabBar**
 
-我们通过 "bottom" 属性来添加一个导航栏底部 Tab 按钮组，Materila 组件中提供了一个 TabBar 组件，可以快速生成 Tab 菜单
+我们通过 "bottom" 属性来添加一个导航栏底部 Tab 按钮组，Materila 组件中提供了一个 TabBar 组件，可以快速生成 Tab 菜单：
+
+```dart
+class _ScaffoldRouteState extends State<ScaffoldRoute>
+  with SingleTickerProviderStateMixin {
+    TabController _tabController //需要定义一个Controller
+    List tabs = ["新闻","历史","图片"];
+
+    @override
+    void initState(){
+      super.initState();
+      //创建Controller
+      _tabController = TabController(length:tabs.length, vsync:this);
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        appBar:AppBar(
+          ...
+          bottom:TabBar(
+            controller:_tabController,
+            tabs:tabs.map((e)=>Tab(text:e)).toList()//Widget数组   
+          ),
+        ),
+        ...
+      )
+    }
+  }
+```
+上面代码首先创建了一个 TabController ，用于控制、监听 Tab 菜单切换，再通过 TabBar 生成一个底部菜单栏，TabBar 的 tabs 属性接受一个 Widget 数组，表示每一个 Tab 子菜单。这里可以自定义也能如上例一样直接使用 Tab 组件，它是 Material 组件库提供的 Material 风格的 Tab 菜单。
+
+Tab 组件有三个可选参数，除了指定文字外还能指定 Tab 菜单图标，或者直接自定义组件样式：
+
+```dart
+Tab({
+  Key key,
+  this.text,//菜单文本
+  this.icon,//菜单图标
+  this.child,//自定义组件样式
+})
+```
+
+**TabBarView**
+
+TabBar 只能生成静态菜单，由于 Tab 菜单和 Tab 页的切换需要同步，我们需要通过 TabController 去监听 Tab 菜单的切换去切换 Tab 页：
+
+```dart
+_tabController.addListener((){
+  switch(_tabController.index){
+    case 1: ...;
+    case 2: ...;
+  }
+});
+```
+若 Tab 页可以滑动切换，还需要在滑动过程中更新 TabBar 指示器的偏移。Material 库提供了 TabBarView 组件，通过它可以轻松实现 Tab 页，还可以非常容易地配合 TabBar 来实现同步切换和滑动状态同步。
+
+```dart
+Scaffold(
+  appBar:AppBar(
+    ...
+    bottom:TabBar(
+      controller: _tabController,
+      tabs:tabs.map((e)=>Tab(text: e)).toList()),
+    ),
+    drawer:MyDrawer(),
+    body:TabBarView(
+      controller:_tabController,
+      children:tabs.map((e) {
+        return Container(
+          alignment: Alignment.center,
+          child:Text(e, textScaleFactor:5),
+        );
+      }).toList(),
+    ),
+    ...
+  )
+)
+```
+
+**Drawer**
+
+```dart
+class MyDrawer extends StatelessWidget {
+  const MyDrawer({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 38.0),
+                child: Row(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Image.asset(
+                        "imgs/coast.jpg",
+                        width: 80,
+                      ),
+                    ),
+                    Text(
+                      "Wendux",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    )
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  children: <Widget>[
+                    ListView(
+                      children: <Widget>[
+                        ListTile(
+                          leading: const Icon(Icons.add),
+                          title: const Text('Add account'),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.settings),
+                          title: const Text('Manage accounts'),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              )
+            ],
+          )),
+    );
+  }
+}
+```
+抽屉菜单通常将 Drawer 组件作为根节点，实现了 Material 风格的菜单面板，MediaQuery.removePadding 可以移除 Drawer 默认的一些留白。抽屉菜单页由顶部和底部组成，顶部由用户头像和昵称组成，底部是一个菜单列表，用 ListView 实现。
+
+**bottomNavigationBar**
+
+Material 组件提供了 BottomAppBar 组件，可以与 FloatingActionButton 配合实现打洞效果：
+
+```dart
+bottomNavigationBar: BottomAppBar(
+  color: Colors.white,
+  shape: CircularNotchedRectangle(),//打孔
+  child: Row(children: <Widget>[
+    IconButton(icon: Icon(Icons.home),),
+    SizedBox(),//中间位置空出
+    IconButton(icon: Icon(Icons.business),)
+  ],
+  mainAxisAlignment: MainAxisAlignment.spaceAround,),
+),
+floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+floatingActionButton: FloatingActionButton(
+    //悬浮按钮
+    child: Icon(Icons.add),
+    onPressed: _onAdd,)
+```
+
+##### Clip
+
+Flutter 中提供了一些裁剪函数，比如 ClipOval(), ClipRRect(), ClipRect() 等，用于对组件进行裁剪：
+
+```dart
+class ClipTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //头像
+    Widget coast = Image.asset(
+      "imgs/coast.jpg",
+      width: 60.0,
+    );
+    return Center(
+      child: Column(
+        children: <Widget>[
+          coast, //不裁
+          ClipOval(
+            child: coast,
+          ), //裁剪圆形
+          ClipRRect(
+            //裁剪圆角矩形
+            borderRadius: BorderRadius.circular(15.0),
+            child: coast,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Align(
+                alignment: Alignment.topLeft,
+                widthFactor: .5, //宽度设为一半
+                child: coast,
+              ),
+              Text(
+                "你好世界",
+                style: TextStyle(color: Colors.green),
+              )
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              ClipRect(
+                //将溢出部分剪裁
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  widthFactor: .5,
+                  child: coast,
+                ),
+              ),
+              Text(
+                "你好世界",
+                style: TextStyle(color: Colors.green),
+              )
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+**CustomClipper**
+
+通过 CustomClipper 剪裁子组件的特定区域：
+
+```dart
+class MyClipper extends CunstomClipper<Rect> {
+  @override
+  Rect getClip(Size size) => Rect.fromLTWH(10.0,15.0,40.0,30.0);
+  //getClip()用于获取裁剪区域的接口
+  @override
+  bool shouldReclip(CustomClipper<Rect> oldClipper) => false;
+  //shouldReclip()用于决定是否重新裁剪
+}
+```
+
+裁剪是在 layout 完成后的绘制阶段进行的，不会影响组件的大小，与 Transform 原理类似。
 
 ### 滚动组件
+
+当组件内容超过当前显示视口 ViewPort 时，如果没有特殊处理则会提示 Overflow 错误，为此 Flutter 提供了多种可滚动组件(Scrollable Widget)用于显示列表和长布局。可滚动组件都直接或间接包含一个 Scrollable 组件，来看一下定义：
+
+```dart
+Scrollable({
+  ...
+  this.axisDirection = AxisDirection.down,//滚动方向
+  this.controller,//接受ScrollController，控制滚动位置，监听滚动事件
+  this.physics,//接受ScrollPhysics类型对象，决定如何相应操作
+  @required this.viewportBuilder,
+})
+```
+**Scrollbar** 是一个 Material 风格的滚动指示器，要为可滚动组件添加滚动条只需将 Scrollbar 作为可滚动组件的任意一个父级组件即可。
+
+##### SingleChildScrollView
+
+SingleChildScrollView 类似于 Andriod 中的 ScrollView，只接受一个子组件：
+
+```dart
+SingleChildScrollView({
+  this.scrollDirection = Axis.vertical,
+  //滚动方向，默认垂直
+  this.reverse = false,
+  //阅读方向
+  this.padding,
+  bool primary,
+  //是否使用默认PrimaryScrollController
+  this.physics,
+  this.controller,
+  this.child,
+})
+```
+
+注意，因为 SingleChildScrollView 不支持基于 sliver 的延迟实例化模型，若视口 ViewPort 超出屏幕太多应该使用支持延迟加载的组件，比如 ListView 。
+
+```dart
+class SingleChildScrollViewTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    return Scrollbar(
+      //显示进度条
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(left: 380),
+        child: Column(
+          //动态创建一个List<Widget>
+          children: str
+              .split("") //每个字母用一个Text显示，放大两倍
+              .map((e) => Text(
+                    e,
+                    textScaleFactor: 2.0,
+                    style: TextStyle(color: Colors.grey),
+                  ),)
+              .toList(),//Widget List
+        ),
+      ),
+    );
+  }
+}
+```
+
+##### ListView
+
+ListView 是最常用的可滚动组件之一，可以沿一个方向线性排布所有子组件，支持 Sliver 的延迟构建模型。
+
+```dart
+ListView({
+  ...
+  //可滚动Widget公共参数
+  Axis scrollDirection = Axis.vertical,
+  bool reverse = false,
+  ScrollController controller,
+  bool primary,
+  ScrollPhysics physics,
+  EdgeInsetsGeometry padding,
+
+  //ListView各构造函数的共同参数
+  double itemExtent,
+  //不为null会强制children长度为itemExtent值，指定后更滚动更高效
+  bool shrinkWrap = false,
+  //是否根据子组件总长度设置ListView长度，默认false即尽可能多占用空间。
+  bool addAutomaticKeepAlives = true,
+  bool addRepaintBoundaries = true,//是否重绘，取决于重绘开销
+  double cacheExtent,
+
+  //子Widget列表
+  List<Widget> children = const <Widget>[],
+})
+```
+
+默认构造函数有一个 children 参数，接受 Widget 列表，但需要提前创建好而用不到Sliver懒加载模型，与 SingleChildScrollView + Column 没有本质区别:
+
+```dart
+ListView(
+  shrinkWrap: true,
+  padding: const EdgeInsets.all(20.0),
+  children:<Widget>[
+    const Text('I\'m dedlicating every day to you'),
+    const Text('Domestic life was never quite my style'),
+    const Text('When you smile, you knock me out, I fall apart'),
+    const Text('And I thought I was so smart'),
+  ]
+)
+```
+
+这种通过 List 作为 children 属性的方法只适用于子组件较少的情况。
+
+**ListView.builder**
+
+ListView.builder 适合列表项比较多的情况，只有当子组件真正显示的时候才会倍创建，也就是说该构造函数创建 ListView 是基于 Sliver 懒加载模型的。
+
+```dart
+ListView.builder({
+  ...
+  @required IndexedWidgetBuilder itemBuilder,
+  int itemCount,
+  ...
+})
+```
+itemBuilder 是列表项的构建器，类型为 IndexedWidgetBuilder ，返回值为一个 Widget，当列表滚动到具体 index 位置时会调用该构建器构建列表项。itemCount 为列表项的数量，如果其值为 null 则为无限列表。
+
+```dart
+ListView.builder(
+  itemCount: 100,
+  itemExtent:50.0,//强制高度为50.0
+  itemBuilder:(BuildContext context, int index) {
+    return ListTile(title: Text("$index"));
+  }
+)
+```
+
+**ListView.separated**
+
+在列表之间添加分割组件，比 ListView.builder 多了一个 separatorBuilder 参数，是一个分割组件生成器。下例在奇数行添加了蓝色下划线，偶数行添加了绿色下划线：
+
+```dart
+class ListView3 extends StatelessWidget {
+  @override
+  Widget build(Buildcontext context) {
+    //下划线Widget预定义以供复用
+    Widget divider1=Divider(color: Colors.blue,);
+    Widget divider2=Divider(color: Colors.green,);
+    return ListView.separated(
+      itemCount:100,
+      //列表项构造器
+      itemBuilder:(BuildContext context, int index) {
+        return ListTile(title:Text("$index"));
+      },
+      //分割器构造器
+      separatorBuilder:(BuildContext context, int index) {
+        return index%2==0?divider1:divider2;
+      } 
+    );
+  }
+}
+```
+
+实例：无限加载列表
+
+```dart
+import 'package:english_words/english_words.dart';
+
+class InfiniteListView extends StatefulWidget {
+  @override
+  _InfiniteListViewState createState() => _InfiniteListViewState();
+}
+
+class _InfiniteListViewState extends State<InfiniteListView> {
+  static const loadingTag = "##loading##"; //表尾标记
+  var _words = <String>[loadingTag];
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+        itemBuilder: (context, index) {
+          //如果到了表尾
+          if (_words[index] == loadingTag) {
+            //不足100条，继续获取数据
+            if (_words.length - 1 < 100) {
+              //获取数据
+              _retrieveData();
+              //加载时显示loading
+              return Container(
+                padding: const EdgeInsets.all(16),
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 24.0,
+                  height: 24.0,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.0,
+                  ),
+                ),
+              );
+            } else {
+              //已经加载了100条数据，不再获取
+              return Container(
+                alignment: Alignment.center,
+                padding: EdgeInsets.all(16.0),
+                child: Text("没有更多了", style: TextStyle(color: Colors.grey)),
+              );
+            }
+          }
+          //显示单词列表项
+          return ListTile(
+            title: Text(_words[index]),
+          );
+        },
+        separatorBuilder: (context, index) => Divider(height: .0),
+        itemCount: _words.length);
+  }
+
+  void _retrieveData() {
+    Future.delayed(Duration(seconds: 2)).then((e) {
+      _words.insertAll(
+          _words.length - 1,
+          //english_words包的generateWordPairs()每次生成20个单词
+          generateWordPairs().take(20).map((e) => e.asPascalCase).toList());
+      setState(() {
+        //重新构建列表
+      });
+    });
+  }
+}
+```
 
 ### 功能组件
 
 不会影响 UI 布局及外观的 Widget，通常具有一定的功能，如事件监听、数据存储等，比如 FocusScope 焦点控制，PageStorage 数据存储，NotificationListener 事件监听等等。
+
+##### WillPopScope
+
+为了避免用户误触而设置的导航返回拦截，默认构造如下：
+
+```dart
+const WillPopScope({
+  ...
+  @required WillPopCallback onWillPop,
+  @required Widget child
+})
+```
 
 <br/>
 
