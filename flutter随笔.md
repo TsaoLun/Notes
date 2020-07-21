@@ -3769,7 +3769,7 @@ ListView(
 
 **ListView.builder**
 
-ListView.builder 适合列表项比较多的情况，只有当子组件真正显示的时候才会倍创建，也就是说该构造函数创建 ListView 是基于 Sliver 懒加载模型的。
+ListView.builder 适合列表项比较多的情况，只有当子组件真正显示的时候才会被创建，也就是说该构造函数创建 ListView 是基于 Sliver 懒加载模型的。
 
 ```dart
 ListView.builder({
@@ -3885,6 +3885,217 @@ class _InfiniteListViewState extends State<InfiniteListView> {
           generateWordPairs().take(20).map((e) => e.asPascalCase).toList());
       setState(() {
         //重新构建列表
+      });
+    });
+  }
+}
+```
+
+**添加固定列表头**：在列表顶部添加“商品列表”的标题。
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return Column(children:<Widget>[
+    ListTile(title:Text("商品列表")),
+    ListView.builder(itemBuilder:(BuildContext context, int index) {
+      return ListTile(title: Text("$index"));
+    }),
+  ]);
+}
+//触发异常
+```
+此处异常是因为 ListView 高度边界无法确定，我们可以通过 SizedBox 指定边界，比如指定高度为屏幕高度减去状态栏、导航栏和表头，`height: MediaQuery.of(context).size.height-24-56-56`，但这种方法并不优雅，若表头布局改变剩余高度就得重新计算。最好的办法是通过 Flex 弹性布局 Expanded 自动拉伸组件大小。Column 是继承自 Flex 的，可以用 Column + Expanded 来实现：
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return Column(children:<Widget>[
+    ListTile(title:Text("商品列表")),
+    Expanded(
+      child:ListView.builder(itemBuilder:(BuildContext context, int index) {
+        return ListTile(title: Text("$index"));
+      }),
+    ),
+  ]);
+}
+```
+
+##### GridView
+
+GridView 可以构建一个二维网格列表，其默认的构造函数定义代码如下:
+
+```dart
+GridView({
+  Axis scrollDirection = Axis.vertical,
+  bool reverse = false,
+  ScrollController controller,
+  bool primary,
+  ScrollPhysics physics,
+  bool shrinkWrap = false,
+  EdgeInsetsGeometry padding,
+  @required SliverGridDelegate gridDelegate,
+  //控制子Widget layout的委托
+  bool addAutomaticKeepAlives = true,
+  bool addRepaintBoundaries = true,
+  double cacheExtent,
+  List<Widget> children = const <Widget>[],
+})
+```
+gridDelegate 参数的类型是 SliverGridDelegate，作用是控制 GridView 子组件如何排列 layout 。SliverGridDelegate 是一个抽象类,定义了 GridView Layout 的相关接口，子类需要通过它们来实现具体的布局算法。
+
+Flutter 中提供了两个 SliverGridDelegate 子类 SliverGridDelegateWithFixedCrossAxisCount 和 SliverGridDelegateWithMaxCrossAxisExtent ，接下来认识一下它们：
+
+**SliverGridDelegateWithFixedCrossAxisCount** 实现了一个横轴为固定数量子元素的 layout 算法，其构造函数：
+
+```dart
+SliverGridDelegateWithFixedCrossAxisCount({
+  @required double crossAxisCount,//横轴子元素数量
+  double mainAxisSpacing = 0.0,//主轴方向间距
+  double crossAxisSpacing = 0.0,//横轴方向子元素间距
+  double childAspectRatio = 1.0,//子元素横轴主轴长度比
+})
+```
+实例：
+
+```dart
+GridView(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount:3,
+    childAspectRatio:1.0
+  ),
+  children:<Widget>[
+    Icon(Icons.ac_unit),
+    Icon(Icons.airport_shuttle),
+    Icon(Icons.all_inclusive),
+    Icon(Icons.beach_access),
+    Icon(Icons.cake),
+    Icon(Icons.free_breakfast)
+  ]
+);
+```
+
+**GridView.count** 构造函数内部使用了 SliverGridDelegateWithFixedCrossAxisCount ，通过它可以快速创建横轴固定数量子元素的 GridView ，上面的示例代码等价于如下代码：、
+
+```dart
+GridView.count(
+  crossAxisCount: 3,
+  childAspectRatio: 1.0,
+  children:<Widget>[
+    Icon(Icons.ac_unit),
+    Icon(Icons.airport_shuttle),
+    Icon(Icons.all_inclusive),
+    Icon(Icons.beach_access),
+    Icon(Icons.cake),
+    Icon(Icons.free_breakfast),
+  ],
+);
+```
+
+**SliverGridDelegateWithMaxCrossAxisExtent** 子类实现了一个横轴子元素为固定最大长度的 layout 算法，其构造函数为：
+
+```dart
+SliverGridDelegateWithMaxCrossAxisExtent({
+  double maxCrossAxisExtent,
+  double mainAxisSpacing = 0.0,
+  double crossAxisSpacing = 0.0,
+  double childAspectRatio = 1.0,
+})
+```
+看一下实例：
+
+```dart
+GridView(
+  padding: EdgeInsets.zero,
+  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: 120.0,
+    childAspectRatio: 2.0,//宽高比为2
+  ),
+  children:<Widget>[
+    Icon(Icons.ac_unit),
+    Icon(Icons.airport_shuttle),
+    Icon(Icons.all_inclusive),
+    Icon(Icons.beach_access),
+    Icon(Icons.cake),
+    Icon(Icons.free_breakfast),
+  ],
+);
+```
+
+GridView.extent 构造函数内部使用了 SliverGridDelegateWithMaxCrossAxisExtent，我们通过它可以快速创建纵轴子元素为固定最大长度的 GridView，上例等价于如下代码：
+
+```dart
+GridView.extent(
+  maxCrossAxisExtent:120.0,
+  childAspectRatio:2.0,
+  children:<Widget>[
+    Icon(Icons.ac_unit),
+    Icon(Icons.airport_shuttle),
+    Icon(Icons.all_inclusive),
+    Icon(Icons.beach_access),
+    Icon(Icons.cake),
+    Icon(Icons.free_breakfast),
+  ],
+);
+```
+
+**GridView.builder**
+
+当子 Widget 较多无法全部提前构建好时，可以通过 GridView.builder 来动态创建子 Widget。GridView.builder 必须指定的参数有如下两个：
+
+```dart
+GridView.builder(
+  ...
+  @required SliverGridDelegate gridDelegate,
+  @required IndexedWidgetBuilder itemBuilder,
+)
+```
+其中，itemBuilder 为子 Widget 构建器。假设我们需要从一个异步数据源分批获取一些 Icon，然后用 GridView 做展示，代码如下：
+
+```dart
+class InfiniteGridView extends StatefulWidget {
+  @override
+  _InfiniteGridViewState createState() => _InfiniteGridViewState();
+}
+
+class _InfiniteGridViewState extends State<InfiniteGridView> {
+  List<IconData> _icons = [];//保存Icon数据
+
+  @override
+  void initState() {
+    //初始化数据
+    _retrieveIcons();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount:3,//每行三列
+        childAspectRatio:1.0//宽高相等
+      ),
+      itemCount: _icons.length,
+      itemBuilder: (context, index) {
+        //如果显示到最后一个并且Icon的总数小于200,则继续获取数据
+        if (index == _icons.length - 1 && _icons.length < 200) {
+          _retrieveIcons();
+        }
+        return Icon(_icons[index]);
+      }
+    );
+  }
+
+  //模拟异步获取数据
+  void _retrieveIcons() {
+    Future.delayed(Duration(milliseconds:200)).then((e) {
+      setState((){
+        _icons.addAll([
+          Icons.ac_unit,
+          Icons.airport_shuttle,
+          Icons.all_inclusive,
+          Icons.beach_access, Icons.cake,
+          Icons.free_breakfast
+        ]);
       });
     });
   }
