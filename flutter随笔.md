@@ -4102,6 +4102,12 @@ class _InfiniteGridViewState extends State<InfiniteGridView> {
 }
 ```
 
+##### CustomScrollView
+
+CustomScrollView 可以使用 Sliver 来自定义滚动模型的组件，可以包含多种滚动模型，比如顶部是 GridView 底部是 ListView ，它们的滚动效果是分离的，需要一个 “胶水” CustomScrollView 来进行粘贴。
+
+Sliver 版和非 Sliver 版可滚动组件最大的区别就是前者不包含滚动模型而后者包含滚动模型，也正因如此才能将多个 Sliver 粘在一起，共用 CustomScrollView 的 Scrollable 实现统一的滑动效果。CustomScrollView 的子组件必须是 Sliver 。
+
 ### 功能组件
 
 不会影响 UI 布局及外观的 Widget，通常具有一定的功能，如事件监听、数据存储等，比如 FocusScope 焦点控制，PageStorage 数据存储，NotificationListener 事件监听等等。
