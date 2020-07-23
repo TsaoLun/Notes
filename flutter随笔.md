@@ -4247,16 +4247,16 @@ class TestRoute extends StatelessWidget {
 }
 
 class ShareDataWidget extends InheritedWidget {
-  ShareDataWidget({@required this.data, Widget child //这是什么意思
-      })
-      : super(child: child);
+  //将当前计数器点击次数保存在ShareDataWidget的data属性中
+  ShareDataWidget({@required this.data, Widget child//为子组件作准备？
+      }): super(child: child);
 
   final int data; //需要在子树中共享的数据，保存点击次数
 
-  //定义一个便捷方法，方便子树中的Widget获取共享数据
+  //定义一个便捷方法，方便子树中的widget获取共享数据
   static ShareDataWidget of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<ShareDataWidget>();
-    //这里用static而不是class，应该和swift中类似，稍后补
+    //这里用static而不是class，应该和swift中类似
   }
 
   //该回调决定当data发生变化时是否通知子树中依赖data的Widget
@@ -4325,6 +4325,158 @@ class _InheritedWidgetTestRouteState extends State<InheritedWidgetTestRoute> {
   }
 }
 ```
+
+#####　Provider
+
+在 Flutter 开发中，状态管理是永恒的话题。如果状态是组件私有的，则应该由组件自己管理；如果状态要跨组件共享，则该状态应该由各个组件共同点父元素来管理。对于跨组件共享的状态，使用全局事件总线 EventBus 是一个观察者模式的实现，通过它就可以实现跨组件状态同步：状态持有方（发布者）负责更新、发布状态，状态使用方（观察者）监听状态改变事件来执行一些操作。
+
+```dart
+//定义事件
+enum Event{
+  login,
+  ...//省略其他事件
+}
+
+//登录状态改变后发布状态改变事件
+bus.emit(Event.login);
+
+//依赖登录状态的页面
+void onLoginChanged(e){
+  //登录状态变化处理逻辑
+  bus.on(Event.login, onLogin);
+  super.initState();
+}
+
+@override
+void dispose(){
+  //取消订阅
+  bus.off(Event.login, onLogin);
+  super.dispose();
+}
+```
+可见通过观察者模式来实现跨组件状态共享有一些明显缺点：
+
+1. 必须显示定义各种事件，不好管理
+2. 订阅者必须显示注册状态改变回调，也必须在组件销毁时手动解绑避免内存泄露
+
+之前的 InheritedWidget 天生能绑定 InheritedWidget 与依赖它的子孙组件的依赖关系，并且当 InheritedWidget 数据发生变化时，自动更新依赖的子孙组件。利用这个特性，我们可以将需要跨组件共享的状态保存在 InheritedWidget 中，然后在子组件中引用 InheritedWidget 即可。著名的 Provider 包正是基于这个思想实现的一套跨组件状态共享解决方案，我们通过 InheritedWidget 实现的思路来一步步实现一个最小功能的 Provider 。
+
+```dart
+//一个通用的InheritedWidget，保存需要跨组件共享的状态
+class InheritedProvider<T> extends InheritedWidget {
+  InheritedProvider({@required this.data, Widget child}):
+    super(child: child);
+  
+  //共享状态使用泛型
+  final T data;
+
+  @override
+  bool updateShouldNotify(InheritedProvider<T> old) {
+    //在此简单返回true，则每次更新都会调用依赖其的子孙节点didChangeDependencies
+    return true;
+  }
+}
+```
+有了数据保存的地方，接下来就是在数据发生变化的时候重新构建 InheritedProvider，现在面临的两个问题：
+
+1. 数据发生变化怎么通知
+2. 谁来重新构建 InheritedProvider?
+
+我们可以使用之前介绍的 eventBus 来进行事件通知，但为了更贴近 Flutter 开发，我们使用 Flutter SDK 中提供的 ChangeNotifier 类，它继承自 Listenable，也实现了一个 Flutter 风格的发布者-订阅者模式，ChangeNotifier 定义大致如下：
+
+```dart
+class ChangeNotifier implements Listenable {
+  List listeners = [];
+  @override
+  void addListener(VoidCallback listener) {
+    //添加监听器
+    listeners.add(listener);
+  }
+  @override
+  void removeListener(VoidCallback listerner) {
+    //移除监听器
+    listerners.remove(listener);
+  }
+
+  void notifyListeners(){
+    //通知所有监听器，触发监听器回调
+    listerner.forEach((item)=>item());
+  }
+
+  ...//省略无关代码
+}
+```
+我们可以通过 addListener() 和 removeListener() 来添加、移除监听器（订阅者）；通过调用 notifyListeners() 可以触发所有监听器回调。
+
+现在我们将要共享的状态放到一个 Model 类中，然后让它继承自 ChangeNotifier，这样当共享的状态改变时我们只需要调用 notifyListeners() 来通知订阅者，然后由订阅者来重新构建 InheritedProvider 。接下来我们实现这个订阅者类：
+
+```dart
+class ChangeNotifierProvider<T extends ChangeNotifier> extends StatefulWidget {
+  ChangeNotifierProvider({
+    Key key,
+    this.data,
+    this.child,
+  });
+
+  final Widget child;
+  final T data;
+
+  //定义一个便捷方法，方便子树中的widget获取共享数据
+  static T of<T>(BuildContext context) {
+    final type = _typeOf<InheritedProvider<T>>();
+    final provider = context.dependOnInheritedWidgetOfExactType<InheritedProvider<T>>();
+    return provider.data;
+  }
+
+  @override
+  _ChangeNotifierProviderState<T> createState() => _ChangeNotifierProviderState<T>();
+}
+```
+
+该类继承 StatefulWidget，然后自定义类一个 of() 静态方法供子类方便获取 Widget 树中的 InheritedProvider 中保存的共享状态(model)，下面我们实现该类对应的 _ChangeNotifierProviderState 类：
+
+```dart
+class _ChangeNotifierProviderState<T extends ChangeNotifier> extends State<ChangeNotifierProvider<T>> {
+  void update() {
+    //如果数据发生变化，重新构建InheritedPrvider
+    setState(()=>{});
+  }
+
+  @override
+  void didUpdateWidget(ChangeNotifierProvider<T> oldWidget) {
+    //当Provider更新时，如果新旧数据不等则解绑旧数据监听，同时添加新数据监听
+    if (widget.data != oldWidget.data) {
+      oldWidget.data.removeListener(update);
+      widget.data.addListener(update);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void initState(){
+    //给model添加监听器
+    widget.data.addListener(update);
+    super.initState();
+  }
+
+  @override
+  void dispose(){
+    //移除model的监听器
+    widget.data.removeListener(update);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InheritedProvider<T>(
+      data: widget.data,
+      child: widget.child,
+    );
+  }
+}
+```
+可以看到 _ChangeNotifierProviderState 类的主要作用就是监听到共享状态 model 改变时重新构建 Widget 树。注意在 _ChangeNotifierProviderState 类中调用 setState() 方法，widget.child 始终是同一个，所以执行 build 时，InheritedProvider 的 child 引用的始终是同一个子 widget，widget.child 并不会重新 build，这也就相当于对 child 进行了缓存。
+
 
 <br/>
 
