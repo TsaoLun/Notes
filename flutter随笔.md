@@ -4104,17 +4104,81 @@ class _InfiniteGridViewState extends State<InfiniteGridView> {
 
 ##### CustomScrollView
 
-CustomScrollView 可以使用 Sliver 来自定义滚动模型的组件，可以包含多种滚动模型，比如顶部是 GridView 底部是 ListView ，它们的滚动效果是分离的，需要一个 “胶水” CustomScrollView 来进行粘贴。
+CustomScrollView 可以使用 Sliver 来自定义滚动模型的组件，可以包含多种滚动模型，比如顶部是 GridView 底部是 ListView ，它们的滚动效果是分离的，需要一个 “胶水” CustomScrollView 来进行粘贴。
 
-Sliver 版和非 Sliver 版可滚动组件最大的区别就是前者不包含滚动模型而后者包含滚动模型，也正因如此才能将多个 Sliver 粘在一起，共用 CustomScrollView 的 Scrollable 实现统一的滑动效果。CustomScrollView 的子组件必须是 Sliver 。
+Sliver 版和非 Sliver 版可滚动组件最大的区别就是前者不包含滚动模型而后者包含滚动模型，也正因如此才能将多个 Sliver 粘在一起，共用 CustomScrollView 的 Scrollable 实现统一的滑动效果，比如 SliverList 或者 SliverGrid 。CustomScrollView 的子组件必须是 Sliver 。
+
+```dart
+class CustomScrollViewTestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //因为本路由没有使用Scaffold，为让子级Widget使用
+    //MaterialDesign默认样式风格，使用Material作为本路由的根
+    return Material(
+      child: CustomScrollView(
+        slivers: <Widget>[
+          //AppBar，包含一个导航栏
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 250.0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text('Demo'),
+              background: Image.asset(
+                "./src/iconImg.jpeg",
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+          SliverPadding(
+            //用SliverPadding包裹SliverGrid添加补白
+              padding: const EdgeInsets.all(8.0),
+              sliver: SliverGrid(
+                  //Grid
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, //Grid按两列显示
+                    mainAxisSpacing: 10.0,
+                    crossAxisSpacing: 10.0,
+                    childAspectRatio: 4.0,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                    //创建子widget
+                    return Container(
+                      alignment: Alignment.center,
+                      color: Colors.cyan[100 * (index % 9)],
+                      child: Text('grid item $index'),
+                    );
+                  }, childCount: 20))),
+
+          //子元素高度为50像素的List
+          SliverFixedExtentList(
+              itemExtent: 50.0,
+              delegate:
+                  SliverChildBuilderDelegate((BuildContext context, int index) {
+                return Container(
+                  alignment: Alignment.center,
+                  color: Colors.lightBlue[100 * (index % 9)],
+                  child: Text('list item $index'),
+                );
+              }, childCount: 50 //列表项数
+            )
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
 
 ### 功能组件
 
-不会影响 UI 布局及外观的 Widget，通常具有一定的功能，如事件监听、数据存储等，比如 FocusScope 焦点控制，PageStorage 数据存储，NotificationListener 事件监听等等。
+不会影响 UI 布局及外观的 Widget，通常具有一定的功能，如事件监听、数据存储等，之前提到的 FocusScope 焦点控制，PageStorage 数据存储，NotificationListener 事件监听等等。
 
 ##### WillPopScope
 
-为了避免用户误触而设置的导航返回拦截，默认构造如下：
+为了避免用户误触而设置的导航返回拦截，比如某个时间段需要双击才认为是退出。WillPopScope 的默认构造函数如下：
 
 ```dart
 const WillPopScope({
@@ -4122,6 +4186,53 @@ const WillPopScope({
   @required WillPopCallback onWillPop,
   @required Widget child
 })
+```
+onWillPop 是一个回调函数，当用户点击返回按钮时被调用，该回调需要返回一个 Future 对象，如果 Future 最终值为 false 时，则当前路由不出栈（不会返回）；最终值为 true 时，当前路由出栈退出。我们需要提供这个回调来决定是否退出。
+
+```dart
+//为防止用户误触返回键退出，只有在1秒内双击才退出
+class WillPopScopeTestRoute extends StatefulWidget {
+  @override
+  WillPopScopeTestRouteState createState() {
+    return WillPopScopeTestRouteState();
+  }
+}
+
+class WillPopScopeTestRouteState extends State<WillPopScopeTestRoute> {
+  DateTime _lastPressedAt; //上次点击时间
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        //返回Future对象
+        if (_lastPressedAt == null ||
+            DateTime.now().difference(_lastPressedAt) > Duration(seconds: 1)) {
+          //两次点击间隔超过1秒则重新计时
+          _lastPressedAt = DateTime.now();
+          return false;
+        }
+        return true;
+      },
+      child: Container(
+        alignment: Alignment.center,
+        child: Text("1秒内双击返回键退出"),
+      ),
+    );
+  }
+}
+```
+
+##### InheritedWidget
+
+InheritedWidget 是 Flutter 中非常重要的一个功能性组件，提供了一种数据在 widget 树中从上到下传递、共享的方式，比如在应用的根 widget 中通过 InheritedWidget 共享一个数据，那么我们便可以在任意子 widget 中来获取该共享的数据。如 Flutter SDK 中正是通过 InheritedWidget 来共享应用主题 Theme 和 Locale 信息的。
+
+**didChangeDependencies**
+
+之前提到 StatefulWidget 时，提到 State 对象有一个 didChangeDependencies 回调，它会在依赖发生变化时被 Flutter Framework 调用。而这个“依赖”指的是子 widget 是否使用了父 widget 中的 InheritedWidget 数据。下面来看一下之前“计数器”示例应用程序的 InheritedWidget 版本，首先通过继承 InheritedWidget 将当前计数器点击次数保存在 ShareDataWidget 的 data 属性中：
+
+```dart
+
 ```
 
 <br/>
