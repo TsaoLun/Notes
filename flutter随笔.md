@@ -4225,14 +4225,105 @@ class WillPopScopeTestRouteState extends State<WillPopScopeTestRoute> {
 
 ##### InheritedWidget
 
-InheritedWidget 是 Flutter 中非常重要的一个功能性组件，提供了一种数据在 widget 树中从上到下传递、共享的方式，比如在应用的根 widget 中通过 InheritedWidget 共享一个数据，那么我们便可以在任意子 widget 中来获取该共享的数据。如 Flutter SDK 中正是通过 InheritedWidget 来共享应用主题 Theme 和 Locale 信息的。
+InheritedWidget 是 Flutter 中非常重要的一个功能性组件，提供了一种数据在 widget 树中从上到下传递、共享的方式，比如在应用的根 widget 中通过 InheritedWidget 共享一个数据，那么我们便可以在任意子 widget 中来获取该共享的数据。Flutter SDK 正是通过 InheritedWidget 来共享应用主题 Theme 和 Locale 信息的。
 
 **didChangeDependencies**
 
-之前提到 StatefulWidget 时，提到 State 对象有一个 didChangeDependencies 回调，它会在依赖发生变化时被 Flutter Framework 调用。而这个“依赖”指的是子 widget 是否使用了父 widget 中的 InheritedWidget 数据。下面来看一下之前“计数器”示例应用程序的 InheritedWidget 版本，首先通过继承 InheritedWidget 将当前计数器点击次数保存在 ShareDataWidget 的 data 属性中：
+之前提到 StatefulWidget 时，提到 State 对象有一个 didChangeDependencies 回调，它会在依赖发生变化时被 Flutter Framework 调用。而这个“依赖”指的是子 widget 是否使用了父 widget 中的 InheritedWidget 数据。这种机制可以使子组件在所依赖的 InheritedWidget 变化时更新自身。下面来看一下之前“计数器”示例应用程序的 InheritedWidget 版本，首先通过继承 InheritedWidget 将当前计数器点击次数保存在 ShareDataWidget 的 data 属性中：
 
 ```dart
+import 'package:flutter/material.dart';
 
+void main() => runApp(MaterialApp(title: "Test", home: TestRoute()));
+
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Demo')),
+      body: InheritedWidgetTestRoute(),
+    );
+  }
+}
+
+class ShareDataWidget extends InheritedWidget {
+  ShareDataWidget({@required this.data, Widget child //这是什么意思
+      })
+      : super(child: child);
+
+  final int data; //需要在子树中共享的数据，保存点击次数
+
+  //定义一个便捷方法，方便子树中的Widget获取共享数据
+  static ShareDataWidget of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ShareDataWidget>();
+    //这里用static而不是class，应该和swift中类似，稍后补
+  }
+
+  //该回调决定当data发生变化时是否通知子树中依赖data的Widget
+  @override
+  bool updateShouldNotify(ShareDataWidget old) {
+    //如果返回true，则子树中依赖(build函数中有调用)本widget
+    //的子widget的state.didChangeDependencies会被调用
+    return old.data != data;
+  }
+}
+
+//实现一个子组件_TestWidget，在其build方法中引用ShareDataWidget中的数据
+//同时在其didChangeDependencies()回调中打印日志
+class _TestWidget extends StatefulWidget {
+  @override
+  __TestWidgetState createState() => __TestWidgetState();
+}
+
+class __TestWidgetState extends State<_TestWidget> {
+  @override
+  Widget build(BuildContext context) {
+    //使用InheritedWidget中的共享数据
+    return Text(ShareDataWidget.of(context).data.toString());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    //父或祖先widget中InheritedWidget改变(updateShouldNotify返回true)时会被调用
+    //如果build中没有依赖InheritedWidget则此回调不会被调用
+    print("Dependencies change");
+  }
+}
+
+//最后创建一个按钮每次点击就将ShareDataWidget自增
+class InheritedWidgetTestRoute extends StatefulWidget {
+  @override
+  _InheritedWidgetTestRouteState createState() =>
+      _InheritedWidgetTestRouteState();
+}
+
+class _InheritedWidgetTestRouteState extends State<InheritedWidgetTestRoute> {
+  int count = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ShareDataWidget(
+        data: count,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20.0),
+              child: _TestWidget(), //子widget中依赖ShareDataWidget
+            ),
+            RaisedButton(
+              child: Text("Increment"),
+              //每点击一次，将count自增再重新build，ShareDataWidget的data将被更新
+              onPressed: () => setState(() => ++count),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
 ```
 
 <br/>
