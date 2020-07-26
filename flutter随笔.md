@@ -4477,6 +4477,83 @@ class _ChangeNotifierProviderState<T extends ChangeNotifier> extends State<Chang
 ```
 可以看到 _ChangeNotifierProviderState 类的主要作用就是监听到共享状态 model 改变时重新构建 Widget 树。注意在 _ChangeNotifierProviderState 类中调用 setState() 方法，widget.child 始终是同一个，所以执行 build 时，InheritedProvider 的 child 引用的始终是同一个子 widget，widget.child 并不会重新 build，这也就相当于对 child 进行了缓存。
 
+**购物车示例**
+
+```dart
+//定义一个Item类
+class Item {
+  Item(this.price, this.count);
+  double price;
+  int count;
+}
+
+//定义一个保存购物车内商品数据的CartModel类
+class CartModel extends ChangeNotifier {
+  //用于保存购物车中商品列表
+  final List<Item> _items = [];
+
+  //禁止改变购物车里的商品信息
+  UnmodifiableListView<Item> get items => UnmodifiableListView(items);
+
+  //购物车中商品的总价
+  double get totalPrice =>
+      _items.fold(0, (value, item) => value + item.count * item.price);
+
+  //将[item]添加到购物车，唯一能从外部改变购物车的方法
+  void add(Item item) {
+    _items.add(item);
+    //通知监听器（订阅者），重新构建InheritedProovider更新状态
+    notifyListeners();
+  }
+}
+
+//CartModel即要跨组件共享的model类，我们来构建示例页面
+class ProviderRoute extends StatefulWidget {
+  @override
+  _ProviderRouteState createState() => _ProviderRouteState();
+}
+
+class _ProviderRouteState extends State<ProviderRoute> {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ChangeNotifierProvider<CartModel>(
+          data: CartModel(),
+          child: Builder(builder: (context) {
+            return Column(
+              children: <Widget>[
+                Builder(builder: (context) {
+                  var cart = ChangeNotifierProvider.of<CartModel>(context);
+                  return Text("总价：${cart.totalPrice}");
+                }),
+                Builder(builder: (context) {
+                  print("RaisedButton build"); //后面优化部分会用到
+                  return RaisedButton(
+                    child: Text("添加商品"),
+                    onPressed: () {
+                      //给购物车中添加商品，添加后总价会更新
+                      ChangeNotifierProvider.of<CartModel>(context)
+                          .add(Item(20.0, 1));
+                    },
+                  );
+                })
+              ],
+            );
+          })),
+    );
+  }
+}
+```
+
+上例将 Provider 的原理和流程体现的很清楚，Model 变化后会自动通知 ChangeNotifierProvider，ChangeNotifierProvider 内部会重新构建 InheritedWidget，而依赖该 InheritedWidget 的子孙 Widget 就会更新。
+
+使用 Provider 会带来如下收益：
+1. 业务代码更关注数据，UI 会随 Model 更新，而不用在状态改变后再去手动调动 setState() 显示更新页面。
+2. 数据改变的消息传递被屏蔽了，无需手动处理状态改变事件的发布和订阅，都封装在 Provider 中。
+3. 在大型复杂应用中，需要全局共享的状态非常多，使用 Provider 会大大简化代码逻辑。
+
+
+
 
 <br/>
 
