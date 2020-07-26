@@ -4362,7 +4362,7 @@ void dispose(){
 之前的 InheritedWidget 天生能绑定 InheritedWidget 与依赖它的子孙组件的依赖关系，并且当 InheritedWidget 数据发生变化时，自动更新依赖的子孙组件。利用这个特性，我们可以将需要跨组件共享的状态保存在 InheritedWidget 中，然后在子组件中引用 InheritedWidget 即可。著名的 Provider 包正是基于这个思想实现的一套跨组件状态共享解决方案，我们通过 InheritedWidget 实现的思路来一步步实现一个最小功能的 Provider 。
 
 ```dart
-//一个通用的InheritedWidget，保存需要跨组件共享的状态
+//泛型，一个通用的InheritedWidget，保存需要跨组件共享的状态
 class InheritedProvider<T> extends InheritedWidget {
   InheritedProvider({@required this.data, Widget child}):
     super(child: child);
@@ -4411,6 +4411,9 @@ class ChangeNotifier implements Listenable {
 现在我们将要共享的状态放到一个 Model 类中，然后让它继承自 ChangeNotifier，这样当共享的状态改变时我们只需要调用 notifyListeners() 来通知订阅者，然后由订阅者来重新构建 InheritedProvider 。接下来我们实现这个订阅者类：
 
 ```dart
+//该方法用于在Dart中获取模块类型
+Type _typeOf<T> => T;
+
 class ChangeNotifierProvider<T extends ChangeNotifier> extends StatefulWidget {
   ChangeNotifierProvider({
     Key key,
