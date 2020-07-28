@@ -4326,7 +4326,7 @@ class _InheritedWidgetTestRouteState extends State<InheritedWidgetTestRoute> {
 }
 ```
 
-#####　Provider
+##### Provider
 
 在 Flutter 开发中，状态管理是永恒的话题。如果状态是组件私有的，则应该由组件自己管理；如果状态要跨组件共享，则该状态应该由各个组件共同点父元素来管理。对于跨组件共享的状态，使用全局事件总线 EventBus 是一个观察者模式的实现，通过它就可以实现跨组件状态同步：状态持有方（发布者）负责更新、发布状态，状态使用方（观察者）监听状态改变事件来执行一些操作。
 
@@ -4505,7 +4505,7 @@ class CartModel extends ChangeNotifier {
   //将[item]添加到购物车，唯一能从外部改变购物车的方法
   void add(Item item) {
     _items.add(item);
-    //通知监听器（订阅者），重新构建InheritedProovider更新状态
+    //通知监听器（订阅者），重新构建InheritedProvider更新状态
     notifyListeners();
   }
 }
@@ -4555,9 +4555,530 @@ class _ProviderRouteState extends State<ProviderRoute> {
 2. 数据改变的消息传递被屏蔽了，无需手动处理状态改变事件的发布和订阅，都封装在 Provider 中。
 3. 在大型复杂应用中，需要全局共享的状态非常多，使用 Provider 会大大简化代码逻辑。
 
+**优化**
+
+上面实现的 ChangeNotifierProvider 有两个明显缺点：代码组织和性能问题。先来看一下代码组织问题：
+
+```dart
+Builder(builder:(context){
+  var cart = ChangeNotifierProvider.of<CartModel>(context);
+  return Text("总价：${cart.totalPrice}")
+})
+```
+这段代码有两点可以优化：
+1. 需要显式调用 ChangeNotifierProvider.of ，当 APP 内部依赖 CartModel 很多时，这样的代码将很冗余。‘
+2. 语义不明确，由于 ChangeNotifierProvider 时订阅者，那么依赖 CartModel 的 Widget 自然就是订阅者，其实也就是状态的消费者，如果我们用 Builder 来构建，语义就不是很明确，如果能使用一个具有明确语义的 Widget 比如叫 Consumer ，就能看到它知道它是依赖某个夸组件或全局的状态。
+
+```dart
+//这是一个便捷类，会获得当前context和指定数据类型的Provider
+class Consumer<T> extends StatelessWidget {
+  Consumer({
+    Key key,
+    @required this.builder,
+    this.child,
+  }) : assert(builder != null),
+    super(key: key);
+
+  final Widget child;
+  final Widget Function(BuildContext context, T value) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return builder(
+      context,
+      ChangeNotifierProvider.of<T>(context),//自动获取Model
+    );
+  }
+}
+```
+Consumer 的实现很简单，通过指定模板参数，再内部自动调用 ChangeNotifierProvider.of 获取相应的 Model，并且 Consumer 这个名字本身也是具有明确语义（消费者）的。现在上面代码块可以优化如下这样：
+
+```dart
+Consumer<CartModel>(
+  builder:(context, cart)=>Text("总价：${cart.totalPrice}");
+)
+```
+接下来处理性能问题，上面代码在构建“添加按钮”的代码处：
+
+```dart
+Builder(builder:(context){
+  print("RaisedButton build");//构建时输出日志
+  return RaisedButton(
+    child:Text("添加商品"),
+    onPressed:(){
+      ChangeNotifierProvider.of<CartModel>(context).add(Item(20.0,1));
+    }
+  );
+})
+```
+构建 RaisedButton 的 Builder 中调用了 ChangeNotifierProvider.of，也就是说依赖了 Widget 树上的 InheritedWidget 所以添加完商品后 CartModel 发生变化，会通知 ChangeNotifierProvider 重新构建子树。为了避免重新构建子树，需要解除按钮和 InheritedWidget 建立的依赖关系。调用 dependOnInheritedWidgetOfExactType() 和 getElementForInheritedWidgetOfExactType() 的区别在于前者会注册依赖关系而后者不会，作如下修改：
+
+```dart
+//添加一个Listen参数，表示是否建立依赖关系
+static T of<T>(BuildContext context, {bool listen = true}) {
+  final type = _typeOf<InheritedProvider<T>>();
+  final provider = listen
+    ? context.dependOnInheritedWidgetOfExactType<InheritedProvider<T>>()
+    : context.getElementForInheritedWidgetOfExactType<InheritedProvider<T>>()?.widget
+      as InheritedProvider<T>;
+  return provider.data;
+}
+
+//修改调用部分代码
+Column(
+  children:<Widget>[
+    Consumer<CartModel>(
+      builder:(BuildContext context, cart)=>Text("总价：${cart.totalPrice}"),
+    ),
+    Builder(builder:(context){
+      print("RaisedButton build");
+      return RaisedButton(
+        child:Text("添加商品"),
+        onPressed:(){
+          //listen设为false，不建立依赖
+          ChangeNotifierProvider.of<CartModel>(context, listen: false)
+            .add(Item(20.0,1));
+        },
+      );
+    })
+  ],
+)
+```
+
+##### Color & Theme
+
+实现一个背景颜色和 Title 可以自定义的导航栏，背景色为深色时 Title 为浅色，背景色为浅色时 Title 为深色。要实现这个功能需要计算背景色的亮度，动态确定 Title 的颜色。Color 类中提供了一个 computeLuminance() 方法，可以返回一个 [0-1] 的值，数字越大颜色越深，我们可以根据它来动态确定 Title 的颜色，下面是 NavBar 的简单实现：
+
+```dart
+class NavBar extends StatelessWidget {
+  final String title;
+  final Color color;//背景颜色
+
+  NavBar({
+    Key key,
+    this.color,
+    this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        minHeight:52,
+        minWidth:double.infinity,
+      ),
+      decoration:BoxDecoration(
+        color: color,
+        boxShadow: [
+          //阴影
+          BoxShadow(
+            color:Colors.black26,
+            offset:Offset(0,3),
+            blurRadius:3,
+          ),
+        ],
+      ),
+      child:Text(
+        title,
+        style:TextStyle(
+          fontWeight:FontWeight.bold,
+          //根据背景色亮度来确定Title颜色
+          color: color.computeLuminance() < 0.5 ? Colors.white : Colors.black,
+        ),
+      ),
+      alignment: Alignment.center,
+    );
+  }
+}
+```
+摆上 appBar 需要 PreferredSize：
+
+```dart
+void main() => runApp(MaterialApp(title: "Test", home: TestRoute()));
+
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(30),
+        child: NavBar(
+          title: 'Demo',
+          color: Colors.white,
+        ),
+      ),
+    ));
+  }
+}
+```
+
+**Theme**
+
+Theme 组件可以为 Material APP 定义 ThemeData，Material 组件如导航栏颜色、标题字体、Icon 样式等都使用了主题数据，Theme 内会使用 InheritedWidget 来为其子树共享样式数据。在子组件中，可以通过 Theme.of 方法获取当前的 ThemeData 。(注意 Material Design 设计规范中，导航栏高度不能自定义，ThemeData 只包含了可自定义部分。)
+
+```dart
+ThemeData({
+  Brightness brightness,//深色还是浅色
+  MaterialColor primarySwatch,//主题颜色样本
+  Color accentColor,//次级色，决定大多数Widget颜色，如进度条开关
+  Color cardColor,//卡片颜色
+  Color dividerColor,//分割线颜色
+  ButtonThemeData buttonTheme,//按钮主题
+  Color cursorColor,//输入框光标颜色
+  Color dialogBackgroundColor,//对话框背景颜色
+  String fontFamily,//文字字体
+  TextTheme  textTheme,//字体主题，包括body标题文字样式
+  IconThemeData iconTheme,//Icon默认样式
+  TargetPlatform platform,//指定平台控件风格
+})
+```
+实现一个路由器换肤功能
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(title: "Test", home: ThemeTestRoute()));
+
+class ThemeTestRoute extends StatefulWidget {
+  @override
+  _ThemeTestRouteState createState() => _ThemeTestRouteState();
+}
+
+class _ThemeTestRouteState extends State<ThemeTestRoute> {
+  Color _themeColor = Colors.teal; //当前路由主题色
+
+  @override
+  Widget build(BuildContext context) {
+    ThemeData themeData = Theme.of(context);
+    return Theme(
+      data: ThemeData(
+        primarySwatch: _themeColor, //用于导航栏、FloatingActionButton背景色
+        iconTheme: IconThemeData(color: _themeColor)
+      ),
+      child: Scaffold(
+        appBar: AppBar(title: Text("主题测试"),),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children:<Widget>[
+              Icon(Icons.favorite),
+              Icon(Icons.airport_shuttle),
+              Text(" 颜色跟随主题")]
+            ),//为第二行Icon自定义颜色
+            Theme(
+              //通过Theme为第二行固定颜色
+              data: themeData.copyWith(iconTheme: themeData.iconTheme.copyWith(
+                color: Colors.black
+              ),),
+            child:Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(Icons.favorite),
+                Icon(Icons.airport_shuttle),
+                Text(" 颜色固定黑色")
+              ],
+            ))
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: ()=>setState(()=>_themeColor =
+          _themeColor==Colors.teal ? Colors.grey : Colors.teal,
+        ),
+        child:Icon(Icons.palette))
+      ),
+    );
+  }
+}
+```
+改进：
+
+```dart
+class _ThemeTestRouteState extends State<ThemeTestRoute> {
+  Color _themeColor = Colors.blue; //当前路由主题色
+  List<Color> themeColorList = [Colors.blue, Colors.grey, Colors.teal];
+  int _colorindex = 0;
+
+  changeColor() {
+    _colorindex >= 2 ? _colorindex = 0 : _colorindex += 1;
+    _themeColor = themeColorList[_colorindex];
+  }
 
 
+  @override
+  Widget build(BuildContext context) {
+    ThemeData themeData = Theme.of(context);
+    return Theme(
+      data: ThemeData(
+          primarySwatch: _themeColor, //用于导航栏、FloatingActionButton背景色
+          iconTheme: IconThemeData(color: _themeColor)),
+      child: Scaffold(
+          appBar: AppBar(
+            title: Text("主题测试"),
+          ),
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.favorite),
+                    Icon(Icons.airport_shuttle),
+                    Text(" 颜色跟随主题")
+                  ]), //为第二行Icon自定义颜色
+              Theme(
+                  data: themeData.copyWith(
+                    iconTheme:
+                        themeData.iconTheme.copyWith(color: Colors.black),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(Icons.favorite),
+                      Icon(Icons.airport_shuttle),
+                      Text(" 颜色固定黑色")
+                    ],
+                  ))
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+              onPressed: () => setState(
+                    () => changeColor(),
+                  ),
+              child: Icon(Icons.palette))),
+    );
+  }
+}
+```
+注意几点：可以通过局部主题覆盖全局主题，正如代码中通过 Theme 为第二行图标指定固定颜色一样，Flutter 中会经常使用这种方法自定义子树主题。为什么局部主题可以覆盖全局主题？主要是因为 widget 中使用主题样式时是通过 Theme.of(BuildContext context) 来获取的，看看简化后的代码：
 
+```dart
+static ThemeData of(BuildContext context, {bool shadowThemeOnly = false}) {
+  //简化了的代码
+  return context.dependOnInheritedWidgetOfExactType<_InheritedTheme>().theme.data
+}
+```
+`context.dependOnInheritedWidgetOfExactType` 会在 widget 树中从当前位置向上查找第一个类型为 _InheritedTheme 的 widget 。所以当局部指定 Theme 后，其子树中通过 Theme.of() 向上查找到第一个 _InheritedTheme 便是我们指定的 Theme 。
+
+本示例是对单个路由换肤，如果想对整个应用换肤，可以去修改 MaterialApp 的 theme 属性。
+
+##### FutureBuilder & StreamBuilder
+
+很多时候我们会依赖一些异步数据来动态更新 UI，比如打开一个页面需要先从互联网上获取数据，过程中显示一个加载框，等获取到数据时我们再渲染页面；又比如我们想展示 Stream 的进度。通过 StatefulWidget 可以实现，但 Flutter 专门提供了 FutureBuilder 和 StreamBuilder 两个组件来快速实现这种功能。
+
+**FutureBuilder**
+
+FutureBuilder 会依赖一个 Future，它会根据所依赖的 Future 的状态来动态构建自身，来看一下 FutureBuilder 构造函数:
+
+```dart
+FutureBuilder({
+  this.future,
+  this.initialData,
+  @required this.builder,
+})
+```
++ future：FutureBuilder依赖的Future，通常是一个异步耗时任务。
++ initialData：初始数据，用户设置默认数据。
++ builder：Widget构建器；该构建器会在 Future 执行的不同阶段被多次调用，构建器签名：`Function(BuildContext, AsyncSnapshot snapshot)`
+
+snapshot 会包含当前异步任务的状态信息及结果信息，比如我们可以通过 `snapshot.connectionState` 获取异步任务的状态信息，通过 `snapshot.hasError` 判断异步任务是否有错误等等。另外 FutureBuilder 的 builder 函数签名和 StreamBuilder 的 builder 是相同的。
+
+**示例**
+
+我们实现一个路由，当该路由打开时我们从网上获取数据，获取数据时弹出一个加载框；获取结束时，如果成功则显示获取到的数据，如果失败则显示错误。这里只模拟一下这个过程，隔3秒后返回一个字符串：
+
+```dart
+class TestRoute extends StatelessWidget {
+  Future<String> mockNetworkData() async {
+    return Future.delayed(Duration(seconds: 2), () => "您已获取到数据");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Demo'),
+        ),
+        body: Center(
+            child: FutureBuilder<String>(
+                future: mockNetworkData(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  //请求已结束
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return snapshot.hasError
+                        ? Text("Error: ${snapshot.error}")
+                        : Text("Contents:${snapshot.data}");
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                })));
+  }
+}
+```
+上面代码在 builder 中根据当前异步任务状态 ConnectionState 来返回不同的 widget，Connection 是一个枚举类，定义如下：
+
+```dart
+enum ConnectionState {
+  //当前没有异步任务，比如FutureBuilder的future为null时
+  none,
+
+  //异步任务处于等待状态
+  waiting,
+
+  //Stream处于激活状态，对于FutureBuilder没有该状态
+  active,
+
+  //异步任务终止
+  done,
+}
+```
+注意 ConnectionState.active 只会在 StreamBuilder 中才会出现。
+
+**StreamBuilder**
+
+在 Dart 中 Stream 也是用于接收异步事件数据，和 Future 不同的是，它可以接收多个异步操作的结果，常用于会多次读取数据的异步任务场景，如网络任务下载、文件读写等。StreamBuilder 正是用于配合 Stream 来展示流上事件（数据）变化的 UI 组件。下面看一下 StreamBuilder 的默认构造函数：
+
+```dart
+StreamBuilder({
+  Key key,
+  this.initialData,
+  Stream<T> stream,
+  @required this.builder,
+})
+```
+和 FutureBuilder 构造函数唯一的不同就是需要一个 stream，接下来创建计时器 Demo，使用 Stream 实现每隔一秒生成一个数字：
+
+```dart
+Stream<int> counter() {
+  return Stream.periodic(Duration(seconds:1),(i) {
+    return i;
+  });
+}
+
+//StreamBuilder使用代码如下
+Widget build(BuildContext context) {
+  return StreamBuilder<int>(
+    stream: counter(),
+    builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+      if (snapshot.hasError)
+        return Text("Error: ${snapshot.error}");
+      switch (snapshot.connectionState) {
+        case ConnectionState.none:
+          return Text("没有Stream");
+        case ConnectionState.waiting:
+          return Text("等待数据");
+        case ConnectionState.active:
+          return Text("active:${snapshot.data}");
+        case ConnectionState.done:
+          return Text("Stream已关闭");
+      }
+      return null;
+    }
+  );
+}
+```
+
+##### Dialog
+
+对话框本质上也是 UI 布局，通常一个对话框会包含标题、内容，以及一些操作按钮，为此，Material 库中提供了一些现成的对话框组件来用于快速的构建出一个完整的对话框。
+
+**AlertDialog**
+
+构造函数定义如下：
+
+```dart
+const AlertDialog({
+  Key key,
+  this.title,//对话框标题组件
+  this.titlePadding,//标题填充
+  this.titleTextStyle,//标题文本样式
+  this.content,//对话框内容组件
+  this.contentPadding = const EdgeInsets.fromLTRB(24.0,20.0,24.0,24.0),
+  this.contentTextStyle,//内容文本样式
+  this.actions,//对话框操作按钮组
+  this.backgroundColor,//对话框背景
+  this.elevation,//对话框的阴影
+  this.semanticLabel,//对话框语义化标签
+  this.shape,//对话框外形
+})
+```
+示例:
+
+```dart
+AlertDialog(
+  title:Text("提示"),
+  content:Text("您确定要删除当前文件吗？"),
+  actions: <Widget>[
+    FlatButton(
+      child:Text("取消"),
+      onPressed:() => Navigator.of(context).pop(),//关闭对话框
+    ),
+    FlatButton(
+      child: Text("删除"),
+      onPressed:() {
+        //...执行删除操作
+        Navigator.of(context).pop(true);//关闭对话框
+      },
+    ),
+  ],
+);
+```
+我们通过 Navigator.of(context).pop() 方法来关闭对话框，和路由返回的方式一致，并且都可以返回一个结果数据。对话框构建好了，如何将它弹出来？返回数据如何被接收？这些问题的答案都在 showDialog() 方法中。showDialog() 是 Material 组件库提供的用于弹出 Material 风格对话框的方法，签名如下：
+
+```dart
+Future<T> showDialog<T>({
+  @required BuildContext context,
+  bool barrierDismissible = true,//点击对话框barrier时是否关闭它
+  WidgetBuilder builder,//对话框UI的builder
+})
+```
+该方法只有两个参数，返回一个Future，用于接收对话框的返回值：如果我们是通过点击对话框遮罩关闭的，则 Future 的值为 null，否则为我们通过 Navigator.of(context).pop(result) 返回的 result 值，示例如下：
+
+```dart
+//点击该按钮后弹出对话框
+RaisedButton(
+  child:Text("对话框1"),
+  onPressed:() async {
+    //弹出对话框并等待其关闭
+    bool delete = await showDeleteConfirmDialog1();
+    if (delete == null) {
+      print("取消删除");
+    } else {
+      print("已确认删除");
+      //...删除文件
+    }
+  }
+),
+
+//弹出对话框
+Future<bool> showDeleteConfirmDialog1() {
+  return showDialog<bool>(
+    context: context,
+    builder:(context) {
+      return AlertDialog(
+        title:Text("提示"),
+        content:Text("您确定要删除当前文件吗?"),
+        actions:<Widget>[
+          FlatButton(
+            child:Text("取消"),
+            onPressed:()=>Navigator.of(context).pop(),//关闭对话框
+          ),
+          FlatButton(
+            child:Text("删除"),
+            onPressed:(){
+              //关闭对话框并返回true
+              Navigator.of(context).pop(true);
+            }
+          )
+        ]
+      );
+    }
+  );
+}
+```
+示例运行后，点击对话框取消按钮或遮罩，控制台就会输出“取消删除”，点击“删除”按钮，控制台就会输出“已确认删除”。
 <br/>
 
 # 事件与通知
