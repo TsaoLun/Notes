@@ -5079,6 +5079,50 @@ Future<bool> showDeleteConfirmDialog1() {
 }
 ```
 示例运行后，点击对话框取消按钮或遮罩，控制台就会输出“取消删除”，点击“删除”按钮，控制台就会输出“已确认删除”。
+
+**SimpleDialog**
+
+SimpleDialog 也是 Material 组件库提供的对话框，它会展示一个列表，用于列表选择的场景。下面是一个选择 APP 语言的示例：
+
+```dart
+Future<void> changeLanguage() async {
+  int i = await showDialog<int>(
+    context: context,
+    builder:(BuildContext context) {
+      return SimpleDialog(
+        title: const Text('请选择语言'),
+        children:<Widget>[
+          SimpleDialogOption(
+            onPressed:(){
+              //返回1
+              Navigator.pop(context, 1);
+            },
+            child:Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: const Text('中文简体'),
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed:(){
+              //返回2
+              Navigator.pop(context, 2);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: const Text('美国英语'),
+            ),
+          )
+        ]
+      );
+    }
+  );
+
+  if (i != null) {
+    print("选择了：${i == 1 ? "中文简体":"美国英语"}");
+  }
+}
+```
+
 <br/>
 
 # 事件与通知
