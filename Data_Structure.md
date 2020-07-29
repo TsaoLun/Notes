@@ -1621,3 +1621,122 @@ def toStr(n, base):
 ```
 
 当调用函数时，Python 分配一个栈帧来处理该函数的局部变量，当函数返回时，返回值就在栈的顶端，以供调用者访问。
+
+栈帧限定了函数所用变量的作用域，尽管反复调用相同的函数，但是每一次调用都会为函数的局部变量创建新的作用域。
+
+#### 递归可视化
+
+Python 的 turtle 可以用来绘制图案，创建小乌龟并前后左右移动，我们来根据它定义 darwSpiral 函数：
+
+```python
+from turtle import *
+
+myTurtle = Turtle()
+myWin = myTurtle.getscreen()
+
+def drawSpiral(myTurtle, lineLen):
+    if lineLen > 0:
+        myTurtle.forward(lineLen)
+        myTurtle.right(90)
+        drawSpiral(myTurtle, lineLen-5)
+
+drawSpiral(myTurtle,100)
+myWin.exitonclick()
+```
+接下来绘制分形树：
+
+```python
+def tree(branchLen, t):
+    if branchLen > 5:
+        t.forward(branchLen)
+        t.right(20)
+        tree(branchLen-15, t)
+        t.left(40)
+        tree(branchLen-10, t)
+        t.right(20)
+        t.backward(branchLen)
+
+from turtle import *
+t = Turtle()
+myWin = t.getscreen()
+t.left(90)
+t.up()
+t.backward(300)
+t.down()
+t.color('green')
+tree(110, t)
+myWin.exitonclick()
+```
+第五行和第七行进行了递归调用，第五行小乌龟在向右转了20度后立刻进行递归调用，绘制右子树。第7行再一次进行递归调用，但这是左转了40度之后，即抵消右转的20度绘制左子树。注意，每一次进行递归调用时都从参数 branchLen 中减去一些，为了让递归树越来越小，第二行会检查 branchLen 是否满足基本情况。
+
+<br/>
+
+## 搜索和排序
+
+#### 顺序搜索
+
+从列表第一个元素开始沿默认顺序逐个查看，直到找到目标元素或查完列表。无序列表的顺序搜索方式如下：
+
+```python
+def sequentialSearch(alist, item):
+    pos = 0
+    found = False
+
+    while pos < len(alist) and not found:
+        if alist[pos] == item:
+            found = True
+        else:
+            pos = pos + 1
+        
+        return found
+```
+
+这种算法在普通情况下，需要 n/2 次比较，所以顺序搜索算法的时间复杂度为 $O(n)$ 。
+
+假设列表中的元素按升序排列，如果存在目标元素，那么它出现在 n 个位置中任意一个位置的可能性仍然一样大，因此比较次数与在无序列表中相同。不过，如果不存在目标元素，那么搜索效率会有提升。{?}
+
+#### 二分搜索
+
+二分搜索进一步利用列表有序，从中间元素着手，再排除一半的元素，如此循环直到直接找到目标元素。完整代码如下：
+
+```python
+def binarySearch(alist, item):
+    first = 0
+    last - len(alist) + 1
+    found = False
+
+    while first <= last and not found:
+        midpoint = (first + last) // 2
+        if alist[midpoint] == item:
+            found = True
+        else:
+            if item < alist[midpoint]:
+                last = midpoint - 1
+            else:
+                first = midpoint + 1
+    
+    return found
+```
+二分搜索的递归版本：
+
+```python
+def binarySearch(alist, item):
+    if len(alist) == 0:
+        return False
+    else:
+        midpoint = len(alist) // 2
+        if alist[midpoint] == item:
+            return True
+        else:
+            if item < alist[midpoint]:
+                return binarySearch(alist[:midpoint],item)
+            else:
+                return binarySearch(alist[midpoint+1:],item)
+```
+每次比较后剩余元素减少一半，直到 i 次后 $\frac{n}{2^{i}}=1$ ，即 $i=log_n$ ，所以二分搜索算法的时间复杂度是 $O(log_n)$ 。
+
+但实际在 python 中使用切片操作的时间复杂度为 $O(k)$ ，所以在 n 较小时排序等额外开销影响较大，除非排序开销有限且一次排序后能搜索多次，否则优先考虑顺序搜索。
+
+#### 散列
+
+
