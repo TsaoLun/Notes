@@ -5177,7 +5177,7 @@ Future<T> showGeneralDialog<T>({
   RouteTransitionsBuilder transitionBuilder,//对话框打开关闭动画
 })
 ```
-实际上，showDialog 方法正是 showGeneralDialog 的一个封装，定制了 Material 风格对话框的遮罩颜色和动画。Material 风格对话框打开关闭动画是一个 Fade 动画，下面我们自己封装一个 showCustomDialog 方法，缩放动画且遮罩颜色为 Colors.black87：
+实际上，showDialog 方法正是 showGeneralDialog 的一个封装，定制了 Material 风格对话框的遮罩颜色和动画。Material 风格对话框打开关闭动画是一个 Fade 动画，下面我们自己封装一个 showCustomDialog 方法，实现缩放动画效果且遮罩颜色为 Colors.black87：
 
 ```dart
 Future<T> showCustomDialog<T>({
@@ -5244,6 +5244,208 @@ showCustomDialog<bool>(
     );
   },
 );
+```
+
+**对话框实现原理**
+
+看一下 showGeneralDialog 的具体实现：
+
+```dart
+Future<T> showGeneralDialog<T> ({
+  @required BuildContext context,
+  @required RoutePageBuilder pageBuilder,
+  bool barrierDismissible,
+  String barrierLabel,
+  Color barrierColor,
+  Duration transitionDuration,
+  RouteTransitionsBuilder transitionBuilder,
+}) {
+  return Navigator.of(context, rootNavigator:true).push<T>(_DialogRoute<T>(
+    pageBuilder: pageBuilder,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: barrierLabel,
+    barrierColor: barrierColor,
+    transitionDuration: transitionDuration,
+    transitionBuilder: transitionBuilder,
+  ));
+}
+```
+实现很简单，直接调用 Navigator 的 push 方法打开新对话框路由 _DialogRoute，然后返回了 push 的返回值。可见对话框实际上是通过路由的形式实现的，这也是为什么我们可以使用 Navigator 的 pop 方法来退出对话框的原因。
+
+**对话框状态管理**
+
+用户在选择删除一个文件时，会弹出询问对话框；在选择文件夹时，应该让用户确认是否删除子文件夹，为了避免二次弹窗一般会在对话框底部添加一个删除子目录的复选框。如何管理复选框的选中状态？习惯上，我们会在路由页的 State 中来管理选中状态，但很可能运行后发现复选框无法选中。
+
+原因很简单，setState 方法只会针对当前 context 的子树重新 build ，但是我们的对话框并不是在 _DialogRouteState 的 build 方法中构建的，而是通过 showDialog 构建的 UI 的。另一个角度，前面说对话框也是通过路由的方式实现的，企图在父路由中调用 setState 来让子路由更新是行不通的，即 context 根本不对，正确的方法如下：
+
+**单独抽离出 StatefulWidget**
+
+既然 context 不对，直接的思路就是将复选框的选中逻辑单独封装成 StatefulWidget，然后在其内部管理复选状态。
+
+```dart
+//单独封装一个内部管理选中状态的复选框组件
+class DialogCheckbox extends StatefulWidget {
+  DialogCheckbox({
+    Key key,
+    this.value,
+    @required this.onChanged,
+  });
+
+  final ValueChanged<bool> onChanged;
+  final bool value;
+
+  @override
+  _DialogCheckboxState createState() => _DialogCheckboxState();
+}
+
+class _DialogCheckboxState extends State<DialogCheckbox> {
+  bool value;
+
+  @override
+  void initState() {
+    value = widget.value;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+      return Checkbox(
+      value: value,
+      onChanged:(v) {
+        //将选中状态通过事件的形式抛出
+        widget.onChanged(v);
+        setState(() {
+          //更新自身状态
+          value = v;
+        });
+      },
+    );
+  }
+}
+```
+下面是弹出对话框的代码：
+
+```dart
+Future<bool> showDeleteConfirmDialog3() {
+  bool _withTree = false;//记录复选框是否选中
+  return showDialog<bool>(
+    context: context,
+    builder:(context) {
+      return AlertDialog(
+        title: Text("提示"),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children:<Widget>[
+            Text("您确定要删除当前文件吗？"),
+            Row(
+              children:<Widget>[
+                Text("同时删除子目录？"),
+                DialogCheckbox(
+                  value:_withTree,//默认不选中
+                  onChanged:(bool value){
+                    //更新选中状态
+                    _withTree = !_withTree;
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions:<Widget>[
+          FlatButton(
+            child:Text("取消"),
+            onPressed:()=>Navigator.of(context).pop(),
+          ),
+          FlatButton(
+            child:Text("删除"),
+            onPressed:()=>Navigator.of(context).pop(_withTree);
+          )
+        ]
+      );
+    }
+  );
+}
+```
+最后就是使用：
+
+```dart
+RaisedButton(
+  child: Text("话框3(复选框可点击)"),
+  onPressed:() async {
+    //弹出确认删除对话框
+    bool deleteTree = await showDeleteConfirmDialog3();
+    if (deleteTree == null) {
+      print("取消删除");
+    } else {
+      print("同时删除子目录:$deleteTree");
+    }
+  }
+)
+```
+
+**使用 StatefulBuilder 方法**
+
+上面的方法虽然可以解决对话框状态更新的问题，但对话框上所有状态组件都单独封装在 statefulwidget 中不仅麻烦而且复用性不大。上面方法的本质是将对话框的状态置于一个 StatefulWidget 的上下文中，由于 StatefulWidget 在内部管理，有没有办法在不需要单独抽离组件的情况下创建一个 StatefulWidget 的上下文呢？可以从 Builder 组件的实现获得灵感，Builder 可以获得组件所在位置真正的 Context，来看一下源码：
+
+```dart
+class Builder extends StatelessWidget {
+  const Builder({
+    Key key,
+    @required this.builder,
+  }) : assert(builder != null),
+    super(key: key);
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) => builder(context);
+}
+```
+Builder 实际上只是继承了 StatelessWidget，然后在 build 方法中获取当前 context 后将构建方法代理到了 builder 回调。可见，Builder 实际上是获取了 StatelessWidget 的上下文 context，我们按这个方法来封装一个 StatefulBuilder 方法获取 StatefulWidget 的上下文：
+
+```dart
+class StatefulBuilder extends StatefulWidget {
+  const StatefulBuilder({
+    Key key,
+    @required this.builder,
+  }) : assert(builder != null),
+    super(key: key);
+
+  final StatefulWidgetBuilder builder;
+
+  @override
+  _StatefulBuilderState createState() => _StatefulBuilderState();
+}
+
+class _StatefulBuilderState extends State<StatefulBuilder> {
+  @override
+  Widget build(BuildContext context) => widget.builder(context, setState);
+}
+```
+StatefulBuilder 获取了 StatefulWidget 的上下文并代理了其构建过程，下面通过 StatefulBuilder 来重构上面的代码：
+
+```dart
+Row(
+  children:<Widget>[
+    Text("同时删除子目录"),
+    //使用StatefulBuilder来构建StatefulWidget上下文
+    StatefulBuilder(
+      builder:(context, _setState) {
+        return Checkbox(
+          value: _withTree,//默认不选中
+          onChanged:(bool value) {
+            //_setState方法实际就是该StatefulWidget的setState方法
+            //调用后builder方法会重新被调用
+            _setState(() {
+              //更新选中状态
+              _withTree = !_withTree;
+            });
+          }
+        );
+      }
+    )
+  ]
+)
 ```
 
 <br/>
