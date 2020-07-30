@@ -4980,7 +4980,7 @@ Widget build(BuildContext context) {
 }
 ```
 
-##### Dialog
+##### Material Dialog
 
 对话框本质上也是 UI 布局，通常一个对话框会包含标题、内容，以及一些操作按钮，为此，Material 库中提供了一些现成的对话框组件来用于快速的构建出一个完整的对话框。
 
@@ -5121,6 +5121,129 @@ Future<void> changeLanguage() async {
     print("选择了：${i == 1 ? "中文简体":"美国英语"}");
   }
 }
+```
+列表项组件使用了 SimpleDialogOption 来包装类一下，相当于一个 FlatButton ，只不过按钮文案左对齐且 padding 较小。
+
+**Dialog**
+
+实际上 AlertDialog 和 SimpleDialog 都使用了 Dialog 类，由于 AlertDialog 和 SimpleDialog 中使用了 IntrinsicWidth 来尝试通过子组件的实际尺寸来调整自身尺寸，这导致他们的子组件不能是延迟加载模型的组件（如 ListView, GridView, CustomScrollView 等），若需要嵌套一个 ListView 可以使用 Dialog 类：
+
+```dart
+Future<void> showListDialog() async {
+  int index = await showDialog<int>(
+    context: context,
+    builder: (BuildContext context) {
+      var child = Column(
+        children:<Widget>[
+          ListTile(title:Text("请选择")),
+          Expanded(
+            child:ListView.builder(
+              itemCount:30,
+              itemBuilder:(BuildContext context, int index){
+                return ListTile(
+                  title:Text("$index"),
+                  onTap:()=>Navigator.of(context).pop(index),
+                );
+              },
+            )
+          ),
+        ],
+      );
+      //使用AlertDialog会报错
+      return Dialog(child: child);
+    },
+  );
+  if (index != null) {
+    print("点击了: $index");
+  }
+}
+```
+AlertDialog, SimpleDialog, Dialog 是 Material 组件库提供的三种对话框，旨在快速构建出符合 Material 设计规范的对话框，但读者完全可以自定义对话框样式。
+
+##### General Dialog 
+
+**对话框打开动画及遮罩**
+
+对话框的内部样式已经介绍过来，外部样式包含对话框遮罩样式、打开动画等。之前的 showDialog 方法提供了打开 Material 风格对话框的方法，Flutter 还提供了一个 showGeneralDialog 方法，签名如下：
+
+```dart
+Future<T> showGeneralDialog<T>({
+  @required BuildContext context,
+  @required RoutePageBuilder pageBuilder,//构建对话框UI
+  bool barrierDismissible,//点击遮罩是否关闭对话框
+  String barrierLabel,//语义化标签
+  Color barrierColor,//遮罩颜色
+  Duration transitionDuration,//对话框打开关闭的动画时长
+  RouteTransitionsBuilder transitionBuilder,//对话框打开关闭动画
+})
+```
+实际上，showDialog 方法正是 showGeneralDialog 的一个封装，定制了 Material 风格对话框的遮罩颜色和动画。Material 风格对话框打开关闭动画是一个 Fade 动画，下面我们自己封装一个 showCustomDialog 方法，缩放动画且遮罩颜色为 Colors.black87：
+
+```dart
+Future<T> showCustomDialog<T>({
+  @required BuildContext context,
+  bool barrierDismissible = true,
+  WidgetBuilder builder,
+}) {
+  final ThemeData theme = Theme.of(context, shadowThemeOnly: true);
+  return showGeneralDialog(
+    context: context,
+    pageBuilder:(BuildContext buildContext, Animation<double> animation, Animation<double> secondaryAnimation) {
+      final Widget pageChild = Builder(builder: builder);
+      return SafeArea(
+        child: Builder(builder: BuildContext context) {
+          return theme != null
+            ? Theme(data: theme, child: pageChild)
+            : pageChild;
+        }
+      )
+    },
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black87,//自定义遮罩颜色
+    transitionDuration: const Duration(milliseconds:150),
+    transitionBuilder: _buildMaterialDialogTransitions,
+  );
+}
+
+Widget _buildMaterialDialogTransitions(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child) {
+    //使用缩放动画
+    return ScaleTransition(
+      scale: CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOut,
+      ),
+      child: child,
+    );
+  }
+
+//...现在使用showCustomDialog打开文件删除确认对话框
+showCustomDialog<bool>(
+  context: context,
+  builder: (context) {
+    return AlertDialog(
+      title:Text("提示"),
+      content:Text("您确定要删除当前文件吗？"),
+      actions:<Widget>[
+        FlatButton(
+          child:Text("取消"),
+          onPressed:()=>Navigator.of(context).pop(),
+        ),
+        FlatButton(
+          child:Text("删除"),
+          onPressed:() {
+            //执行删除操作
+            Navigator.of(context).pop(true);
+          },
+        ),
+      ],
+    );
+  },
+);
 ```
 
 <br/>
