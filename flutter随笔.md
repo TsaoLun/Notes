@@ -5447,6 +5447,19 @@ Row(
   ]
 )
 ```
+这种方法本质上就是子组件通知父组件(StatefulWidget)重新 build 子组件本身来实现 UI 更新的，实际上 StatefulBuilder 正是 Flutter SDK 中提供的一个类，它和 Builder 的原理是一样的。
+
+**精妙的解法**
+
+我们先搞清楚 UI 是怎么更新的，我们知道在调用 setState 方法后 StatefulWidget 就会重新 build，那 setState 方法做了什么？来看一下 setState 源码：
+
+```dart
+void setState(ViodCallback fn) {
+  ...//省略
+  _element.markNeedsBuild();
+}
+```
+setState 中调用了 Element 的 markNeedsBuild() 方法，Flutter 是一个响应式框架，要更新 UI 只需要改变状态后通知框架页面需要重构即可，而 Element 的 markNeedsBuild() 方法正是来实现这个功能的，
 
 <br/>
 
