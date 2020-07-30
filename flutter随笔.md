@@ -5646,7 +5646,104 @@ RaisedButton(
   },
 ),
 ```
+showModalBottomSheet 的实现原理和 showGeneralDialog 实现原理相同，都是通过路由的方式来实现的。
 
+**Loading 框**
+
+其实 Loading 框可以直接通过 showDialog + AlertDialog 来自定义：
+
+```dart
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    showLoadingDialog() {
+      showDialog(
+          context: context,
+          barrierDismissible: false, //点击遮罩不关闭对话框
+          builder: (context) {
+            return AlertDialog(
+                content:
+                    Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              CircularProgressIndicator(),
+              Padding(
+                padding: const EdgeInsets.only(top: 26.0),
+                child: Text("正在加载，请稍候..."),
+              )
+            ]));
+          });
+    }
+
+    return RaisedButton(child: Text('x'), onPressed: () => showLoadingDialog());
+  }
+}
+```
+如果我们嫌 Loading 框太宽，想自定义对话框宽度，这时只使用 SizedBox 或 ConstrainedBox 是不行的，原因是 showDialog 中已经给对话框设置了宽度限制，根据在第五章“尺寸限制类容器”一节中所述，可以使用 UnconstrainedBox 先抵消 showDialog 对宽度的限制，然后再使用 SizedBox 指定宽度，代码如下：
+
+```dart
+...//省略无关代码
+UnconstrainedBox(
+  constrainedAxis: Axis.vertical,
+  child: SizedBox(
+    width: 280,
+    child: AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children:<Widget>[
+          CircularProgressIndicator(value:.8),
+          Padding(
+            padding: const EdgeInsets.only(top:26.0),
+            child:Text("正在加载，请稍候"),
+          )
+        ]
+      )
+    )
+  )
+);
+```
+
+**日历选择**
+
+实现代码：
+
+```dart
+Future<DateTime> _showDatePicker1() {
+  var date = DateTime.now();
+  return showDatePicker(
+    context: context,
+    initialDate: date,
+    firstDate: date,
+    lastDate: date.add(//未来30天可选
+      Duration(days:30),
+    ),
+  );
+}
+```
+iOS 风格的日历选择器需要使用 showCupertinoModalPopup 方法和 CupertinoDatePicker 组件来实现：
+
+```dart
+Future<DateTime> _showDatePicker2() {
+  var date = DateTime.now();
+  return showCupertinoModalPopup(
+    context: context,
+    builder:(ctx) {
+      return SizedBox(
+        height:200,
+        child:CupertinoDatePicker(
+          mode: CupertinoDatePickerMode.dateAndTime,
+          minimumDate:date,
+          maximumDate:date.add(
+            Duration(days:30),
+          ),
+          maximumYear:date.year + 1,
+          onDateTimeChanged: (DateTime value) {
+            print(value);
+          }
+        )
+      );
+    }
+  );
+}
+```
 
 <br/>
 
@@ -5658,7 +5755,7 @@ Flutter 中的手势系统有两个独立的层，第一层为原始指针事件
 
 先来介绍原始指针事件(Pointer Event，在移动设备上通常为触摸事件)，在移动端各平台或 UI 系统的原始指针事件模型基本都是一致，即：一次完整的事件分为三个阶段：手指按下、手指移动、手指抬起。
 
-当指针按下时，Flutter 会对应用程序执行命中测试（Hit Test），以确定指针与屏幕接触的位置存在哪些组件，指针按下事件被分发到由命中测试发现的最内部的组件，然后从那里开始，事件会在组件树中向上冒泡，从最内部的组件被分发到组件树根的路径上的所有组件。
+当指针按下时，Flutter 会对应用程序执行命中测试（Hit Test），以确定指针与屏幕接触的位置存在哪些组件，指针按下事件被分发到由命中测试发现的**最内部**的组件，然后从那里开始，事件会在组件树中向上冒泡，从最内部的组件被分发到组件树根的路径上的所有组件。
 
 Flutter 可以使用 Listener 来监听原始触摸事件，功能性组件 Listener 的构造函数定义：
 
@@ -5679,6 +5776,7 @@ Listener({
 ```dart
 ...
 //定义一个状态，保存当前指针位置
+PointerEvent _event;
 ...
 Listener(
   child: Container(
@@ -5693,14 +5791,22 @@ Listener(
   onPointerUp:(PointerUpEvent event)=>setState(()=>_event=event),
 ),
 ```
-
 这里参数 PointerDownEvent，PointerMoveEvent，PointerUpEvent 都是 PointerEvent 的子类，PointerEvent 类中包括当前指针的一些信息：
 + position：鼠标相对于全局坐标的偏移。
 + delta：两次指针移动事件(PointerMoveEvent)的距离。
 + pressure：按压力度
 + orientation：指针移动方向，角度值
 
+下面来看 Listener 的 behavior 属性，它决定子组件如何响应命中测试，它的值类型为 HitTestBehavior，这是有三个值的枚举类：
+
++ deferToChild：子组件会一个接一个的进行命中测试
+
+```dart
+
+```
+
 **忽略 PointerEvent**
+
 假如不想让某个子树响应 PointerEvent ，可以使用 IgnorePointer 和 AbsorbPointer，这两个组件都能阻止子树接受指针事件（AbsorbPointer 本身会参与命中测试，而 IgnorePointer 不会）
 
 ```dart
