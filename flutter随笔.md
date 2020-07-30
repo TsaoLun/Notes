@@ -4980,7 +4980,7 @@ Widget build(BuildContext context) {
 }
 ```
 
-##### Material Dialog
+##### Material Dialogs
 
 对话框本质上也是 UI 布局，通常一个对话框会包含标题、内容，以及一些操作按钮，为此，Material 库中提供了一些现成的对话框组件来用于快速的构建出一个完整的对话框。
 
@@ -5160,7 +5160,7 @@ Future<void> showListDialog() async {
 ```
 AlertDialog, SimpleDialog, Dialog 是 Material 组件库提供的三种对话框，旨在快速构建出符合 Material 设计规范的对话框，但读者完全可以自定义对话框样式。
 
-##### General Dialog 
+##### General Dialogs
 
 **对话框打开动画及遮罩**
 
@@ -5191,7 +5191,7 @@ Future<T> showCustomDialog<T>({
     pageBuilder:(BuildContext buildContext, Animation<double> animation, Animation<double> secondaryAnimation) {
       final Widget pageChild = Builder(builder: builder);
       return SafeArea(
-        child: Builder(builder: BuildContext context) {
+        child: Builder(builder: (BuildContext context) {
           return theme != null
             ? Theme(data: theme, child: pageChild)
             : pageChild;
@@ -5459,7 +5459,194 @@ void setState(ViodCallback fn) {
   _element.markNeedsBuild();
 }
 ```
-setState 中调用了 Element 的 markNeedsBuild() 方法，Flutter 是一个响应式框架，要更新 UI 只需要改变状态后通知框架页面需要重构即可，而 Element 的 markNeedsBuild() 方法正是来实现这个功能的，
+setState 中调用了 Element 的 markNeedsBuild() 方法，Flutter 是一个响应式框架，要更新 UI 只需要改变状态后通知框架页面需要重构即可，而 Element 的 markNeedsBuild() 方法正是来实现这个功能的，它将当前 Element 标记为 dirty 以在每一个 Frame 更新。在组件树中，context 实际上就是 Element 对象的引用，我们通过如下方式让复选框得以更新:
+
+```dart
+Future<bool> showDeleteConfirmDialog4() {
+  bool _withTree = false;
+  return showDialog<bool>(
+    context: context,
+    builder:(context) {
+      return AlertDialog(
+        title: Text("提示"),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children:<Widget>[
+            Text("您确定要删除当前文件吗？"),
+            Row(
+              children:<Widget>[
+                Text("同时删除子目录?"),
+                Checkbox(//依然使用Checkbox组件
+                  value: _withTree,
+                  onChanged: (bool value){
+                    //此时context为对话框UI的根Element
+                    //将对话框UI对应的Element标记为dirty
+                    (context as Element).markNeedsBuild();
+                    _withTree = !_withTree;
+                  })
+              ])
+          ]
+        ),
+        actions: <Widget>[
+          FlatButton(
+            child:Text("取消"),
+            onPressed:()=>Navigator.of(context).pop(),
+          ),
+          FlatButton(
+            child:Text("删除"),
+            onPressed:(){
+              //执行删除操作
+              Navigator.of(context).pop(_withTree);
+            }
+          )
+        ]
+      );
+    }
+  );
+}
+```
+以上代码并非最优，用的是对话框的根 context，会导致整个对话框 UI 全部 rebuild，最好的做法是将 context 范围缩小，也就是只将 Checkbox 的 Element 标记为 dirty，优化后的代码：
+
+```dart
+Row(
+  children:<Widget>[
+    Text("同时删除子目录?"),
+    //技巧:通过builder来获得构建Checkbox的context
+    Builder(
+      builder:(BuildContext context) {
+        return Checkbox(
+          value: _withTree,
+          onChanged:(bool value) {
+            (context as Element).markNeedsBuild();
+            _withTree = !_withTree;
+          }
+        );
+      }
+    )
+  ]
+)
+```
+
+```dart
+//报错代码
+import 'package:flutter/material.dart';
+
+void main() => runApp(MaterialApp(
+    title: "Test",
+    home: Scaffold(appBar: AppBar(title: Text('Demo')), body: TestRoute())));
+
+Future<T> showCustomDialog<T>({
+  @required BuildContext context,
+  bool barrierDismissible = true,
+  WidgetBuilder builder,
+}) {
+  final ThemeData theme = Theme.of(context, shadowThemeOnly: true);
+  return showGeneralDialog(
+    context: context,
+    pageBuilder: (BuildContext buildContext, Animation<double> animation,
+        Animation<double> secondaryAnimation) {
+      final Widget pageChild = Builder(builder: builder);
+      return SafeArea(child: Builder(builder: (BuildContext context) {
+        return theme != null ? Theme(data: theme, child: pageChild) : pageChild;
+      }));
+    },
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black87, //自定义遮罩颜色
+    transitionDuration: const Duration(milliseconds: 150),
+    transitionBuilder: _buildMaterialDialogTransitions,
+  );
+}
+
+Widget _buildMaterialDialogTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child) {
+  //使用缩放动画
+  return ScaleTransition(
+    scale: CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOut,
+    ),
+    child: child,
+  );
+}
+
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //...现在使用showCustomDialog打开文件删除确认对话框
+    showCustomDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("提示"),
+          content: Text("您确定要删除当前文件吗？"),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("取消"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            FlatButton(
+              child: Text("删除"),
+              onPressed: () {
+                //执行删除操作
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    return Center(
+      child: FlatButton(
+        onPressed: () => showCustomDialog(context: context),
+        child: Text('x'),
+      ),
+    );
+  }
+}
+```
+
+##### Other Dialogs
+
+**底部菜单列表**
+
+showModalBottomSheet 方法可以弹出一个 Material 风格的底部菜单列表模态对话框，示例如下：
+
+```dart
+Future<int> _showModalBottomSheet() {
+  return showMoadlBottomSheet<int>(
+    context: context,
+    builder:(BuildContext context) {
+      return ListView.builder(
+        itemCount:30,
+        itemBuilder:(BuildContext context, int index) {
+          return ListTile(
+            title: Text("$index"),
+            onTap:()=>Navigator.of(context).pop(index),
+          );
+        }
+      );
+    }
+  );
+}
+```
+点击按钮，弹出该对话框：
+
+```dart
+RaisedButton(
+  child:Text("显示底部菜单列表"),
+  onPressed:() async {
+    int type = await _showModalBottomSheet();
+    print(type);
+  },
+),
+```
+
 
 <br/>
 
