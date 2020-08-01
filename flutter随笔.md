@@ -5757,6 +5757,8 @@ Flutter 中的手势系统有两个独立的层，第一层为原始指针事件
 
 当指针按下时，Flutter 会对应用程序执行命中测试（Hit Test），以确定指针与屏幕接触的位置存在哪些组件，指针按下事件被分发到由命中测试发现的**最内部**的组件，然后从那里开始，事件会在组件树中向上冒泡，从最内部的组件被分发到组件树根的路径上的所有组件。
 
+##### Listener
+
 Flutter 可以使用 Listener 来监听原始触摸事件，功能性组件 Listener 的构造函数定义：
 
 ```dart
@@ -5799,10 +5801,46 @@ Listener(
 
 下面来看 Listener 的 behavior 属性，它决定子组件如何响应命中测试，它的值类型为 HitTestBehavior，这是有三个值的枚举类：
 
-+ deferToChild：子组件会一个接一个的进行命中测试
++ deferToChild：子组件会一个接一个进行命中测试，如果指针事件作用于子组件上时，其父组件也肯定收到该事件。
+
++ opaque：在命中测试时将当前组件当成不透明处理，最终效果相当于当前 Widget 整个区域都是点击区域。下例只有点击文本内容区域时才会触发点击事件：
 
 ```dart
+Listener(
+  child: ConstrainedBox(
+    constraints: BoxConstraints.tight(Size(300.0, 150.0)),
+    child: Center(child: Text("Box A")),
+  ),
+  //behavior:HitTestBehavior.opaque
+  onPointerDown:(event) => print("down A")
+)
+```
+derferToChild 会去子组件判断是否命中测试，该例即 Text("Box A")。重设 behavior 后命中测试时的组件将发生变化，从只有 Text 可点击变成 300 X 150 的区域都可点击。
 
++ translucent：当点击组件透明区域时，可以对自身边界内及底部可视区域都进行命中测试，意味着点击顶部组件透明区域时，顶部组件和底部组件都可以接受到事件，例如：
+
+```dart
+Stack(
+  children:<Widget>[
+    Listener(
+      child: ConstrainedBox(
+        constraints:BoxConstraints.tight(Size(300.0,200.0)),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color:Colors.blue)
+        )
+      ),
+      onPointerDown:(event) => print("down0"),
+    ),
+    Listener(
+      child: ConstrainedBox(
+        constraints: BoxConstraints.tight(Size(200.0, 100.0)),
+        child:Center(child:Text("左上角200*100范围内非文本区域点击")),
+      ),
+      onPointerDown:(event)=>print("down"),
+      //behavior:HitTestBehavior.translucent,//放开此行注释后可以点透
+    )
+  ]
+)
 ```
 
 **忽略 PointerEvent**
@@ -5826,29 +5864,13 @@ Listener(
 ```
 点击 Container 时，由于它在 AbsorbPointer 子树上故不会响应指针事件，日志不会输出 "in"，但 AbosrbPointer 本身是可以接收指针事件的，所以会输出 "up"，如果换成 IgnorePointer 则两个都不会输出。
 
-**GestureDetector**
+##### GestureDetector
 
 GestureDetector 是一个用于手势识别的功能性组件，是指针事件的语义化封装。
 
 我们通过 GestureDetector 对 Container 进行手势识别，触发事件后，在 Container 上显示事件名：
 
 ```dart
-import 'package:flutter/material.dart';
-
-void main() => runApp(MaterialApp(title: "State", home: HomePage()));
-
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('手势检测'),
-      ),
-      body: GestureDetectorTestRoute(),
-    );
-  }
-}
-
 class GestureDetectorTestRoute extends StatefulWidget {
   @override
   _GestureDetectorTestRoute createState() => _GestureDetectorTestRoute();
@@ -5889,23 +5911,9 @@ class _GestureDetectorTestRoute extends State<GestureDetectorTestRoute> {
 
 **拖动 滑动**
 
+GestureDetector 将要监听的组件的原点（左上角）作为本次手势的原点，以下为拖动示例：
+
 ```dart
-import 'package:flutter/material.dart';
-
-void main() => runApp(MaterialApp(title: "State", home: HomePage()));
-
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('手势检测'),
-      ),
-      body: _Drag(),
-    );
-  }
-}
-
 class _Drag extends StatefulWidget {
   @override
   _DragState createState() => _DragState();
@@ -6198,7 +6206,7 @@ Positioned(
 ```
 手势冲突只是手势级别的，而手势是对原始指针的语义化识别，所以在遇到复杂的冲突场景时，通过 Listener 直接识别原始指针事件来解决冲突。
 
-##### cookbook : Taps
+##### cookbook : onTap
 
 在 Flutter 中使用 GestureDetector Widget 处理 Taps 
 
@@ -6261,11 +6269,7 @@ class MyButton extends StatelessWidget {
 }
 ```
 
-![avatar](images/GD.png)
-
-
-
-##### cookbook : InkWell
+**InkWell**
 
 Flutter 提供了 InkWell Widget 来管理点击回调和水波动画
 
@@ -6353,7 +6357,7 @@ class MyButton extends StatelessWidget {
 
 ### 事件总线
 
-事件总线可以实现跨页面的事件通知，比如用户登录或注销事件。事件总线通常实现了订阅者模式，包含订阅者和发布者两种角色，通过事件总线来触发事件和监听事件。
+事件总线可以实现**跨页面的事件通知**，比如用户登录或注销事件。事件总线通常实现了订阅者模式，包含订阅者和发布者两种角色，可以通过事件总线来触发事件和监听事件，示例如下：
 
 ```dart
 //订阅者回调签名
@@ -6374,7 +6378,7 @@ class EventBus {
 
   //添加订阅者
   void on(eventName, EventCallback f) {
-    if (eventName == null||f==null) return;
+    if (eventName == null|| f==null) return;
     _emap[eventName] ??= List<EventCallback>();
     _emap[eventNmae].add(f);
   }
@@ -6403,7 +6407,153 @@ class EventBus {
 }
 
 //定义一个top-level全局变量，页面引入该文件后可以直接用bus
+var bus = EventBud();
+
+//页面A中...
+//监听登录事件
+bus.on("login",(arg){
+  //do something
+});
+
+//登录页B中...
+//登录成功后触发登录事件，页面A中订阅者会被调用
+bus.emit("login", userInfo);
 ```
+> Dart 中实现单例模式的标准做法就是使用 static 变量 + 工厂构造函数的方式，保证 EventBus() 返回始终是同一个实例。
+
+事件总线通常用于组件之间状态共享，也有一些专用的包，如 redux 以及之前提到的 Provider 。在使用状态管理包之前，要想清楚是否有必要，防止化简为繁、过度设计。
+
+### 通知
+
+**Notification** 是 Flutter 中一个重要的机制，在 Widget 树中的每个节点都能分发通知，通知会沿着当前节点向上传递，所有父节点都能通过 NotificationListener 来监听通知。Flutter 将这种由子向父传递通知的机制称为通知冒泡 Notification Bubbling，通知冒泡与用户接触事件冒泡的功能是相似的，唯一不同是通知冒泡可以中止而用户触摸事件则不行。
+
+通知冒泡与 Web 开发中浏览器事件冒泡原理相似，都是事件从出发源逐层向上传递，我们可以在上层节点任意位置监听通知/事件，也可以中止冒泡过程。Flutter 中很多地方都使用了通知，如可滚动组件 Scrollable Widget 滑动时就会分发滚动通知 ScrollNotification，而 Scrollbar 正是通过监听 ScrollNotification 来确定滚动条位置的。
+
+```dart
+NotificationListener(
+  onNotification:(notification){
+    switch (notification.runtimeType) {
+      case ScrollStartNotification:print("开始滚动");break;
+      case ScrollUpdateNotification:print("正在滚动");break;
+      case ScrollEndNotification:print("滚动停止");break;
+      case OverscrollNotification:print("滚动到边界");break;
+    }
+  },
+  child:ListView.builder(
+    itemCount:100,
+    itemBuilder:(context,index){
+      return ListTile(title:Text("$index"));
+    }
+  ),
+);
+```
+我们通过 NotificationListener 来监听子 ListView 的滚动通知，NotificationListener定义代码如下：
+
+```dart
+class NotificationListener<T extends Notification> extends StatelessWidget {
+  const NotificationListener({
+    Key key,
+    @required this.child,
+    this.onNotification,
+  }) : super(key: key);
+  ...//省略无关代码
+}
+```
+onNotification 回调为通知处理回调，返回值类型为布尔值，为 true 时阻止冒泡，其父级 Widget 将收不到该通知。NotificationListener 继承自 StatelessWidget，可以直接嵌套到 Widget 树中。还可以指定一个模板参数，继承自 Notification ,只接收该参数类型的通知。
+
+```dart
+//指定监听通知的类型为滚动结束通知ScrollEndNotification
+NotificationListener<ScrollEndNotification>(
+  onNotification: (notification){
+    //只有在滚动结束时才会触发此回调
+    print(notification);
+  },
+  child: ListView.builder(
+    itemCount:100,
+    itemBuilder:(context, index){
+      return ListTile(title: Text("$index"));
+    }
+  ),
+);
+```
+以上代码只有在滚动结束时才会在控制台打出通知信息。Flutter UI 还有一些其他通知，比如 SizeChangedLayoutNotification, KeepAliveNotification, LayoutChangedNotification等，通过这种通知机制可以使父元素在一些特定的时机做一些特定的事情。
+
+**自定义通知**
+
++ 定义一个通知类，继承自 Notification 类：
+
+```dart
+class MyNotification extends Notification {
+  MyNotification(this.msg);
+  final String msg;
+}
+```
+
++ 分发通知
+
+Notification 提供了一个 dispatch(context) 方法，可用于分发通知，context 实际上就是操作 Element 的一个接口，与 Element 树上的节点是对应的，通知会从与 context 对应的 Element 节点向上冒泡。
+
+```dart
+class NotificationRoute extends StatefulWidget {
+  @override
+  NotificationRoute createState() {
+    return NotificationRouteState();
+  }
+}
+
+class NotificationRouteState extends State<NotificationRoute> {
+  String _msg="";
+  @override
+  Widget build(BuildContext context) {
+    //监听通知
+    return NotificationListener<MyNotification>(
+      onNotification:(notification){
+        setState((){
+          _msg += notification.msg+" ";
+        });
+        return true;
+      },
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children:<Widget>[
+            RaisedButton(
+              onPressed:()=>MyNotification("Hi").dispatch(context),
+              child:Text("Send Notification"),
+            ),
+            Builder(
+              builder:(context) {
+                return RaisedButton(
+                  //按钮点击时分发通知
+                  onPressed:()=>MyNotification("Hi").dispatch(context),
+                  child:Text("Send Notification"),
+                );
+              }
+            ),
+            Text(_msg)
+          ]
+        )
+      )
+    );
+  }
+}
+
+class MyNotification extends Notification {
+  MyNotification(this.msg);
+  final String msg;
+}
+//'NotificationRoute.createState' ('NotificationRoute Function()') isn't a valid override of 'StatefulWidget.createState' ('State<StatefulWidget> Function()').
+//A value of type 'NotificationRouteState' can't be returned from method 'createState' because it has a return type of 'NotificationRoute'.
+```
+代码中 RaisedButton 不能正常工作，因为这个 context 是根 context，而 NotificationListener 是监听的子树，所以我们通过 Builder 构建 RaisedButton，来获得按钮位置的 context 。
+
+**阻止冒泡**
+
+略
+
+**通知冒泡原理**
+
+
 
 **实现滑动关闭**
 
@@ -6458,5 +6608,3 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
-
-#### 
