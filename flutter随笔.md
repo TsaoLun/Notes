@@ -6995,7 +6995,7 @@ class _StaggerRouteState extends State<StaggerRoute> with TickerProviderStateMix
 
     _controller = AnimationController(
       duration: const Duration(milliseconds:2000),
-      vsync: this
+      vsync: this,
     );
   }
 
