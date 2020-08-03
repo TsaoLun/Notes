@@ -7866,3 +7866,9 @@ var paint = Paint() //创建一个画笔并配置其属性
   ..style = PaintingStyle.fill //画笔样式
   ..color = Color(0x77cdb175); //画笔颜色
 ```
+
+**示例：五子棋**
+
+```dart
+
+```
