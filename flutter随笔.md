@@ -1230,6 +1230,60 @@ class MyApp extends StatelessWidget {
 //对不起学到这里有点迷...暂时跳过
 ```
 
+**实现滑动关闭**
+
+1. 创建 item 列表 (类似长列表，将数据源转换为 List )
+2. 将 item 包装在一个 Dismissable Widget 中
+3. 提供滑动背景提示
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<String>.generate(20, (i) => "Item ${i + 1}"),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<String> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Dismissing Items';
+
+    return MaterialApp(
+        title: title,
+        home: Scaffold(
+            appBar: AppBar(
+              title: Text(title),
+            ),
+            body: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Dismissible(
+                    key: Key(item),
+                    onDismissed: (direction) {
+                      items.removeAt(index);
+
+                      Scaffold.of(context).showSnackBar(SnackBar(
+                        content: Text("$item dismissed"),
+                      ));
+                    },
+                    background: Container(color: Colors.red),
+                    child: ListTile(title: Text('$item')));
+              },
+            )
+          )
+        );
+  }
+}
+```
+
 **创建 Grid List**
 
 ```dart
@@ -1270,8 +1324,6 @@ class GridListHome extends StatelessWidget {
   }
 }
 ```
-
-<br/>
 
 <br/>
 
@@ -7038,60 +7090,779 @@ class _StaggerRouteState extends State<StaggerRoute> with TickerProviderStateMix
 }
 ```
 
-### 通用切换动画组件
+### 切换动画
 
+Flutter 提供了 PageView, TabView 等常用切换组件，但这些组件不能覆盖全部需求场景，为此，Flutter SDK 提供了一个 AnimatedSwitcher 组件，定义了一种通用 UI 切换抽象。
 
+##### AnimatedSwitcher
 
-**实现滑动关闭**
-
-1. 创建 item 列表 (类似长列表，将数据源转换为 List )
-2. 将 item 包装在一个 Dismissable Widget 中
-3. 提供滑动背景提示
+AnimatedSwitcher 可以同时对其新旧子元素添加显示、隐藏动画，也就是说在 AnimatedSwitcher 子元素发生变化时，会对其旧元素和新元素绑定动画。先来看一下定义：
 
 ```dart
-import 'package:flutter/foundation.dart';
+const AnimatedSwitcher({
+  this.child,
+  @required this.duration,//新child显示的动画时长
+  this.reverseDuration,//旧child隐藏的动画时长
+  this.switchInCurve = Curves.linear,
+  this.switchOutCurve = Curves.linear,
+  this.transitionBuilder = AnimatedSwitcher.defaultTransitionBuilder,//动画构建器
+  this.layoutBuilder = AnimatedSwitcher.defaultLayoutBuilder,//布局构建器
+})
+```
+当 AnimatedSwitcher 的 child 发生变化时，旧 child 会执行隐藏动画，新 child 会执行显示动画。执行何种动画效果是由 transitionBuilder 参数决定的，该参数接受一个 AnimatedSwitcherTransitionBuilder 类型的 builder 。
+
+```dart
+typedef AnimatedSwitcherTransitionBuilder = 
+  Widget Function(Widget child, Animation<double> animation);
+```
+该 builder 在 AnimatedSwitcher 的 child 切换时会分别对新旧 child 绑定动画，对旧 child 绑定的动画会反向执行 reverse, 对新 child 绑定的动画会正向执行 forward 。默认情况下，AnimatedSwitcher 会对新旧 child 执行渐隐和渐显动画。
+
+来看一个计数器，旧数字执行缩小动画隐藏，新数字执行放大动画显示，代码如下：
+
+```dart
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(MyApp(
-    items: List<String>.generate(20, (i) => "Item ${i + 1}"),
-  ));
+class AnimatedSwitcherCounterRoute extends StatefulWidget {
+  const AnimatedSwitcherCounterRoute({Key key}) : super(key: key)
+
+  @override
+  _AnimatedSwitcherCounterRouteState createState() => _AnimatedSwitcherCounterRouteState();
 }
 
-class MyApp extends StatelessWidget {
-  final List<String> items;
-
-  MyApp({Key key, @required this.items}) : super(key: key);
+class _AnimatedSwitcherCounterRouteState extends State<AnimatedSwitcherCounterRoute> {
+  int _count = 0;
 
   @override
   Widget build(BuildContext context) {
-    final title = 'Dismissing Items';
-
-    return MaterialApp(
-        title: title,
-        home: Scaffold(
-            appBar: AppBar(
-              title: Text(title),
-            ),
-            body: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Dismissible(
-                    key: Key(item),
-                    onDismissed: (direction) {
-                      items.removeAt(index);
-
-                      Scaffold.of(context).showSnackBar(SnackBar(
-                        content: Text("$item dismissed"),
-                      ));
-                    },
-                    background: Container(color: Colors.red),
-                    child: ListTile(title: Text('$item')));
-              },
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children:<Widget>[
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds:500),
+            transitionBuilder:(Widget child, Animation<double> animation) {
+              //执行缩放动画
+              return ScaleTransition(child:child, scale:animation);
+            },
+            child:Text(
+              '$_count',
+              //显示指定key，不同key会被认为是不同Text，这样才能执行动画
+              key: ValueKey<int>(_count),
+              style:Theme.of(context).textTheme.display1,
             )
+          ),
+          RaisedButton(
+            child:const Text('+1',),
+            onPressed:() {
+              setState((){
+                _count += 1;
+              });
+            }
           )
-        );
+        ]
+      )
+    );
   }
 }
+```
+AnimatedSwitcher 的新旧 child，如果类型相同，则 Key 必须是不相等的。
+
+**AnimatedSwitcher** 的实现原理
+
+要想实现新旧 child 切换动画，只需要明确两个问题：动画执行的时机和如何对新旧 child 执行动画。从 AnimatedSwitcher 的使用方式我们可以看到，当 child 发生变化时（即 Key 或类型不同时相等），需要重新创建，然后动画开始执行。我们可以通过继承 StatefulWidget 来实现 AnimatedSwitcher，具体做法是在 didUpdateWidget 回调中判断其新旧 child 是否发生变化，如果发生变化则对旧 child 执行反向退场 reverse，对新 child 执行正向 forward 入场动画即可。
+
+Flutter SDK 中还提供了一个 AnimatedCrossFade 组件，也可以切换两个子元素，与 AnimatedSwitcher 不同的是，AnimatedCrossFade 主要针对两个子元素，而 AnimatedSwitcher 则是在一个子元素的新旧值之间切换。
+
+**AnimatedSwitcher 高级用法**
+
+假设我们想实现类似路由平移切换的动画，直接通过 AnimatedSwitcher 做不到，因为旧 child 会原路退出。下面我们封装一个 MySlideTransition 与 SlideTransition 的不同在于对其动画反向执行进行了定制：
+
+```dart
+class MySlideTransition extends AnimatedWidget {
+  MySlideTransition({
+    Key key,
+    @required Animation<Offset> position,
+    this.transformHitTests = true,
+    this.child,
+  })
+    : assert(position != null),
+      super(key: key, listenable: position);
+
+  Animation<Offset> get position => listenable;
+  final bool transformHitTests;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    Offset offset=position.value;
+    //动画反向执行，调整x偏移
+    if (position.status == AnimationStatus.reverse) {
+      offset = Offset(-offset.dx, offset.dy);
+    }
+    return FractionalTranslation(
+      translation: offset,
+      transformHitTests: transformHitTests,
+      child: child,
+    );
+  } 
+}
+```
+调用时，将 SlideTransition 替换成 MySlideTransition:
+
+```dart
+AnimatedSwitcher(
+  duration: Duration(milliseconds:200),
+  transitionBuilder:(Widget child,Animation<double> animation) {
+    var tween = Tween<Offset>(begin:Offset(1,0),end:Offset(0,0))
+      return MySlideTransition(
+        child: child,
+        position: tween.animate(animation),
+      );
+  },
+  ...//省略
+)
+```
+
+##### SlideTransitionX
+
+本节封装一个出入滑动动画，以适应各种 Transition，代码如下：
+
+```dart
+class SlideTransitionX extends AnimatedWidget {
+  SlideTransitionX({
+    Key key,
+    @required Animation<double> position,
+    this.transformHitTests = true,
+    this.direction = AxisDirection.down,
+    this.child,
+  })
+    : assert(position != null),
+    super(key: key, listenable: position) {
+    //偏移在内部处理
+    switch(direction) {
+      case AxisDirection.up:
+        _tween = Tween(begin: Offset(0,1), end:Offset(0,0));
+        break;
+      case AxisDirection.right:
+        _tween = Tween(begin: Offset(-1,0), end:Offset(0,0));
+        break;
+      case AxisDirection.down:
+        _tween = Tween(begin: Offset(0,-1), end:Offset(0,1));
+        break;
+      case AxisDirection.left:
+        _tween = Tween(begin: Offset(1,0), end: Offset(0,0));
+        break;
+    }
+  }
+
+  Animation<double> get position => listenable;
+
+  final bool transformHitTests;
+  final Widget child;
+  //退场方向
+  final AxisDirection direction;
+
+  Tween<Offset> _tween;
+
+  @override
+  Widget build(BuildContext context) {
+    Offset offset = _tween.evaluate(position);
+    if (position.status == AnimationStatus.reverse) {
+      switch (direction) {
+        case AxisDirection.up:
+          offset = Offset(offset.dx, -offset.dy);
+          break;
+        case AxisDirection.right:
+          offset = Offset(-offset.dx, offset.dy);
+          break;
+        case AxisDirection.down:
+          offset = Offset(offset.dx, offset.dy);
+          break;
+        case AxisDirection.left:
+          offset = Offset(-offset.dx, offset.dy);
+          break;
+      }
+    }
+    return FractionalTranslation(
+      translation: offset,
+      transformHitTests: transformHitTests,
+      child: child,
+    );
+  }
+}
+```
+在需要切换新旧 UI 元素的场景中，AnimatedSwitcher 十分实用。
+
+### 动画过渡
+
+我们将在 Widget 属性发生变化时执行过渡动画的组件称为“动画过渡组件”，它会在内部自管理 AnimationController 。
+
+前面介绍过的动画封装方法中，通常需要使用者自己提供一个 AnimationController 对象来自定义这些属性，但如此一来就得手动管理 AnimationController，这会增加使用的复杂性。如果能将 AnimationController 也进行封装则会大大提高动画组件的易用性。
+
+**自定义动画过渡组件**
+
+我们要实现一个 AnimatedDecoratedBox，它可以实现在 decoration 属性发生变化时，将旧状态变成新状态的过程展示为一个过渡动画。根据前面所学的知识，我们实现了一个 AnimatedDecoratedBox 组件，代码如下：
+
+```dart
+class AnimatedDecoratedBox extends StatefulWidget {
+  AnimatedDecoratedBox({
+    Key key,
+    @required this.decoration,
+    this.child,
+    this.curve = Curves.linear,
+    @required this.duration,
+    this.reverseDuration,
+  })
+
+  final BoxDecoration decoration;
+  final widget child;
+  final Duration duration;
+  final Curve curve;
+  final Duration reverseDuration;
+
+  @override
+  _AnimatedDecoratedBoxState createState() => _AnimatedDecoratedBoxState();
+}
+
+class _AnimatedDecoratedBoxState extends State<AnimatedDecoratedBox>
+  with SingleTickerProviderStateMixin {
+    @protected
+    AnimationController get controller => _controller;
+    AnimationController _controller;
+
+    Animation<double> get animation => _animation;
+    Animation<double> _animation;
+
+    DecorationTween _tween;
+
+    @override
+    Widget build(BuildContext context) {
+      return AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return DecoratedBox(
+            decoration: _tween.animate(_animation).value,
+            child: child,
+          );
+        },
+        child: widget.child,
+      );
+    }
+
+    @override
+    void initState(){
+        super.initState();
+        _controller = AnimationController(
+          duration = widget.duration,
+          reverseDuration: widget.reverseDuration,
+          vsync: this,
+        );
+        _tween = DecorationTween(begin: widget.decoration);
+        _updateCurve();
+      }
+
+      void _updateCurve() {
+        if (widget.curve != null)
+        _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
+        else
+        _animation = _controller;
+      }
+
+      @override
+      void didUpdateWidget(AnimatedDecoratedBox oldWidget) {
+        super.didUpdateWidget(oldWidget);
+        if (widget.curve != oldWidget.curve)
+        _updateCurve();
+        _controller.duration = widget.duration;
+        _controller.reverseDuration = widget.reverseDuration;
+        if(widget.decoration != (_tween.end??_tween.begin)){
+          _tween
+            ..begin = _tween.evaluate(_animation)
+            ..end = widget.decoration;
+          _controller
+            ..value = 0.0
+            ..forward();
+        }
+      }
+
+      @override
+      void dispose() {
+        _controller.dispose();
+        super.dispose();
+      }
+    }
+  }
+```
+
+Flutter 预置了很多动画过渡组件，其实现方式大多和 AnimatedDecoratedBox 差不多：
+
+```dart
+class AnimatedWidgetsTest extends StatefulWidget {
+  @override
+  _AnimatedWidgetsTestState createState() => _AnimatedWidgetsTestState();
+}
+
+class _AnimatedWidgetsTestState extends State<AnimatedWidgetsTest> {
+  double _padding = 10;
+  var _align = Alignment.topRight;
+  double _height = 100;
+  double _left = 0;
+  Color _color = Colors.red;
+  TextStyle _style = TextStyle(color: Colors.black);
+  Color _decorationColor = Colors.blue;
+
+  @override
+  Widget build(BuildContext context) {
+    var duration = Duration(seconds: 5);
+    return SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+          RaisedButton(
+            onPressed: () {
+              setState(() {
+                _padding = 20;
+              });
+            },
+            child: AnimatedPadding(
+              duration: duration,
+              padding: EdgeInsets.all(_padding),
+              child: Text("AnimatedPadding"),
+            ),
+          ),
+          SizedBox(
+            height: 50,
+            child: Stack(
+              children: <Widget>[
+                AnimatedPositioned(
+                  duration: duration,
+                  left: _left,
+                  child: RaisedButton(
+                    onPressed: () {
+                      setState(() {
+                        _left = 100;
+                      });
+                    },
+                    child: Text("AnimatedPositioned"),
+                  ),
+                )
+              ],
+            ),
+          ),
+          Container(
+            height: 100,
+            color: Colors.grey,
+            child: AnimatedAlign(
+              duration: duration,
+              alignment: _align,
+              child: RaisedButton(
+                onPressed: () {
+                  setState(() {
+                    _align = Alignment.center;
+                  });
+                },
+                child: Text("AnimatedAlign"),
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: duration,
+            height: _height,
+            color: _color,
+            child: FlatButton(
+              onPressed: () {
+                setState(() {
+                  _height = 150;
+                  _color = Colors.blue;
+                });
+              },
+              child: Text(
+                "AnimatedContainer",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          AnimatedDefaultTextStyle(
+            child: GestureDetector(
+                child: Text("hello world"),
+                onTap: () {
+                  setState(() {
+                    _style = TextStyle(
+                      color: Colors.blue,
+                      decorationStyle: TextDecorationStyle.solid,
+                      decorationColor: Colors.blue,
+                    );
+                  });
+                }),
+            style: _style,
+            duration: duration,
+          ),
+          AnimatedDecoratedBox(
+              duration: duration,
+              decoration: BoxDecoration(color: _decorationColor),
+              child: FlatButton(
+                onPressed: () {
+                  setState(() {
+                    _decorationColor = Colors.red;
+                  });
+                },
+                child: Text(
+                  "AnimatedDecoratedBox",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ))
+        ].map((e) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: e,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+```
+
+# 自定义组件
+
+如果需要自定义组件，一般有三种方式：组合其他组件，自绘和实现 RenderObject 。
+
+### 组合现有组件
+
+##### GradientButton
+
+Flutter Material 组件库中的按钮默认不支持渐变背景，为了实现渐变背景按钮，我们自定义一个 GradientButton 组件，支持如下功能：
+
+1. 背景支持渐变色
+2. 手指按下时有涟漪效果
+3. 可以支持圆角
+
+```dart
+class GradientButton extends StatelessWidget {
+  GradientButton({
+    this.colors,
+    this.width,
+    this.height,
+    this.onPressed,
+    this.borderRadius,
+    @required this.child,
+  });
+
+  //渐变色数组
+  final List<Color> colors;
+
+  //按钮宽高
+  final double width;
+  final double height;
+
+  final Widget child;
+  final BorderRadius borderRadius;
+
+  //点击回调
+  final GestureTapCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
+
+    //确保colors数组不为空
+    List<Color> _colors = colors ??
+        [theme.primaryColor, theme.primaryColorDark ?? theme.primaryColor];
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: _colors),
+        borderRadius: borderRadius,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          splashColor: _colors.last,
+          highlightColor: Colors.transparent,
+          borderRadius: borderRadius,
+          onTap: onPressed,
+          child: ConstrainedBox(
+            constraints: BoxConstraints.tightFor(height: height, width: width),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: DefaultTextStyle(
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+使用 GradientButton :
+
+```dart
+import 'package:flutter/material.dart';
+import './widgets/index.dart';//lib/widgets
+
+void main() => runApp(MaterialApp(home: TestRoute()));
+
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Column(children: <Widget>[
+        GradientButton(
+          child: Text('Submit'),
+          colors: [Colors.orange, Colors.red],
+          height: 50.0,
+          onPressed: onTap,
+        ),
+        GradientButton(
+          height: 50.0,
+          colors: [Colors.lightGreen, Colors.green[700]],
+          child: Text("Submit"),
+          onPressed: onTap,
+        ),
+        GradientButton(
+          height: 50.0,
+          colors: [Colors.lightBlue[300], Colors.blueAccent],
+          child: Text("Submit"),
+          onPressed: onTap,
+        )
+      ]),
+    );
+  }
+  onTap() {
+    print("button click");
+  }
+}
+```
+在抽离出单独的组件时，需要考虑代码的规范性，如必要参数要用@required标注，对于可选参数，在特定场景下需要判空或设置默认值。为了保证代码的健壮性，我们需要在用户错误地使用组件时能够兼容或报错提示（使用 assert 断言函数实现）。
+
+##### TurnBox
+
+之前介绍过 RotatedBox，可以旋转子组件，但是只能固定90度且旋转角度更新过程没有动画。本节将实现一个 TurnBox 组件，不仅可以以任意角度旋转而且可以手动指定动画速度。
+
+```dart
+class TurnBox extends StatefulWidget {
+  const TurnBox({
+    Key key, //因为是Stateful所以需要key
+    this.turns = .0, //旋转圈数
+    this.speed = 200,
+    @required this.child, //此处有无required区别？
+  }) : super(key: key);
+
+  final double turns;
+  final int speed;
+  final Widget child;
+
+  @override
+  _TurnBoxState createState() => _TurnBoxState();
+}
+
+class _TurnBoxState extends State<TurnBox> with SingleTickerProviderStateMixin {
+  AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, lowerBound: -double.infinity, upperBound: double.infinity);
+    _controller.value = widget.turns;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: widget.child,
+    );
+  }
+
+  @override
+  void didUpdateWidget(TurnBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    //旋转角度发生变化时执行过渡动画
+    if (oldWidget.turns != widget.turns) {
+      _controller.animateTo(
+        widget.turns,
+        duration: Duration(milliseconds: widget.speed ?? 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+}
+```
+需要说明两点：
+
+1. 我们通过组合 RotationTransition 和 child 实现旋转效果。
+2. 在 didUpdateWidget 中，需要判断要旋转的角度是否发生了变化，再执行过渡动画。
+
+接下来进行测试：
+
+```dart
+class TurnBoxRoute extends StatefulWidget {
+  @override
+  _TurnBoxRouteState createState() => _TurnBoxRouteState();
+}
+
+class _TurnBoxRouteState extends State<TurnBoxRoute> {
+  double _turns = .0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: <Widget>[
+          TurnBox(
+              turns: _turns, speed: 500, child: Icon(Icons.refresh, size: 50)),
+          TurnBox(
+              turns: _turns,
+              speed: 1000,
+              child: Icon(Icons.refresh, size: 150.0)),
+          RaisedButton(
+            child: Text("顺时针旋转1/5圈"),
+            onPressed: () {
+              setState(() {
+                _turns += .2;
+              });
+            },
+          ),
+          RaisedButton(
+            child: Text("逆时针旋转1/5圈"),
+            onPressed: () {
+              setState(() {
+                _turns -= .2;
+              });
+            },
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+如果我们封装的是 StatefulWidget，一定要注意在组件更新时是否需要同步状态。比如我们要封装一个富文本展示组件 MyRichText，可以自动处理 URL，定义代码如下：
+
+```dart
+class MyRichText extends StatefulWidget {
+  MyRichText({
+    Key key,
+    this.text,//文本字符串
+    this.linkStyle,//URL链接样式
+  }) : super(key: key);
+
+  final String text;
+  final TextStyle linkStyle;
+
+  @override
+  _MyRichTextState createState((){_MyRichTextState()});
+}
+```
+接下来在 _MyRichTextState 中要实现如下两个功能：
+1. 解析文本字符串 "text" 生成 TextSpan 并缓存起来。
+2. 在 build 中返回最终的富文本样式。
+
+```dart
+class MyRichText extends StatefulWidget {
+  MyRichText({
+    Key key,
+    this.text, //文本字符串
+    this.linkStyle, //URL链接样式
+  }) : super(key: key);
+
+  final String text;
+  final TextStyle linkStyle;
+
+  @override
+  _MyRichTextState createState() => _MyRichTextState();
+}
+
+class _MyRichTextState extends State<MyRichText> {
+  TextSpan _textSpan;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: _textSpan,
+    );
+  }
+
+  TextSpan parseText(String text) {
+    //解析文本字符串，构建出TextSpan
+    //...
+  }
+
+  @override
+  void initState() {
+    _textSpan = parseText(widget.text);
+    super.initState();
+  }
+}
+```
+
+为了不在每次创建 TextSpan 的时候都去解析字符串，我们在 initState 中对解析的结果进行了缓存，然后在 build 中直接使用解析结果 _textSpan 。这看起来不错，但是上面代码存在**严重问题**：父组件传入的 text 发生变化时（组件树结构不变），MyRichText 显示的内容不会更新，原因是 initState 只会在 State 创建时被调用，text 发生变化时，parseText 并没有被重新执行导致 _textSpan 仍然是旧的解析值。
+
+这时只需要添加一个 didUpdateWidget 回调函数，然后在里面重新调用 parseText 即可，代码如下：
+
+```dart
+@override
+void didUpdateWidget(MyRichText oldWidget) {
+  if (widget.text != oldWidget.text) {
+    _textSpan = parseText(widget.text);
+  }
+  super.didUpdateWidget(oldWidget);
+}
+```
+当我们在 State 中需要缓存某些依赖 Widget 参数的数据时，一定要注意在组件更新时是否需要同步状态。
+
+### 自绘组件
+
+##### CustomPaint
+
+开发者可以通过 Canvas 绘制各种自定义图形，Flutter 提供了一个 CustomPaint 组件，可以结合画笔 CustomPainter 实现自定义图形绘制：
+
+```dart
+CustomPaint({
+  Key key,
+  this.painter,
+  this.foregroundPainter,
+  this.size = Size.zero,
+  this.isComplex = false,
+  this.willChange = false,
+  Widget child,//子节点，可以为空
+})
+```
++ painter，背景画笔，会显示在子节点后面。
++ foregroundPainter，前景画笔，会显示在子节点前面。
++ size，画布尺寸，有 child 则忽略此参数使用 child 尺寸，也能包一层 SizeBox 。
++ isComplex，如果选是则会应用一些缓存策略来减少重复渲染开销。
++ willChange，与 isComplex 配合使用，启动缓存时代表下一帧是否更新
+
+为了避免子节点不必要的重绘，一般包裹在 RepaintBoundary 组件中，这样在绘制时就会创建一个新绘制层 Layer 独立于父组件：
+
+```dart
+CustomPaint(
+  size:Size(300, 300),//指定画布大小
+  painter:MyPainter(),
+  child:RepaintBoundary(child:...),
+)
+```
+**CustomPainter** 中定义了一个虚函数 paint：`void paint(Canvas canvas, Size size);` ，其中 Canvas 为画布，包括各种绘制方法，Size 为当前绘制区域大小。
+
+**Paint** 画笔，可以配置各种属性如粗细、颜色、样式等，代码如下：
+
+```dart
+var paint = Paint() //创建一个画笔并配置其属性
+  ..isAntiAlias = true //抗锯齿
+  ..style = PaintingStyle.fill //画笔样式
+  ..color = Color(0x77cdb175); //画笔颜色
 ```
