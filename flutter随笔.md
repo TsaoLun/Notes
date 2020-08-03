@@ -7856,7 +7856,7 @@ CustomPaint(
   child:RepaintBoundary(child:...),
 )
 ```
-**CustomPainter** 中定义了一个虚函数 paint：`void paint(Canvas canvas, Size size);` ，其中 Canvas 为画布，包括各种绘制方法，Size 为当前绘制区域大小。
+**CustomPainter** 中定义了一个虚函数 **paint** 包含两个参数：`void paint(Canvas canvas, Size size);` ，其中 Canvas 为画布，包括各种绘制方法，Size 为当前绘制区域大小。
 
 **Paint** 画笔，可以配置各种属性如粗细、颜色、样式等，代码如下：
 
@@ -7870,6 +7870,8 @@ var paint = Paint() //创建一个画笔并配置其属性
 **示例：五子棋**
 
 ```dart
+import 'dart:math';
+
 class CustomPaintRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -7903,9 +7905,13 @@ class MyPainter extends CustomPainter {
 
     for (int i = 0; i <= 15; ++i) {
       double dy = eHeight * i;
-      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), paint);
+      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), paint);
     }
-
+    
+    for (int i = 0; i <= 15; ++i) {
+      double dx = eWidth * i;
+      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), paint)
+    }
     //画一个黑子
     paint
       ..style = PaintingStyle.fill
@@ -7928,5 +7934,318 @@ class MyPainter extends CustomPainter {
   //在实际场景中正确利用此回调减小开销
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+```
+一种优化方法是将棋盘单独设为一个组件，并设置其 shouldRepaint 回调值为 false，作为背景。
+
+##### CustomProgressIndicator
+
+略
+
+<br/>
+
+# 文件与网络
+
+### 文件操作
+
+**PathProvider** 提供了一种平台透明的方式来访问设备文件系统上的常用位置。
+
+临时目录：使用 getTemporaryDirectory() 来获取临时目录。
+
+文档目录：使用 getApplicationDocumentsDirectory() 来获取应用程序的文档目录。
+
+外部存储：使用 getExternalStorageDirectory()获取外部存储目录，注意 iOS 不支持。
+
+**示例**
+
+还是以计数器为例，实现在应用退出重启后可以恢复点击次数的功能，引入 PathProvider 插件：
+
+```dart
+class FileOperationRoute extends StatefulWidget {
+  FileOperationRoute({Key key}) : super(key: key);
+
+  @override
+  _FileOperationRouteState createState() => _FileOperationRouteState();
+}
+
+class _FileOperationRouteState extends State<FileOperationRoute> {
+  int _counter;
+
+  @override
+  void initState() {
+    super.initState();
+    //从文件读取点击次数
+    _readCounter().then((int value) {
+      setState(() {
+        _counter = value;
+      });
+    });
+  }
+
+  Future<File> _getLocalFile() async {
+    //获取应用目录
+    String dir = (await getApplicationDocumentsDirectory()).path;
+    return File('$dir/counter.txt');
+  }
+
+  Future<int> _readCounter() async {
+    try {
+      File file = await _getLocalFile();
+      //读取点击次数（以字符串）
+      String contents = await file.readAsString();
+      return int.parse(contents);
+    } on FileSystemException {
+      return 0;
+    }
+  }
+
+  Future<Null> _incrementCounter() async {
+    setState(() {
+      _counter++;
+    });
+    //将点击次数以字符串类型写到文件中
+    await (await _getLocalFile()).writeAsString('$_counter');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('文件操作')),
+      body: Center(
+        child: Text('点击了 $_counter 次'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+在实际开发中，如果要存储一些简单的数据，使用 shared_preferences 插件会比较简单。
+
+### HttpClient
+
+Dart IO 库中提供了用于发起 HTTP 请求的一些类，我们可以直接使用 HttpClient 来发起请求。
+1. 创建一个 HttpClient：`HttpClient httpClient = HttpClient();`
+2. 打开 HTTP 连接，设置请求头：`HttpClientRequest request = await httpClient.getUrl(url);`，其他 HTTP Method 还有 httpClient.post(), httpClient.delete(), 如包含 Query 参数可以在构建 URI 时添加，通过 HttpClientRequest 可以设置 header 或发送 request body。
+3. 等待连接服务器，代码如下：`HttpClientResponse response = await request.close();` ，这一步完成后请求信息就已经发送给服务器了，返回一个 HttpClientResponse 对象，包含了请求头 header 和响应流 Stream 。
+4. 读取响应内容，代码如下：`String responseBody = await response.transform(utf8.decoder).join();` 
+5. 请求结束，关闭 HttpClient：`httpClient.close();`
+
+**示例**
+
+我们实现一个获取百度首页 HTML 的例子，点击获取按钮后会请求百度首页，成功后将返回内容显示出来并在控制台打印相应 header，代码如下：
+
+```dart
+import 'dart:io';
+import 'dart:convert';
+
+class HttpTestRoute extends StatefulWidget {
+  @override
+  _HttpTestRouteState createState() => _HttpTestRouteState();
+}
+
+class _HttpTestRouteState extends State<HttpTestRoute> {
+  bool _loading = false;
+  String _text = "";
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints.expand(),
+      child: Column(
+        children: <Widget>[
+          RaisedButton(
+            child: Text("获取百度首页"),
+            onPressed: _loading
+                ? null
+                : () async {
+                    setState(() {
+                      _loading = true;
+                      _text = "正在请求...";
+                    });
+                    try {
+                      //创建一个HttpClient
+                      HttpClient httpClient = HttpClient();
+                      //打开HTTP连接
+                      HttpClientRequest request = await httpClient
+                          .getUrl(Uri.parse("https://www.baidu.com"));
+                      //使用苹果UA
+                      request.headers.add(
+                          "user-agent",
+                          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
+                      //等待连接服务器
+                      HttpClientResponse response = await request.close();
+                      //读取响应内容
+                      _text = await response.transform(utf8.decoder).join();
+                      //输出响应头
+                      print(response.headers);
+                      //关闭client后，通过该client发起的所有请求都会中止
+                      httpClient.close();
+                    } catch (e) {
+                      _text = "请求失败：$e";
+                    } finally {
+                      setState(() {
+                        _loading = false;
+                      });
+                    }
+                  },
+          ),
+            Expanded(child:SingleChildScrollView(child:Text(_text.replaceAll(RegExp(r"\s"), "")),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),),
+          )
+        ],
+      ),
+    );
+  }
+}
+```
+
+### dio HTTP
+
+直接使用 HttpClient 发起网络请求是比较麻烦的，如果再涉及文件上传下载、Cookie 管理等就会非常繁琐，Dart 社区有一些第三方 HTTP 请求库，首先介绍一下 dio，支持 Restful API, FormData, 拦截器，请求取消，Cookie 管理，文件上传下载，超时等。
+
+**示例**
+
+Github 开放的 API 可用于请求 flutterchina 组织下所有公开的开源项目，实现过程：在请求阶段弹出 loading，结束后如果失败则展示错误信息；如果请求成功则将项目名称列表展示。
+
+```dart
+class FutureBuilderRoute extends StatefulWidget {
+  @override
+  _FutureBuilderRouteState createState() => _FutureBuilderRouteState();
+}
+
+class _FutureBuilderRouteState extends State<FutureBuilderRoute> {
+  Dio _dio = Dio();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      child: FutureBuilder(
+        future: _dio.get("https://api.github.com/orgs/flutterchina/repos"),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          //请求完成
+          if (snapshot.connectionState == ConnectionState.done) {
+            Response response = snapshot.data;
+            //发生错误
+            if (snapshot.hasError) {
+              return Text(snapshot.error.toString());
+            }
+            //若请求成功，则通过项目信息构建用于显示项目名称的ListView
+            return ListView(
+              children: response.data
+                  .map<Widget>((e) => ListTile(
+                        title: Text(e["full_name"]),
+                      ))
+                  .toList(),
+            );
+          }
+          //请求未完成时弹出loading
+          return CircularProgressIndicator();
+        },
+      ),
+    );
+  }
+}
+//api废了？
+```
+
+### WebSockets
+
+WebSocket 协议实现了客户端与服务端的实时通信，HTTP 虽然可以通过 keep-alive 机制使服务器在响应结束后保持连接一段时间，但只是为了避免在同一台服务器请求多个资源时频繁创建连接，并非用于试试通信。
+
+WebSocket 协议本质上是一个基于 TCP 的协议，它首先通过 HTTP 发起一条特殊的 HTTP 请求进行握手，如果服务端支持 WebSocket 协议，则会进行协议升级。WebSocket 会使用 HTTP 协议握手后创建 TCP 长连接，所以服务端与客户端可以通过此 TCP 连接进行实时通信。
+
+**步骤**
+1. 连接到 WebSocket 服务器
+2. 监听来自服务器的消息
+3. 将数据发送到服务器
+4. 关闭 WebSocket 连接
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:web_socket_channel/io.dart';
+
+void main() => runApp(MaterialApp(home: TestRoute()));
+
+class TestRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: WebSocketRoute(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _sendMessage,
+        tooltip: 'Send message',
+        child: Icon(Icons.send),
+      ),
+    );
+  }
+
+  void _sendMessage() {
+    if (_controller.text.isNotEmpty) {
+      channel.sink.add(_controller.text);
+    }
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
+  }
+}
+
+class WebSocketRoute extends StatefulWidget {
+  @override
+  _WebSocketRouteState createState() => _WebSocketRouteState();
+}
+
+class _WebSocketRouteState extends State<WebSocketRoute> {
+  TextEditingController _controller = TextEditingController();
+  IOWebSocketChannel channel;
+  String _text = "";
+
+  @override
+  void initState() {
+    //创建WebSocket连接
+    channel = IOWebSocketChannel.connect('ws://echo.websocket.orh');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Form(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(labelText: 'Send a message'),
+            ),
+          ),
+          StreamBuilder(
+            stream: channel.stream,
+            builder: (context, snapshot) {
+              //网络不通达时
+              if (snapshot.hasError) {
+                _text = "网络不通";
+              } else if (snapshot.hasData) {
+                _text = "echo:" + snapshot.data;
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Text(_text),
+              );
+            },
+          )
+        ],
+      ),
+    );
+  }
 }
 ```
