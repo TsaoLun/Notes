@@ -8170,14 +8170,57 @@ WebSocket 协议本质上是一个基于 TCP 的协议，它首先通过 HTTP �
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 
-void main() => runApp(MaterialApp(home: TestRoute()));
+void main() => runApp(MaterialApp(home: WebSocketRoute()));
 
-class TestRoute extends StatelessWidget {
+class WebSocketRoute extends StatefulWidget {
+  @override
+  _WebSocketRouteState createState() => _WebSocketRouteState();
+}
+
+class _WebSocketRouteState extends State<WebSocketRoute> {
+  TextEditingController _controller = TextEditingController();
+  IOWebSocketChannel channel;
+  String _text = "";
+
+  @override
+  void initState() {
+    //创建WebSocket连接
+    channel = IOWebSocketChannel.connect('ws://echo.websocket.org');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: WebSocketRoute(),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Form(
+              child: TextFormField(
+                controller: _controller,
+                decoration: InputDecoration(labelText: 'Send a message'),
+              ),
+            ),
+            StreamBuilder(
+              stream: channel.stream,
+              builder: (context, snapshot) {
+                //网络不通达时
+                if (snapshot.hasError) {
+                  _text = "网络不通";
+                } else if (snapshot.hasData) {
+                  _text = "echo:" + snapshot.data;
+                }
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Text(_text),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _sendMessage,
         tooltip: 'Send message',
@@ -8199,53 +8242,22 @@ class TestRoute extends StatelessWidget {
   }
 }
 
-class WebSocketRoute extends StatefulWidget {
-  @override
-  _WebSocketRouteState createState() => _WebSocketRouteState();
-}
+```
 
-class _WebSocketRouteState extends State<WebSocketRoute> {
-  TextEditingController _controller = TextEditingController();
-  IOWebSocketChannel channel;
-  String _text = "";
+HTTP 和 WebSocket 协议都属于应用层协议，除了它们还有 SMTP, FTP 等，它们都是通过 Socket API 来实现的。Flutter 的 Socket API 在 dart:io 包中，来看一个使用 Socket 实现 HTTP 请求的示例：
 
-  @override
-  void initState() {
-    //创建WebSocket连接
-    channel = IOWebSocketChannel.connect('ws://echo.websocket.orh');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Form(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(labelText: 'Send a message'),
-            ),
-          ),
-          StreamBuilder(
-            stream: channel.stream,
-            builder: (context, snapshot) {
-              //网络不通达时
-              if (snapshot.hasError) {
-                _text = "网络不通";
-              } else if (snapshot.hasData) {
-                _text = "echo:" + snapshot.data;
-              }
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Text(_text),
-              );
-            },
-          )
-        ],
-      ),
-    );
-  }
+```dart
+_request() async{
+  //建立连接
+  var socket = await Socket.connect("baidu.com", 80);
+  //根据HTTP，发送请求头
+  socket.writeln("GET / HTTP/1.1");
+  socket.writeln("Host:baidu.com");
+  socket.writeln("Connection:close");
+  socket.writeln();
+  await socket.flush();//发送
+  //读取返回内容
+  _response = await socket.transform(utf8.decoder).join();
+  await socket.close();
 }
 ```
