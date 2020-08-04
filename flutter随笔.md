@@ -8261,3 +8261,57 @@ _request() async{
   await socket.close();
 }
 ```
+
+### JSON 转换
+
+我们可以通过 dart:convert 中内置的 JSON 解码器 json.decode() 将 JSON 格式的字符串转为 Dart 对象，该方法可以根据 JSON 字符串具体内容将其转为 List 或 Map，这样我们就可以通过他们来查找所需的值：
+
+```dart
+//一个JSON格式的用户列表字符串
+String jsonStr = '[{"name":"Jack"},{"name":"Rose"}]';
+//将JSON字符串转为Dart对象(此处为List)
+List items = json.decode(jsonStr);
+//输出第一个用户的姓名
+print(items[0]["name"])
+```
+通过 json.decode() 将 JSON 字符串转为 List/Map 在大项目中可能难以管理，有如下JSON：
+
+```dart
+{
+  "name":"John Smith",
+  "email":"john@example.com",
+}
+```
+我们可以通过调用 json.decode 方法来解码 JSON，使用 JSON 字符串作为参数：
+
+```dart
+Map<String, dynamic> user = json.decode(json);
+
+print('Howdy, ${user['name']}!');
+print('We sent the verification link to ${user['email']}.');
+```
+由于 json.decode() 仅返回一个 Map<String, dynamic>，这意味着直到运行时我们才知道值得类型，很容易出错。解决方法是 Json Model 化，具体做法就是，通过预定义一些与 JSON 结构对应的 Model 类，然后在请求到数据后再动态根据数据创建出 Model 类的实例。
+
+这样在开发阶段，我们使用的是 Model 类的实例，而不是 Map/List，在访问内部属性时就不会发生拼写错误。我们创建一个 class 类：
++ User.fromJson 构造函数，用于从一个 map 构造出一个 User 实例 map structure
++ toJson 方法，将 User 实例转换为一个 map
+
+```dart
+//user.dart
+class User {
+  final String name;
+  final String email;
+
+  User(this.name, this.email);
+
+  User.fromJson(Map<String, dynamic> json)
+    : name = json['name'],
+      email = json['email'];
+
+  Map<String, dynamic> toJson() =>
+    <String, dynamic>{
+      'name':name,
+      'email':email,
+    };
+}
+```
