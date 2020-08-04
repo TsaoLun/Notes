@@ -8290,9 +8290,9 @@ Map<String, dynamic> user = json.decode(json);
 print('Howdy, ${user['name']}!');
 print('We sent the verification link to ${user['email']}.');
 ```
-由于 json.decode() 仅返回一个 Map<String, dynamic>，这意味着直到运行时我们才知道值得类型，很容易出错。解决方法是 Json Model 化，具体做法就是，通过预定义一些与 JSON 结构对应的 Model 类，然后在请求到数据后再动态根据数据创建出 Model 类的实例。
+由于 json.decode() 仅返回一个 Map<String, dynamic>，这意味着直到运行时我们才知道值的类型，出错后会在运行时崩溃。解决方法是 Json Model 化，具体做法就是，通过预定义一些与 JSON 结构对应的 Model 类，然后在请求到数据后再动态根据数据创建出 Model 类的实例。
 
-这样在开发阶段，我们使用的是 Model 类的实例，而不是 Map/List，在访问内部属性时就不会发生拼写错误。我们创建一个 class 类：
+这样在开发阶段，我们使用的是 Model 类的实例，而不是 Map/List，在访问内部属性时就不会发生拼写错误（编译不通过）。我们创建一个 class 类：
 + User.fromJson 构造函数，用于从一个 map 构造出一个 User 实例 map structure
 + toJson 方法，将 User 实例转换为一个 map
 
@@ -8314,4 +8314,19 @@ class User {
       'email':email,
     };
 }
+
+//现在反序列化user
+Map userMap = json.decode(json);
+var user = User.fromJson(userMap);
+
+print('Howdy, ${user.name}!');
+print('We sent the verification link to ${user.email}.');
 ```
+要序列化一个 user ，我们只需要将该 User 对象传递给 json.encode 方法即可，不需要手动调用 toJson 这个方法，因为 JSON.encode 内部会自动调用：
+
+```dart
+String json = json.encode(user);
+```
+User.fromJson 和 User.toJson 方法都需要进行单元测试，以验证正确的行为。
+
+**json_serializable** 可以为我们生成 JSON 系列化模块，它需要一个常规 dependencies:json_annotation 和两个开发依赖项 dev_dependencies: build_runner, json_serializable 。但我们依然需要为每一个 JSON 写模板，Pub 上有生成模板的自动化脚本包 **Json_model** 等等。
