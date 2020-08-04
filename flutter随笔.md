@@ -8330,3 +8330,16 @@ String json = json.encode(user);
 User.fromJson 和 User.toJson 方法都需要进行单元测试，以验证正确的行为。
 
 **json_serializable** 可以为我们生成 JSON 系列化模块，它需要一个常规 dependencies:json_annotation 和两个开发依赖项 dev_dependencies: build_runner, json_serializable 。但我们依然需要为每一个 JSON 写模板，Pub 上有生成模板的自动化脚本包 **Json_model** 等等。
+
+<br/>
+
+# 通道与插件
+
+### 平台通道
+
+Flutter APP 通过平台通道 platform channel 与原生平台进行通信：
++ 应用的 Flutter 部分通过平台通道将消息发送到其应用程序的所在宿主应用。
++ 宿主监听平台通道，并接收该消息。然后它会调用该平台的 API，并将响应发送回客户端，即应用程序的 Flutter 部分。
+
+![avatar](/images/channel.png)
+
