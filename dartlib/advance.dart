@@ -872,3 +872,20 @@
 //     return [a, b];
 //   }
 // }
+
+// //按位&
+// void main() {
+//     int i = 33;
+
+//     if (i&1==1) {
+//       print("Odds");
+//     } else {
+//       print("Even");
+//     }
+//  }
+
+bool isEmpty(String string) => string.length == 0;
+
+main() {
+  isEmpty(null);
+}

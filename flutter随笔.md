@@ -8343,3 +8343,4 @@ Flutter APP 通过平台通道 platform channel 与原生平台进行通信：
 
 ![avatar](/images/channel.png)
 
+
