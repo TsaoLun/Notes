@@ -101,4 +101,27 @@ console.log(buf1.equals(buf2));
 
 //---Node 回调函数和异步事件处理---
 
+var http = require('http');
 
+var server = http.createServer(); 
+
+//server.on() 捕获(订阅)事件
+server.on('request', function (request, response) {
+    console.log('request event');
+
+    response.writeHead(200, { 'Content-Type': 'text/plain' });
+    response.end('Hello World\n');
+});
+
+server.on('connection', function () {
+    console.log('connection event');
+});
+
+//listening 事件订阅
+server.listen(8124, function () {
+    console.log('listening event'); //第二个打印(创建服务器后)
+});
+
+console.log('Server running on port 8124'); //最先打印
+
+//创建异步回调函数
