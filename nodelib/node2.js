@@ -5,10 +5,10 @@ process.stdin.on('readable', function () {
     if (input != null) {
         process.stdout.write(`stdout: ${input}`);
     }
-}); */
+}); 
 
 
-/* //---监听退出字符串---
+//监听退出字符串
 
 process.stdin.setEncoding('utf8');
 
@@ -22,10 +22,10 @@ process.stdin.on('readable', function () {
         
         process.stdout.write(`stdout: ${input}`);
     }
-}); */
+});*/
 
 
-/* //---缓冲器 buffer 与类型化数组 Uint8Array---
+/*//---缓冲器 buffer 与类型化数组 Uint8Array---
 
 let a = [1, 2, 3];
 let b = Buffer.from(a);
@@ -99,7 +99,8 @@ console.log(buf1.equals(buf2));
 //buffer.copy() 从一个缓冲器复制到另一个(略)
 //buf1.compare(buf2) 前大于后返回 1 否则 -1*/
 
-//---Node 回调函数和异步事件处理---
+
+/*//---Node 回调函数和异步事件处理---
 
 var http = require('http');
 
@@ -125,3 +126,252 @@ server.listen(8124, function () {
 console.log('Server running on port 8124'); //最先打印
 
 //创建异步回调函数
+//第一个参数为数字，第二个参数为回调函数
+
+var fib = function (n) {
+    if (n < 2) return n;
+    return fib(n - 1) + fib(n - 2);
+};
+
+var Obj = function () { }; //创建对象
+Obj.prototype.doSomething = function (arg1_) { //函数 dosomething
+    var callback_ = arguments[arguments.length - 1]; //最后一个参数
+    callback = (typeof (callback_) == 'function' ? callback_ : null); //判断参数类型
+    var arg1 = typeof arg1_ === 'number' ? arg1_ : null; //只处理 number 类型的参数
+    if (!arg1)
+        return callback(new Error('first arg missing or not a number'));
+    process.nextTick(function () { //异步回调时，确保调用前清除事件循环
+        var data = fib(arg1);
+        callback(null, data);
+    });
+}
+
+var test = new Obj();
+var number = 40;
+
+test.doSomething(number, function (err, value) {
+    if (err)
+        console.error(err); //异步不能依赖 throw...catch, 错误处理在 Error 对象中进行
+    else
+        console.log('fibonaci value for %d is %d', number, value);
+});
+
+console.log('called doSomething'); //先处理同步，再调用阻塞功能
+
+//EventEmitter 激活异步处理
+
+var eventEmitter = require('events').EventEmitter;
+
+var counter = 0;
+
+var em = new eventEmitter();
+
+setInterval(function () { em.emit('timed', counter++); }, 3000); //创建事件timed
+
+em.on('timed', function (data) { // function 括号中是事件 timed 的回调
+    console.log('timed ' + data);
+});*/
+
+
+/*//创建对象并使用 Util 继承 EventEmitter
+"use strict";
+
+var util = require('util');
+var eventEmitter = require('events').EventEmitter;
+var fs = require('fs');
+
+function InputChecker(name, file) {
+    this.name = name;
+    this.writeStream = fs.createWriteStream('./' + file + '.txt',
+        {
+            'flags': 'a',
+            'encoding': 'utf8',
+            'mode': 0o666
+        });
+};
+
+util.inherits(InputChecker, eventEmitter);
+
+//check 方法检查特定输入命令
+InputChecker.prototype.check = function check(input) {
+    let command = input.trim().substr(0, 3);
+
+    //emit 根据命令设置触发事件
+    if (command == "wr:") {
+        this.emit('write', input.substr(3, input.length));
+    } else if (command == "en:") {
+        this.emit('end');
+    } else {
+        this.emit('echo', input);
+    }
+};
+
+//new object
+let ic = new InputChecker('Shelley', 'output');
+
+//监听 write, end 与 echo 事件
+ic.on('write', function (data) {
+    this.writeStream.write(data, 'utf8');
+    process.stdout.write('...file saved\n');
+});
+
+ic.on('echo', function (data) {
+    process.stdout.write(ic.name + ' wrote ' + data);
+});
+
+ic.on('end', function () {
+    process.exit();
+});
+
+//process.stdin 对象继承自 EventEmitter
+process.stdin.setEncoding('utf8');
+process.stdin.on('readable', function () {
+    let input = process.stdin.read();
+    if (input !== null)
+        ic.check(input);
+});*/
+
+
+/*//事件循环和定时器
+var timer1 = setTimeout(function (name) {
+    console.log('Hello ' + name);
+}, 3000, 'Shelley');//可选参数为回调函数参数
+
+console.log("waiting on timer...");
+
+setTimeout(function (timer) {
+    clearTimeout(timer);
+    console.log('cleared timer');
+}, 3000, timer1);
+
+var interval = setInterval(function (name) {
+    console.log('Hello ' + name);
+}, 3000, 'Shelley');
+
+var timer = setTimeout(function (interval) {
+    clearInterval(interval);
+    console.log('cleared timer');
+}, 30000, interval);
+
+timer.unref();
+
+console.log('waiting on first interval...');*/
+
+
+/*//---嵌套回调和异常处理---
+
+//同步
+var fs = require('fs');
+
+try {
+    var data = fs.readFileSync('./apples.txt', 'utf8');
+    console.log(data);
+    var adjData = data.replace(/[A|a]pple/g, 'orange');
+
+    fs.writeFileSync('./oranges.txt', adjData);
+} catch (err) {
+    console.error(err);
+}
+
+//异步嵌套
+var fs = require('fs');
+
+fs.readFile('./apples.txt', 'utf8', function (err, data) {
+    if (err) {
+        console.error(err);
+    } else {
+        var adjData = data.replace(/apple/g, 'orange');
+        fs.writeFile('./oranges.txt', adjData, function (err) {
+            if (err) console.error(err);
+        });
+    }
+});
+
+//检索要修改的文件袋目录列表
+var fs = require('fs');
+var writeStream = fs.createWriteStream('./log.txt',
+    {
+        'flags': 'a',
+        'toString': 'utf8',
+        'mode': 0666
+    });
+
+writeStream.on('open', function () {
+    fs.readdir('./data/', function (err, files) {
+        if (err) {
+            console.log(err.message);
+        } else {
+            files.forEach(function (name) {
+                fs.readFile('./data/' + name, 'utf8', function (err, data) {
+                    if (err) {
+                        console.error(err.message);
+                    } else {
+                        var adjData = data.replace(/somecompany\.com/g,
+                            'burningbird.net');
+                        fs.writeFile('./data/' + name, adjData, function (err) {
+                            if (err) {
+                                console.error(err.message);
+                            } else {
+                                writeStream.write('changed' + name + '\n', 'utf8', function (err) {
+                                    if (err) console.error(err.message);
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    });
+});
+
+writeStream.on('error', function (err) {
+    console.error("ERROR:" + err);
+});*/
+
+//添加日志消息递增计数器
+
+var fs = require('fs');
+var writeStream = fs.createWriteStream('./log.txt',
+    {
+        flags: 'a',
+        encoding: 'utf8',
+        mode: 0666
+    });
+writeStream.on('open', function () {
+    var counter = 0;
+
+    fs.readdir('./data/', function (err, files) {
+        if (err) {
+            console.error(err.message);
+        } else {
+            files.forEach(function (name) {
+                fs.stat('./data/' + name, function (err, stats) {
+                    if (err) return err;
+                    if (!stats.isFile()) {
+                        counter++;
+                        return;
+                    }
+                    fs.readFile('./data/' + name, 'utf8', function (err, data) {
+                        if (err) {
+                            console.error(err.message);
+                        } else {
+                            writeStream.write('changed' + name + '\n',
+                                function (err) {
+                                    if (err) {
+                                        console.log('finished' + name);
+                                        counter++;
+                                        if (counter >= files.length) {
+                                            console.log('all done');
+                                        }
+                                    }
+                                });
+                        }
+                    });
+                });
+            });
+        }
+    });
+});
+writeStream.on('error', function (err) {
+    console.error("ERROR:" + err);
+});
