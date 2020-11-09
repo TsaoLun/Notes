@@ -328,7 +328,7 @@ writeStream.on('error', function (err) {
     console.error("ERROR:" + err);
 });*/
 
-//添加日志消息递增计数器
+//添加日志消息递增计数器与 stats 检查
 
 var fs = require('fs');
 var writeStream = fs.createWriteStream('./log.txt',
@@ -360,7 +360,7 @@ writeStream.on('open', function () {
                                     if (err) {
                                         console.log('finished' + name);
                                         counter++;
-                                        if (counter >= files.length) {
+                                        if (counter >= files.length) { 
                                             console.log('all done');
                                         }
                                     }
