@@ -42,4 +42,45 @@ setName(person);
 console.log(person.name);*/
 
 
-//---执行上下文与作用域---
+/*//---执行上下文与作用域---
+var color = "blue";
+function changeColor() {
+    if (color === "blue") {
+        color = "red";
+    } else {
+        color = "blue"
+    }
+}
+changeColor();
+console.log(color);
+
+var color = "blue";
+
+function changeColor() {
+    let anotherColor = "red";
+
+    function swapColors() {
+        let tempColor = anotherColor;
+        anotherColor = color;
+        color = tempColor;
+    }
+    swapColors();
+}
+changeColor();
+
+//直接初始化的为全局上下文
+function add(num1, num2) {
+    sum = num1 + num2;
+    return sum;
+}
+let result = add(10, 20);
+console.log(sum);*/
+
+//标识符查找
+var color = 'blue';
+function getColor() {
+    let color = 'red';
+    return color;
+}
+
+console.log(getColor());

@@ -11,7 +11,7 @@
 4. 链接器（库函数，启动代码）
 5. 可执行代码
 
-```c++
+```c
 #include <stdio.h> 
 // #include预处理器指令，stdio.h头文件是编译器软件包标准部分，提供键盘输入和屏幕输出
 
@@ -45,7 +45,7 @@ void butler(void) //定义函数
 ### 数据和C
 
 
-```c++
+```c
 /* platinum.c -- your weight in platinum */
 #include <stdio.h>
 
@@ -75,7 +75,7 @@ int main(void)
 }
 ```
 
-```c++
+```c
 /*base.c--以十进制、八进制、十六进制打印十进制数100*/
 #include <stdio.h>
 int main(void)
@@ -94,7 +94,7 @@ dec = 100; octal = 0144; hex = 0x64
 */
 ```
 
-```c++
+```c
 /*print2.c--根据待打印值的类型使用正确的转换说明*/
 #include <stdio.h>
 int main(void)
@@ -120,7 +120,7 @@ verybig = 12345678908642 and not 12345678908642
 ```
 在C语言中，用单引号括起来的单个字符被称为字符常量 _character constant_（一般是字母和标点），双引号括起来的是字符串。正确的字符常量赋值和初始化方法：`char grade = ' A ';` ，char 还能将转义序列赋给字符变量，同样需要单引号：`char nerf = ' \n ';` 此时打印nerf的效果是另起一行。
 
-```c++
+```c
 /*实现三次Warning三次警鸣*/
 #include <stdio.h>
 int main(void)
@@ -143,7 +143,7 @@ int main(void)
 }
 ```
 
-```c++
+```c
 /*charcode.c-显示字符的代码编号*/
 #include <stdio.h>
 int main(void)
@@ -190,7 +190,7 @@ Instead, use a "macro" from inttypes.h: me32 = 45933945
 ```
 打印浮点值：
 
-```c++
+```c
 /*showf_pt.c--以两种方式显示float类型的值*/
 #include <stdio.h>
 int main(void)
@@ -235,7 +235,7 @@ int main(void)
 
 当前系统的类型大小：
 
-```c++
+```c
 /*typesize.c -- 打印类型大小*/
 #include <stdio.h>
 int main(void)
@@ -260,7 +260,7 @@ Type long double has a size of 16 bytes.
 
 C语言通过函数原型机制检查函数调用时参数的个数和类型是否正确，但该机制对 printf() 和 scanf() 不起作用，因为这两个函数的参数个数可变:
 
-```c++
+```c
 /*badcount.c--参数错误的情况*/
 #include <stdio.h>
 int main(void)
@@ -286,7 +286,7 @@ int main(void)
 
 转义序列示例：退格(\b)、水平制表符(\t)、回车(\r)的工作方式演示：
 
-```c++
+```c
 /*escape.c -- 使用转义序列*/
 #include <stdio.h>
 int main(void)
@@ -304,7 +304,7 @@ int main(void)
 ```
 刷新输出：最初 printf() 语句将输出发送到一个叫作缓冲区的中间存储区域，当缓冲区满、遇到换行字符或需要输入的时候就会刷新缓冲区。旧式编译器遇到scanf() 也不刷新缓冲区，即不显示任何内容等待用户输入，这时需要改代码：
 
-```c++
+```c
 printf("Enter your desired monthly salary:\n");
 scanf("%f", &salary);
 ```
@@ -312,7 +312,7 @@ scanf("%f", &salary);
 
 ### 字符串和格式化I/O
 
-```c++
+```c
 //talkback.c -- 演示与用户交互
 #include <stdio.h>
 #include <string.h> //提供strlen()函数的原型
@@ -356,7 +356,7 @@ _character string_ ，一个或多个字符的序列，双引号不是字符串�
 
 C语言没有专门存储字符串的变量类型，字符串都被存储在char类型的数组中。数组由连续的存储单元组成，字符串中的字符被存储在相邻的存储单元中，每个单元存储一个字符。数组末尾位置的字符 \0 是空字符 null character，用来标记字符串的结束，这意味着数组的容量必须比待存储字符串的字符数多1。
 
-```c++
+```c
 /*praise1.c--使用不同类型的字符串*/
 #include <stdio.h>
 #define PRAISE "You are an extraordinary being."
@@ -381,7 +381,7 @@ scanf() 只读取了 Angela Plains 中的 Angela，在遇到第一个空白（�
 
 sizeof 运算符以字节为单位给出对象的大小，strlen() 函数给出字符串中的字符长度，我们把两种方法用于字符串并比较结果：
 
-```c++
+```c
 /*praise2.c*/
 #include <stdio.h>
 #include <string.h> //提供strlen()函数的原型
@@ -419,7 +419,7 @@ C语言把函数库中相关的函数归为一类，并为每类函数提供一�
 
 程序中使用符号常量比数字常量表意更清晰，也更方便修改。因为变量值会在程序中改变，相比于声明变量再赋值，要创建符号常量更好的办法是用预处理器来定义。通用格式为 `define NAME value` ，符号常量一般大写，所有的 NAME 会完成编译时替换，这样的常量被称为明示常量。
 
-```c++
+```c
 /*pizza.c -- 在比萨饼程序中使用已定义的常量*/
 #include <stdio.h>
 #define PI 3.14159
@@ -441,7 +441,7 @@ int main(void)
 ```
 const关键字，用于限定一个变量为只读：`const int MONTHS = 12;`，const 用起来比#define更灵活。
 
-```c++
+```c
 //defines.c -- 使用limit.h和float头文件中定义的明示常量
 #include <stdio.h>
 #include <limits.h> //整形限制
@@ -477,7 +477,7 @@ float epsilon = 1.192093e-07
 
 printf() 函数打印数据的指令要与待打印数据的类型相匹配。转换说明 _conversion specification_ 指定了如何把数据转换成可显示的形式。
 
-```c++
+```c
 /*printout.c -- 使用转换说明*/
 #include <stdio.h>
 #define PI 3.141593
@@ -557,7 +557,7 @@ int main(void)
 */
 ```
 
-```c++
+```c
 //flags.c -- 演示一些格式标记
 #include <stdio.h>
 
@@ -577,7 +577,7 @@ int main(void)
 */
 ```
 
-```c++
+```c
 //stringf.c -- 字符串格式
 #include <stdio.h>
 #define BLURB "Authentic imitation!"
@@ -625,7 +625,7 @@ WORDS as int, short, and char: 65618 82 R
 */
 ```
 
-```c++
+```c
 //floatcnv.c -- 不匹配的浮点型转换
 #include <stdio.h>
 int main(void)
@@ -652,7 +652,7 @@ int main(void)
 
 大部分C函数都有一个返回值，这是函数计算并返回给主调程序(calling program)的值。例如C库的 sqrt() 函数，接受一个数作为参数并返回该数的平方根。可以把返回值赋给变量，也可以用于计算，还能作为参数传递。printf() 返回打印字符的个数，如果输出有误则返回负值，可以利用其返回值来检查输出错误。
 
-```c++
+```c
 //prntval.c -- printf()返回值
 #include <stdio.h>
 int main(void)
@@ -735,7 +735,7 @@ scanf() 函数使用空白（换行符、制表符和空格）把输入分成多
 
 printf() 和 scanf() 都可以使用*修饰符来修改转换说明的含义，比如在 printf() 中替代字段宽度：
 
-```c++
+```c
 //varwid.c -- 使用变宽输出字段
 #include <stdio.h>
 int main(void)
@@ -796,7 +796,7 @@ The last integer was 2015
 
 首先不使用循环，计算穿9码男鞋的脚长：
 
-```c++
+```c
 //shoes1.c -- 把鞋码转换为
 #include <stdio.h>
 #define ADJUST 7.31 //创建符号常量
@@ -824,7 +824,7 @@ Shoe size (men's)    foot length
 
 利用 while 循环改进程序：
 
-```c++
+```c
 //shoes2.c -- 计算多个不同鞋码对应的脚长
 #include <stdio.h>
 #define ADJUST 7.31
@@ -874,10 +874,3 @@ If the shoe fits, wear it.
 赋值运算符 = ，左侧引用一个存储位置，最简单的方法就是使用变量名。后面还会介绍指针，用于指向一个存储位置，即使用可修改的左值标记那些可赋值的实体。这里的左值是用于标识或定位存储位置的标签。
 
 赋值表达式语句的目的是把值储存到内存位置上，而用于储存值的数据存储区域统称为数据对象。标识对象的方法除了使用变量名和指针表达式，还可以指定数组元素、结构的成员。
-
-```c++
-//golf.c -- 高尔夫锦标赛计分卡
-#include <stdio.h>
-int main(void)
-
-```
