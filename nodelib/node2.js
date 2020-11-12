@@ -335,7 +335,7 @@ var writeStream = fs.createWriteStream('./log.txt',
     {
         flags: 'a',
         encoding: 'utf8',
-        mode: 0666
+        mode: '0666',
     });
 writeStream.on('open', function () {
     var counter = 0;
@@ -351,7 +351,7 @@ writeStream.on('open', function () {
                         counter++;
                         return;
                     }
-                    fs.readFile('./data/' + name, 'utf8', function (err, data) {
+                    fs.readFile('./data/' + name, 'utf8', function (err, data ) {
                         if (err) {
                             console.error(err.message);
                         } else {

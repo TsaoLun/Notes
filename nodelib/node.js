@@ -67,7 +67,7 @@
 
 //---Util 继承 | util.inherits---
 //---EventEmitter InputChecker---
-"use strict"
+"use strict";
 
 var util = require('util');
 var eventEmitter = require('events').EventEmitter;
@@ -80,7 +80,7 @@ function InputChecker(name, file) {
         'encoding': 'utf8',
         'mode': 0o666
     });
-};
+}
 
 util.inherits(InputChecker, eventEmitter);
 InputChecker.prototype.check = function check(input) {
