@@ -63,7 +63,7 @@ vm.runInContext('count1++; counter = true;', sandbox,
 console.log(util.inspect(sandbox));*/
 
 
-//---创建与发布 Node 模块---
+/* //---创建与发布 Node 模块---
 
 function concatArray(str, array) {
     return array.map(function (element) {
@@ -76,6 +76,27 @@ console.log(concatArray('t', [1, 2, 3]));
 
 var newArray = require('./arrayfunctions.js');
 
-console.log(newArray.concatArray('hello', ['test1', 'test2']));
+console.log(newArray.concatArray('hello', ['test1', 'test2']));*/
 
-var mime = require('');
+//Async 模块: 控制流能力
+var fs = require('fs'),
+    async = require('async');
+
+async.waterfall([
+    function readData(callback) {
+        fs.readFile('./data/data1.txt', 'utf8', function (err, data) {
+            callback(err, data);
+        });
+    },
+    function writeData(text, callback) {
+        fs.writeFile('./data/data1.txt', text, function (err) {
+            callback(err, text);
+        });
+    }//任务数组
+], function (err, result) {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log(result);
+        }//最终回调函数
+});
