@@ -206,7 +206,7 @@ console.log(colors);*/
 /*//排序方法
 let values = [1, 3, 2, 40, 5]; //首字符
 values.sort();
-console.log(values);*/
+console.log(values);
 
 //加入比较函数
 function compare(value1, value2) {
@@ -229,3 +229,17 @@ value.sort((a, b) => a < b ? 1 : a > b ? -1 : 0);
 console.log(value);
 
 //操作方法
+let colors = ["red", "green", "blue"];
+let colors2 = colors.concat("yellow", ["black", "brown"]);
+console.log(colors);
+console.log(colors2);
+
+//归并方法 reduce()
+let values = [1, 2, 3, 4, 5];
+let sum = values.reduce((prev, cur)=>{
+    return prev + cur;
+});
+console.log(sum);*/
+
+//Map
+
