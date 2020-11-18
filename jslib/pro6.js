@@ -241,5 +241,110 @@ let sum = values.reduce((prev, cur)=>{
 });
 console.log(sum);*/
 
-//Map
+/* //Map
+const m1 = new Map([
+    ["key1", "val1"],
+    ["key2", "val2"],
+    ["key3", "val3"],
+]);
+console.log(m1.size);
 
+const m2 = new Map({
+    [Symbol.iterator]: function* () {
+        yield ["key1", "val1"];
+        yield ["key2", "val2"];
+        yield ["key3", "val3"];
+    }
+});
+console.log(m2.size);
+
+const m3 = new Map([[]]);
+console.log(m3.has(undefined));
+console.log(m3.get(undefined)); 
+
+const m = new Map();
+
+console.log(m.has("firstName"));
+console.log(m.get("firstName"));
+console.log(m.size);
+
+m.set("firstName", "Matt")
+    .set("lastName", "Firsbie");
+
+console.log(m.has("firstName"));
+console.log(m.get("firstName"));
+console.log(m.size);
+
+m.delete("firstName");
+
+console.log(m.has("firstName"));
+console.log(m.size);
+
+m.clear();
+
+console.log(m.has("lastName"));
+console.log(m.size);
+
+//set() 返回映射实例，将多个操作连缀
+const m = new Map().set("key1", "val1");
+
+m.set("key2", "val2")
+    .set("key3", "val3");
+
+console.log(m.size);
+const functionKey = function () { };
+const symbolKey = Symbol();
+const objectKey = new Object();
+
+m.set(functionKey, "functionValue");
+m.set(symbolKey, "symbolValue");
+m.set(objectKey, "objectValue");
+
+console.log(m.get(functionKey));
+console.log(m.get(symbolKey));
+console.log(m.get(objectKey));
+
+console.log(m.get(function () { }));
+
+const m = new Map();
+const objKey = {},
+    objVal = {},
+    arrKey = [],
+    arrVal = [];
+m.set(objKey, objVal);
+m.set(arrKey, arrVal);
+
+//WeakMap 键为 Object
+const key1 = { id: 1 },
+      key2 = { id: 2 },
+      key3 = { id: 3 };
+const wm = new WeakMap([
+    [key1, "val1"],
+    [key2, "val2"],
+    [key3, "val3"],
+]);
+console.log(wm.get(key1));
+console.log(wm.get(key2));
+console.log(wm.get(key3));*/
+
+/* //原始值可以先包装成对象
+const stringKey = new String("key");
+const wm2 = new WeakMap([
+    [stringKey, "val1"]
+]);
+console.log(wm2.get(stringKey));
+
+const key1 = { id: 1 },
+    key2 = { id: 2 },
+    key3 = { id: 3 };
+
+const wm = new WeakMap().set(key1, "val1");
+
+wm.set(key2, "val2")
+    .set(key3, "val3");
+
+console.log(wm.get(key1));
+console.log(wm.get(key2));
+console.log(wm.get(key3)); */
+
+//使用弱引用
