@@ -345,6 +345,47 @@ wm.set(key2, "val2")
 
 console.log(wm.get(key1));
 console.log(wm.get(key2));
-console.log(wm.get(key3)); */
+console.log(wm.get(key3)); 
 
-//使用弱引用
+//使用弱映射，私有变量
+const wm = new WeakMap();
+
+class User {
+    constructor(id) {
+        this.idProperty = Symbol('id');
+        this.setId(id);
+    }
+
+    setPrivate(property, value) {
+        const privateMembers = wm.get(this) || {};
+        privateMembers[property] = value;
+        wm.set(this, privateMembers);
+    }
+
+    getPrivate(property) {
+        return wm.get(this)[property];
+    }
+
+    setId(id) {
+        this.setPrivate(this.idProperty, id);
+    }
+
+    getId() {
+        return this.getPrivate(this.idProperty);
+    }
+}
+
+const user = new User(123);
+console.log(user.getId());
+user.setId(456);
+console.log(user.getId());
+console.log(wm.get(user)[user.idProperty]);*/
+
+
+//--- Set ---
+const s1 = new Set(["val1", "val2", "val3"]);
+s1.add("Matt");
+console.log(s1.size);
+console.log(s1.has("val2"));
+console.log(typeof s1);
+console.log(s1 instanceof Set);
