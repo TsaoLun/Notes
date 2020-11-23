@@ -67,7 +67,7 @@ Object.defineProperty(book, "year", {
     }
 });
 book.year = 2018;
-console.log(book.edition);*/
+console.log(book.edition);
 
 //定义多个属性
 let book = {};
@@ -94,3 +94,34 @@ Object.defineProperties(book, {
 console.log(book.year);
 book.year = 2019;
 console.log(book.edition);
+
+//---合并对象 Object.assign()---
+let dest, src, result;
+
+dest = {};
+src = { id: 'src' };
+
+result = Object.assign(dest, src);
+
+console.log(dest === result);
+console.log(dest !== src);
+console.log(result);
+console.log(dest);*/
+
+//工厂模式创建对象
+function createPerson(name, age, job) {
+    let o = new Object();
+    o.name = name;
+    o.age = age;
+    o.job = job;
+    o.sayName = function () {
+        console.log(this.name);
+    };
+    return o;
+}
+let person1 = createPerson("Nicholas", 29, "Software Engineer");
+let person2 = createPerson("Greg", 27, "Doctor");
+console.log(person1.name);
+console.log(person2.sayName());
+
+//构造函数模式
