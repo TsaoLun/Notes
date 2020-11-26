@@ -34,7 +34,7 @@ server.on('request', function (request, response) {
 });
 console.log('server listening on 8214');*/
 
-//HTTP 客户端发送数据到服务器
+/* //HTTP 客户端发送数据到服务器
 var http = require('http');
 var querystring = require('querystring');
 
@@ -74,4 +74,41 @@ var req = http.request(options, function (res) {
 });
 
 req.write(postData);
-req.end();
+req.end(); */
+
+//创建静态网站服务器
+var http = require('http'),
+    fs = require('fs'),
+    base = '/home/lun/Notes/jslib/jsio.html';
+
+http.createServer(function (req, res) {
+    let pathname = base + req.url;
+    console.log(pathname);
+
+    fs.stat(pathname, function (err, stats) {
+        if (err) {
+            console.log(err);
+            res.writeHead(404);
+            res.write('Resource missing 404\n');
+            res.end();
+        } else {
+            res.setHeader('Content-Type', 'text/html');
+
+            var file = fs.createReadStream(pathname);
+
+            file.on("open", function () {
+                res.statusCode = 200;
+                file.pipe(res);
+            });
+
+            file.on("error", function (err) {
+                console.log(err);
+                res.writeHead(403);
+                res.write('file missing or permission problem');
+                res.end();
+            });
+        }
+    });
+}).listen(8124);
+
+console.log('Server web running at 8124');

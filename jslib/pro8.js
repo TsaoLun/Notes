@@ -208,7 +208,7 @@ personV1.sayName(); //undefined! Nicholas
 personV1.sayName; // nothing
 console.log(personV1.sayName == personV2.sayName);*/
 
-//原型模式
+/* //原型模式
 function Person() { }
 
 Person.prototype.name = "Nicholas";
@@ -224,5 +224,23 @@ person1.sayName();
 let person2 = new Person();
 person2.sayName();
 
-console.log(person1.sayName == person2.sayName);
-console.log(person1.sayName() == person2.sayName()); //Nicholas, Nicholas, true
+console.log(person1.sayName == person2.sayName); //true
+console.log(person1.sayName() == person2.sayName()); //Nicholas, Nicholas, true 
+
+//使用函数表达式
+let Person = function () { };
+Person.prototype.name = "Nicholas";
+Person.prototype.sayName = function () {
+    console.log(this.name);
+};
+
+let person1 = new Person();
+person1.sayName();
+
+let person2 = new Person();
+person2.sayName();
+
+console.log(person1.sayName == person2.sayName);*/
+
+//理解原型
+
