@@ -177,7 +177,7 @@ function Person(name, age, job) {
 Person("Greg", 27, "Doctor");
 console.log(name);
 console.log(global.name);
-global.sayName();*/
+global.sayName();
 
 //构造函数的 Function 重复创建
 function Person(name, age, job) {
@@ -206,6 +206,23 @@ let personV1 = new PersonV2("Nicholas", 29, "Software Engineer");
 let personV2 = new PersonV2("Greg", 27, "Doctor");
 personV1.sayName(); //undefined! Nicholas
 personV1.sayName; // nothing
-console.log(personV1.sayName == personV2.sayName);
+console.log(personV1.sayName == personV2.sayName);*/
 
 //原型模式
+function Person() { }
+
+Person.prototype.name = "Nicholas";
+Person.prototype.age = 29;
+Person.prototype.job = "Software Engineer";
+Person.prototype.sayName = function () {
+    console.log(this.name);
+};
+
+let person1 = new Person();
+person1.sayName();
+
+let person2 = new Person();
+person2.sayName();
+
+console.log(person1.sayName == person2.sayName);
+console.log(person1.sayName() == person2.sayName()); //Nicholas, Nicholas, true
