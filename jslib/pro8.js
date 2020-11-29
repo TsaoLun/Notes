@@ -420,7 +420,7 @@ person.name = "Greg";
 console.log(hasPrototypeProperty(person,"name"));//false */
 
 //---Object.keys() 获得对象可枚举实例属性---
-function Person() { }
+/* function Person() { }
 Person.prototype.name = "Nicholas";
 Person.prototype.age = 29;
 Person.prototype.job = "Software Engineer";
@@ -439,5 +439,119 @@ console.log(p1keys);
 //列出所有实例属性(包含不可枚举)
 let allkeys = Object.getOwnPropertyNames(Person.prototype);
 console.log(allkeys);
+ */
 
 //-----对象迭代-----
+/* const o = {
+    foo: 'bar',
+    baz: 1,
+    qux: {}
+};
+
+//Object.values() 返回对象值的数组
+console.log(Object.values(o));//[ 'bar', 1, {} ]
+//Object.entries() 返回键值对数组
+console.log(Object.entries((o)));//[ [ 'foo', 'bar' ], [ 'baz', 1 ], [ 'qux', {} ] ]
+
+console.log('---其他原型语法---');
+//包含所有属性和方法对对象字面量
+function Person() { }
+Person.prototype = {
+    name: "Nicholas",
+    age: 29,
+    job: "Software Engineer",
+    sayName() {
+        console.log(this.name);
+    }
+};
+//以上方法重写了 prototype 对象，constructor 属性也指向了新对象
+//(Object 构造函数，不是原构造函数)
+let friend = new Person();
+console.log(friend instanceof Object);
+console.log(friend instanceof Person);
+console.log(friend.constructor == Person);//false
+console.log(friend.constructor == Object);//true
+ */
+
+//---为保留 constructor 在重写时专门设置---
+//Object.defineProperty()
+/* function Person() { }
+Person.prototype = {
+    name: "Nicholas",
+    age: 29,
+    job: "Software Engineer",
+    sayName() {
+        console.log(this.name);
+    }
+};
+//恢复 constructor 属性
+Object.defineProperty(Person.prototype, "constructor", {
+    enumerable: false,
+    value: Person
+}); 
+
+console.log('---原型动态性---');
+//对原型对修改会在已存在对实例中反映
+let friend = new Person();
+Person.prototype.sayHi = function() {
+    console.log("hi");
+};
+friend.sayHi(); */
+//实例与原型之间对链接是指针而不保存副本
+
+//---实例只有指向原型的指针，没有指向构造函数对指针---
+/* function Person() { }
+let friend = new Person();
+Person.prototype = {
+    constructor: Person,
+    name: "Nicholas",
+    age: 29,
+    job: "Software Engineer",
+    sayName() {
+        console.log(this.name);
+    }
+};
+// friend.sayName(); //调用重写原型之后的属性报错
+let friend2 = new Person();
+friend2.sayName(); //Nicholas */
+//新实例在重写原型之前创建，最初的原型没有 sayName 属性
+//此处注意**修改原型与重写原型**，给实例造成的影响
+
+//---原型模式是实现所有原生引用类型的模式---
+//如 sort() 方法在 Array.prototype 上定义
+console.log(typeof Array.prototype.sort); //function
+//如 substring() 方法在 String.prototype 上定义
+console.log(typeof String.prototype.substring); //function
+
+//通过原生对象原型添加方法
+String.prototype.startsWith = function (text) {
+    return this.indexOf(text) === 0;
+};
+let msg = "Hello World!";
+console.log(msg.startsWith("Hello"));
+
+//---原型的问题---
+//1. 弱化构造函数初始化参数能力，所有实例默认相同属性值
+//2. 共享特性
+
+function Person() { }
+Person.prototype = {
+    constructor:Person,
+    name: "Nicholas",
+    age: 29,
+    job: "Software Engineer",
+    friends:["Shelby", "Court"],
+    sayName() {
+        console.log(this.name);
+    }
+};
+
+let person1 = new Person();
+let person2 = new Person();
+
+person1.friends.push("Van");
+console.log(person2.friends);
+//如果某属性在 Person.prototype 上而非实例上，通过 push 方法修改该属性会更改全部实例
+
+//----- 继承 -----
+//
