@@ -519,7 +519,7 @@ friend2.sayName(); //Nicholas */
 
 //---原型模式是实现所有原生引用类型的模式---
 //如 sort() 方法在 Array.prototype 上定义
-console.log(typeof Array.prototype.sort); //function
+/* console.log(typeof Array.prototype.sort); //function
 //如 substring() 方法在 String.prototype 上定义
 console.log(typeof String.prototype.substring); //function
 
@@ -550,8 +550,576 @@ let person1 = new Person();
 let person2 = new Person();
 
 person1.friends.push("Van");
-console.log(person2.friends);
+console.log(person2.friends); */
 //如果某属性在 Person.prototype 上而非实例上，通过 push 方法修改该属性会更改全部实例
 
 //----- 继承 -----
-//
+//---原型链---
+/* function SuperType() {
+    this.property = true;
+}
+
+SuperType.prototype.getSuperValue = function() {
+    return this.property;
+};
+
+function SubType() {
+    this.subproperty = false;
+}
+//继承 SuperType
+SubType.prototype = new SuperType();
+
+SubType.prototype.getSubValue = function () {
+    return this.subproperty;
+};
+
+let instance = new SubType();
+console.log(instance.getSubValue());
+console.log(instance.getSuperValue()); */
+//SuperType 实例所有属性和方法也会存在于 SubType
+
+//---覆盖&增加父类的方法---
+/* function SuperType() {
+    this.property = true;
+}
+
+SuperType.prototype.getSuperValue = function() {
+    return this.property;
+};
+
+function SubType() {
+    this.subproperty = false;
+}
+//继承 SuperType
+SubType.prototype = new SuperType();
+
+//新方法
+SubType.prototype.getSuperValue = function() {
+    return this.subproperty;
+};
+
+//覆盖已有的方法
+SubType.prototype.getSuperValue = function(){
+    return false;
+};
+*/
+//---以字面量方式创建的原型方法相当于重写了原型链---
+/* function SuperType() {
+    this.property = true;
+}
+
+SuperType.prototype.getSuperValue = function() {
+    return this.property;
+};
+
+function SubType() {
+    this.subproperty = false;
+}
+
+SubType.prototype = new SuperType();
+SubType.prototype = {
+    getSubValue(){
+        return this.subproperty;
+    }
+};
+let instance = new SubType();
+console.log(instance.getSuperValue());//报错 */
+
+//1. 原型链的引用值共享问题
+//2. 无法在不影响所有对象实例的情况下把参数传进父类构造函数
+
+//-----盗用构造函数-----
+//在子类构造函数中调用父类构造函数
+//使用 apply() 和 call() 方法以新创建的对象为上下文执行构造函数
+/* function SuperType() {
+    this.colors = ["red", "blue", "green"];
+}
+function SubType() {
+    SuperType.call(this);
+}
+
+let instance1 = new SubType();
+instance1.colors.push("black");
+console.log(instance1.colors);
+
+let instance2 = new SubType();
+console.log(instance2.colors); */
+
+//---传递参数---
+/* function SuperType(name) {
+    this.name = name;
+}
+
+function SubType() {
+    SuperType.call(this, "Nicholas");//参数 name
+    this.age = 29;
+}
+let instance = new SubType();
+console.log(instance.name);
+console.log(instance.age); */
+//问题：必须在构造函数中调用方法因此函数不能重用，子类不能访问父类原型方法
+
+//---组合继承---
+//使用原型链继承原型上的属性和方法，通过盗用构造函数继承实例属性
+/* function SuperType(name){
+    this.name = name;
+    this.colors = ["red","blue","green"];
+}
+
+SuperType.prototype.sayName = function() {
+    console.log(this.name);
+};
+
+function SubType(name, age) {
+    //继承属性
+    SuperType.call(this, name);
+    this.age = age;
+}
+
+//继承方法
+SubType.prototype = new SuperType();
+SubType.prototype.sayAge = function() {
+    console.log(this.age);
+};
+
+let instance1 = new SubType("Nicholas", 29);
+instance1.colors.push("black");
+console.log(instance1.colors);
+instance1.sayName();
+instance1.sayAge();
+
+let instance2 = new SubType("Greg", 27);
+console.log(instance2.colors);
+instance2.sayName();
+instance2.sayAge(); */
+
+//原型式继承
+/* function object(o) {
+    function F() {}
+    F.prototype = o;
+    return new F();
+}
+
+let person = {
+    name: "Nicholas",
+    friends:["Shelby","Court","Van"]
+};
+
+let anotherPerson = object(person);
+anotherPerson.name = "Greg";
+anotherPerson.friends.push("Rob");
+
+let yetAnotherPerson = object(person);
+yetAnotherPerson.name = "Linda";
+yetAnotherPerson.friends.push("Barbie");
+
+console.log(person.friends); */
+
+//----- 类 -----
+//类声明
+// class Person {}
+//类表达式
+/* // const Animal = class {};
+
+let Person = class PersonName {
+    identify() {
+        console.log(Person.name, PersonName.name);
+    }
+};
+
+let p = new Person();
+p.identify();
+console.log(Person.name); */
+
+//---类构造函数---
+//new 实例化操作等同调用其构造函数
+
+/* class Animal {}
+class Person {
+    constructor(){
+        console.log('person ctor');
+    }
+}
+
+class Vegetable {
+    constructor() {
+        this.color = 'orange';
+    }
+}
+
+let a = new Animal();
+let p = new Person();
+let v = new Vegetable();
+console.log(v.color); */
+
+//实例化时传入的参数作为构造函数的参数
+/* class Person {
+    constructor(name) {
+        console.log(arguments.length);
+        this.name = name || null;
+    }
+}
+let p1 = new Person;
+console.log(p1.name);
+
+let p2 = new Person();
+console.log(p2.name);
+
+let p3 = new Person('Jake');
+console.log(p3.name); */
+
+//instanceof 检测
+/* class Person {
+    constructor(override) {
+        this.foo = 'foo';
+        if (override) {
+            return {
+                bar: 'bar'
+            };
+        }
+    }
+}
+let p1 = new Person(),
+    p2 = new Person(true);
+console.log(p1);
+console.log(p1 instanceof Person);
+
+console.log(p2);
+console.log(p2 instanceof Person);
+//false, 返回的不是 this 对象 */
+
+//类构造函数与普通构造函数
+/* function Person() {}
+class Animal {}
+
+let p = Person(); */
+//不加 new 会把 window/global 作为 this 来构建实例
+//let a = Animal();//报错，需 new
+
+//类构造函数仍要使用 new 调用
+/* class Person {}
+
+let p1 = new Person();
+
+//p1.constructor();
+//Class constructor Person cannot be invoked without 'new'
+
+let p2 = new p1.constructor(); */
+
+//---把类当作特殊函数---
+/* class Person {}
+console.log(Person);
+console.log(typeof Person);
+
+console.log(Person.prototype);
+console.log(Person === Person.prototype.constructor);//原型的 constructor 属性指向自身
+
+let p = new Person();
+console.log(p instanceof Person); */
+
+//将类构造函数当成普通构造函数来使用，instanceof 结果相反
+/*class Person {}
+let p1 = new Person();
+
+console.log(p1.constructor === Person);//true
+console.log(p1 instanceof Person);//true
+console.log(p1 instanceof Person.constructor);//false
+
+let p2 = new Person.constructor();
+
+console.log(p2.constructor === Person);
+console.log(p2 instanceof Person);
+console.log(p2 instanceof Person.constructor);
+
+//把类作为参数传递
+let classList = [
+    class {
+        constructor(id) {
+            this.id_=id;
+            console.log('instance ${this.id_}');
+        }
+    }
+];
+
+function createInstance(classDefinition, id) {
+    return new classDefinition(id);
+}
+let foo = createInstance(classList[0], 3141);
+
+//立即实例化
+let p = new class Foo {
+    constructor(x) {
+        console.log(x);
+    }
+}('bar');
+console.log(p); */
+
+//-----实例，原型和类成员-----
+/* class Person {
+    constructor() {
+    //先使用对象包装类型定义一个字符串再测试相等
+        this.name = new String('Jack');
+        this.sayName = () => console.log(this.name);
+        this.nicknames = ['Jake', 'J-Dog'];
+    }
+}
+let p1 = new Person(),
+    p2 = new Person();
+
+p1.sayName();
+p2.sayName();
+
+console.log(p1.name === p2.name);
+console.log(p1.sayName === p2.sayName);
+console.log(p1.nicknames === p2.nicknames); */
+
+//---原型方法与访问器---
+/* class Person {
+    constructor(){
+        //添加到 this 的所有内容都会存在于不同的实例上
+        this.locate = () => console.log('instance');
+    }
+    //在类块中定义的所有内容都会定义在类的原型上
+    locate() {
+        console.log('prototype');
+    }
+}
+let p = new Person();
+p.locate();//instance
+Person.prototype.locate();//prototype */
+
+//不能在类块中给原型添加原始值或对象作为成员数据
+// class Person {
+//     name: 'Jake'
+// }
+
+//类方法等同于对象属性，可以使用字符串、符号或计算的值作为键
+/* const symbolKey = Symbol('symbolKey');
+class Person {
+    stringKey() {
+        console.log('invoked stringKey');
+    }
+    [symbolKey]() {
+        console.log('invoked symbolKey');
+    }
+    ['computed'+'Key']() {
+        console.log('invoked computedKey');
+    }
+}
+let p = new Person();
+p.name = 'Jake';
+console.log(p.name); */
+//类定义支持获取和设置访问器
+/* class Person {
+    set name(newName) {
+        this.name_=newName;
+    }
+    get name() {
+        return this.name_;
+    }
+}
+let p = new Person();
+p.name = 'Jake';
+console.log(p.name); */
+
+//静态类方法：执行不特定于实例的操作
+/* class Person {
+    constructor() {
+        //添加到 this 的所有内容都会存在于不同的实例上
+        this.locate = () => console.log('instance', this);
+    }
+    
+    //定义在类的原型对象上
+    locate() {
+        console.log('prototype', this);
+    }
+    
+    //定义在类本身上
+    static locate() {
+        console.log('class', this);
+    }
+}
+let p = new Person();
+p.locate();
+Person.prototype.locate();
+Person.locate(); */
+
+//静态类方法作为实例工厂
+/* class Person {
+    constructor(age) {
+        this.age_ = age;
+    }
+
+    sayAge() {
+        console.log(this.age_);
+    }
+
+    static create() {
+        //使用随机年龄创建并返回一个 Person 实例
+        return new Person(Math.floor(Math.random()*100));
+    }
+}
+
+console.log(Person.create()); */
+
+//---非函数原型和类成员---
+/* class Person {
+    sayName() {
+        console.log(`${Person.greeting} ${this.name}`);
+    }
+}
+Person.greeting = 'My name is';
+
+Person.prototype.name = 'Jake';
+
+let p = new Person();
+p.sayName(); */
+
+//迭代器和生成器方法
+//类定义语法支持在原型和类本身上定义生成器方法
+/* 
+class Person {
+    //在原型上定义生成器方法
+    *createNicknameIterator() {
+        yield 'Jack';
+        yield 'Jake';
+        yield 'J-Dog';
+    }
+    
+    //在类上定义生成器方法
+    static *createJobIterator() {
+        yield 'Butcher';
+        yield 'Baker';
+        yield 'Candlestick maker';
+    }
+}
+
+let jobIter = Person.createJobIterator();
+console.log(jobIter.next().value);
+console.log(jobIter.next().value);
+console.log(jobIter.next().value);
+
+let p = new Person();
+let nicknameIter = p.createNicknameIterator();
+console.log(nicknameIter.next().value);
+console.log(nicknameIter.next().value);
+console.log(nicknameIter.next().value); */
+
+//因为支持生成器方法，可以通过添加默认迭代器把类实例变成可迭代对象
+/* class Person {
+    constructor(){
+        this.nicknames = ['Jack', 'Jake', 'J-Dog'];
+    }
+    *[Symbol.iterator]() {
+        yield *this.nicknames.entries();
+    }
+}
+let p = new Person();
+for (let [i, nickname] of p) {
+    console.log(nickname);
+} */
+
+//只返回迭代器实例
+/* class Person {
+    constructor(){
+        this.nicknames = ['Jack', 'Jake', 'J-Dog'];
+    }
+    [Symbol.iterator]() {
+        return this.nicknames.entries();
+    }
+}
+let p = new Person();
+for (let [i, nickname] of p) {
+    console.log(nickname);
+} */
+
+//--- 继承 ---
+//ES6 原生支持类继承 extends
+/* class Vehicle {}
+class Bus extends Vehicle {}
+
+let b = new Bus();
+console.log(b instanceof Bus);
+console.log(b instanceof Vehicle);
+
+function Person() {}
+//继承普通构造函数
+class Engineer extends Person {}
+
+let e = new Engineer();
+console.log(e instanceof Engineer);
+console.log(e instanceof Person); */
+
+//类和原型上定义的方法都会带到派生类
+//this 的值会反映调用相应方法的实例或类
+/* class Vehicle {
+    identifyPrototype(id) {
+        console.log(id, this);
+    }
+    static identifyClass(id) {
+        console.log(id, this);
+    }
+}
+class Bus extends Vehicle {}
+
+let v = new Vehicle();
+let b = new Bus(); */
+
+//派生类方法通过 super 关键字引用原型
+/* class Vehicle {
+    constructor() {
+        this.hasEngine = true;
+    }
+}
+class Bus extends Vehicle {
+    constructor() {
+        super();
+        console.log(this instanceof Vehicle);
+        console.log(this);
+    }
+}
+new Bus(); */
+
+//在静态方法中通过 super 调用继承的类上的静态方法
+//派生类的构造函数和静态方法
+/* class Vehicle {
+    static identify() {
+        console.log('vehicle');
+    }
+}
+class Bus extends Vehicle {
+    static identify() {
+        super.identify();
+    }
+}
+Bus.identify(); */
+
+//如果在派生类中显式定义类构造函数，要么调用 super 要么返回对象
+/* class Vehicle {}
+class Car extends Vehicle {}
+
+class Bus extends Vehicle {
+    constructor() {
+        super();
+    }
+}
+
+class Van extends Vehicle {
+    constructor() {
+        return {};
+    }
+}
+console.log(new Car());
+console.log(new Bus());
+console.log(new Van()); */
+
+//---抽象基类---
+//供其他类继承但本身不会实例化
+class Vehicle {
+    constructor() {
+        console.log(new.target);
+        if (new.target === Vehicle) {
+            throw new Error();
+        }
+    }
+}
