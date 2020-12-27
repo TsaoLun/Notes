@@ -1115,11 +1115,116 @@ console.log(new Van()); */
 
 //---抽象基类---
 //供其他类继承但本身不会实例化
-class Vehicle {
+/* class Vehicle {
     constructor() {
         console.log(new.target);
         if (new.target === Vehicle) {
-            throw new Error();
+            throw new Error('Vehicle cannot be directly instantiated');
         }
     }
 }
+//派生类
+class Bus extends Vehicle {}
+new Bus(); */
+// new Vehicle();
+
+//在抽象类中通过 this 检查派生类的方法
+/* class Vehicle {
+    constructor() {
+        if (new.target === Vehicle) {
+            throw new Error('Vehicle cannot be directly instantiated');
+        }
+        if (!this.foo) {
+            throw new Error('Inheriting class must define foo()');
+        }
+        console.log('success!');
+    }
+}
+class Bus extends Vehicle {
+    foo() {}
+}
+class Van extends Vehicle {}
+new Bus(); */
+// new Van();
+
+//继承内置类型
+/* class SuperArray extends Array {
+    shuffle() {
+        //洗牌算法
+        for (let i = this.length - 1; i > 0; i--) {//为什么循环 length-1 ？ 因为最前面一张无法往前洗
+            const j = Math.floor(Math.random() * (i + 1)); //(0, 1) * [2, length] ，(0, 1) * 1 为 0 无法交换
+            [this[i], this[j]] = [this[j], this[i]];
+        }
+    }
+}
+let a = new SuperArray(1, 2, 3, 4, 5);
+
+console.log(a instanceof Array);
+console.log(a instanceof SuperArray);
+console.log(a);
+a.shuffle();
+console.log(a); */
+
+//返回实例类型与原始实例类型一致
+/* class SuperArray extends Array { }
+
+let a1 = new SuperArray(1, 2, 3, 4, 5);
+let a2 = a1.filter(x => !!(x % 2));
+
+console.log(a1);
+console.log(a2);
+console.log(a1 instanceof SuperArray);
+console.log(a2 instanceof SuperArray); */
+
+//覆盖 Symbol.species 访问器
+/* class SuperArray extends Array {
+    static get [Symbol.species]() {
+        return Array;
+    }
+}
+let a1 = new SuperArray(1, 2, 3, 4, 5);
+let a2 = a1.filter(x => (x % 2));
+console.log(a1);
+console.log(a2);
+console.log(a1 instanceof SuperArray);
+console.log(a2 instanceof SuperArray); */
+
+//类混入
+//Object.assign() 混入对象行为
+/* class Vehicle {}
+function getParentClass() {
+    console.log('evaluated expression');
+    return Vehicle;
+}
+//求值类定义时被求值
+class Bus extends getParentClass() {}  */
+
+//定义一组可嵌套函数，最终组合成超类表达式
+class Vehicle {}
+
+//接收超类作为参数
+let FooMixin = (Superclass) => class extends Superclass {
+    foo() {
+        console.log('foo');
+    }
+};
+let BarMixin = (Superclass) => class extends Superclass {
+    bar() {
+        console.log('bar');
+    }
+};
+let BazMixin = (Superclass) => class extends Superclass {
+    baz() {
+        console.log('baz');
+    }
+};
+//将混入类定义为这个参数的子类 ???
+function mix(BaseClass, ...Mixins) {
+    return Mixins.reduce((accumulator, current) => current(accumulator), BaseClass);
+}
+class Bus extends mix(Vehicle, FooMixin, BarMixin, BazMixin) {}
+
+let b = new Bus();
+b.foo();
+b.bar();
+b.baz();
