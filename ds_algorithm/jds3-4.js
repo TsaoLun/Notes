@@ -13,8 +13,8 @@ let numbers = negativeNumbers.concat(zero, positiveNumbers);
 console.log(numbers); */
 
 //数组的迭代器函数
-const isEven = x => x % 2 === 0;
-let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+/* const isEven = x => x % 2 === 0;
+let numbers = [1, 2, 3, 4, 5];
 //every 迭代每个元素直到返回 false
 console.log(numbers.every(isEven));
 //some 会迭代每个元素直到返回 true
@@ -42,4 +42,12 @@ console.log(iterator.next().value);
 console.log(iterator.next().value);
 console.log(iterator.next().value);
 console.log(iterator.next().value);
-console.log(iterator.next().value);
+console.log(iterator.next().value); //undefined
+
+iterator = numbers[Symbol.iterator]();
+for (const n of iterator) {
+    console.log(n);
+} */
+
+//--- Stack ---
+//后进先出 LIFO
