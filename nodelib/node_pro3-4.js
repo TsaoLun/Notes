@@ -71,7 +71,7 @@ console.log(pointsTwo); */
  */
 
 //偏函数：创建一个函数调用部分参数或变量已经预置的函数
-const isType = function (type) {
+/* const isType = function (type) {
     return function (obj) {
         return toString.call(obj) === '[object ' + type + ']';
     };
@@ -81,4 +81,11 @@ const isFunction = isType('Function');
 
 console.log(isString('x'));
 console.log(isString(1));
-console.log(isFunction(isFunction));
+console.log(isFunction(isFunction)); */
+
+//难点1. 异常处理
+//try-catch 只能捕获当次事件循环的异常，对下一个 Tick 才抛出的异常无能为力(process.nextTick)
+//原则1: 必须执行调用者传入的回调函数
+//原则2: 正确传递回异常供调用者判断
+
+//事件发布/订阅模式
