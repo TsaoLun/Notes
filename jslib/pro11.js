@@ -146,3 +146,47 @@ baz(); */
 //await 的限制：必须在异步函数（或其定义）中使用，在同步函数中会抛出 SyntaxError
 
 //停止和恢复执行
+//按顺序调用三个函数，但输出顺序相反
+/* async function foo() {
+    console.log(await Promise.resolve('foo'));
+}
+async function bar() {
+    console.log(await 'bar');
+}
+async function baz() {
+    console.log('baz');
+}
+foo();
+bar();
+baz(); */
+// baz
+// foo
+// bar
+
+//--- 同步异步 ---
+//async 标识符
+//await 起作用
+//JS 运行时碰到 await 关键字时会记录哪里暂停执行
+//即便后面跟着立即可用的值，其余部分也会被异步求值
+
+/* async function foo() {
+    console.log(2);
+    await null;
+    console.log(4);
+}
+console.log(1);
+foo();
+console.log(3); */
+
+//打印顺序：1234
+//打印1后执行异步函数并打印2，await 暂停执行向消息队列中添加任务
+//foo() 退出，打印3，同步线程执行完毕
+//JS 运行时从消息队列中取出任务，恢复异步函数执行
+//await 取得 null 值，打印 4, foo() 返回
+
+//若 await 后面是期约，为了执行异步函数，实际上会有两个任务被添加到消息队列并被异步求值
+async function foo(){
+    console.log(2);
+    console.log(await Promise.resolve(8));
+    console.log(9);
+}
