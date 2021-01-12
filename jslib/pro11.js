@@ -185,8 +185,129 @@ console.log(3); */
 //await 取得 null 值，打印 4, foo() 返回
 
 //若 await 后面是期约，为了执行异步函数，实际上会有两个任务被添加到消息队列并被异步求值
-async function foo(){
+/* async function foo() {
     console.log(2);
     console.log(await Promise.resolve(8));
     console.log(9);
 }
+
+async function bar() {
+    console.log(4);
+    console.log(await 6);
+    console.log(7);
+}
+
+console.log(1);
+foo();
+console.log(3);
+bar();
+console.log(5); */
+// 1
+// 2
+// 3
+// 4
+// 5
+// 8
+// 9
+// 6
+// 7
+// 先同步（以及异步函数中 await 之前的同步部分），再异步
+
+//--- 策略 ---
+//1. 箭头函数实现 sleep
+/* async function sleep(delay) {
+    return new Promise((r) => setTimeout(r, delay));
+}
+
+async function foo() {
+    const t0 = Date.now();
+    await sleep(1500);
+    console.log(Date.now() - t0);
+}
+foo(); */
+
+//2. 平行执行
+/* async function randomDelay(id) {
+    //延迟 0 ~ 1000 毫秒
+    const delay = Math.random() * 1000;
+    return new Promise((resolve) => setTimeout(() => {
+        console.log(`${id} finished`);
+        resolve();
+    }, delay));
+}  */
+
+//多次 await
+/* async function foo() {
+    const t0 = Date.now();
+    await randomDelay(0);
+    await randomDelay(1);
+    await randomDelay(2);
+    await randomDelay(3);
+    await randomDelay(4);
+    console.log(`${Date.now() - t0}ms elapsed`);
+}
+foo(); */
+
+//for 循环
+/* async function foo() {
+    const t0 = Date.now();
+    for (let i = 0; i < 5; ++i) {
+        await randomDelay(i);
+    }
+    console.log(`${Date.now() - t0}ms elapsed`);
+}
+foo(); */
+
+//forEach 不保证顺序
+/* async function foo() {
+    const t0 = Date.now();
+    Array.from(Array(5).keys()).forEach(async(i)=>{
+        await randomDelay(i);
+    });
+}
+foo(); */
+//Array(5).keys(); 返回一个包含数组中每个索引键的Array Iterator对象
+
+//--- 不保证顺序 ---
+/* async function randomDelay(id) {
+    //延迟 0 ~ 1000 毫秒
+    const delay = Math.random() * 1000;
+    return new Promise((resolve) => setTimeout(() => {
+        console.log(`${id} finished`);
+        resolve();
+    }, delay));
+}  */
+
+//一次初始化所有期约，再分别等待结果
+/* async function foo() {
+    const t0 = Date.now();
+    const p0 = randomDelay(0);
+    const p1 = randomDelay(1);
+    const p2 = randomDelay(2);
+    const p3 = randomDelay(3);
+    const p4 = randomDelay(4);
+    
+    await p0;
+    await p1;
+    await p2;
+    await p3;
+    await p4;
+
+    setTimeout(console.log, 0, `${Date.now() - t0}ms elapsed`);
+}
+foo(); */
+
+//for 循环包装
+/* async function foo() {
+    const t0 = Date.now();
+    const promises = Array(5).fill(null).map((_,i)=>randomDelay(i));
+    for (const p of promises) {
+        await p;
+    }
+    console.log(`${Date.now() - t0}ms elapsed`);
+}
+foo(); */
+
+//注意 await 按顺序收到每个期约的值
+
+//串行执行期约
