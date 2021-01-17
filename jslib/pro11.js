@@ -18,7 +18,158 @@ double(3, (x) => console.log(`I was given: ${x}`)); */
 //嵌套异步回调...
 
 //--- 期约 Promise ---
-//pending, fulfilled, rejected
+//三种状态 私有且不可逆 pending, fulfilled (resolved), rejected
+
+//期约两大用途：
+//1. 抽象地表示一个异步操作，比如 HTTP 200～299 兑现，否则拒绝
+//2. 期约封装的异步操作会生成一个状态改变时可访问的值，JSON 字符串或者包含 HTTP 状态码和错误消息的 Error 对象
+
+//resolve() reject() 执行函数控制期约状态
+/* let p1 = new Promise((resolve, reject) => resolve());
+setTimeout(console.log, 0, p1);
+
+let p2 = new Promise((resolve, reject) => reject());
+setTimeout(console.log, 0, p2); */
+
+//执行函数是同步执行的，作为期约的初始化程序
+/* new Promise(() => setTimeout(console.log, 0, 'executor'));
+setTimeout(console.log, 0, 'promise initialized');
+//可通过 setTimeout 推迟切换状态
+let p = new Promise((resolve, reject) => setTimeout(resolve, 1000));
+setTimeout(console.log, 0, p); */
+//打印时为 pending 而不是 resolve
+
+//状态不可切换
+/* let p = new Promise((resolve, reject) => {
+    resolve();
+    reject(); //无效
+});
+setTimeout(console.log, 0, p); */
+
+//待定状态定时退出
+/* let p = new Promise((resolve, reject) => {
+    setTimeout(reject, 10000);// 10 秒后 reject()
+});
+
+console.log(p);//pending
+setTimeout(console.log, 0, p); //pending
+setTimeout(console.log, 11000, p); //reject */
+
+//Promise.resolve() 实例化一个非 pending 解决的期约
+/* let p1 = new Promise((resolve, reject) => resolve());
+let p2 = Promise.resolve();//等效
+
+//把任何值转化为期约
+setTimeout(console.log, 0, Promise.resolve());//Promise {undefined}
+setTimeout(console.log, 0, Promise.resolve(3));//Promise {3} */
+//Promise.reject() 类似
+
+//--- 期约的实例方法 ---
+//ES 异步结构中，任何对象都有 then() 方法
+
+//访问异步操作返回的数据，处理期约成功失败输出，连续对期约求值，添加只有期约终止状态才执行的代码
+//Promise.prototype.then()
+//then 方法接受最多两个参数，onResolved 兑现和 onRejected 拒绝
+
+//1. 期约连锁
+//效果类似于同步任务
+/* let p = new Promise((resolve, reject) => {
+    console.log('first');
+    resolve();
+});
+p.then(() => console.log('second'))
+ .then(() => console.log('third'))
+ .then(() => console.log('fourth')); */
+
+//改写，每个执行器返回一个期约实例，让后续期约等待之前的期约
+/* let p1 = new Promise((resolve, reject) => {
+    console.log('p1 executor');
+    setTimeout(resolve, 1000);
+});
+p1.then(() => new Promise((resolve, reject) => {
+    console.log('p2 executor');
+    setTimeout(resolve, 1000);
+}))
+    .then(() => new Promise((resolve, reject) => {
+        console.log('p3 executor');
+        setTimeout(resolve, 1000);
+    })); */
+
+//把生成期约的代码提取到一个工厂函数中
+/* function delayedResolve(str) {
+    return new Promise((resolve, reject) => {
+        console.log(str);
+        setTimeout(resolve, 1000);
+    });
+}
+delayedResolve('p1 executor')
+  .then(()=>delayedResolve('p2 executor'))
+  .then(()=>delayedResolve('p3 executor'))
+  .then(()=>delayedResolve('p4 executor')); */
+
+//否则回调嵌套
+/* function delayedExecute(str, callback = null) {
+    setTimeout(() => {
+        console.log(str);
+        callback && callback();
+    }, 1000);
+}
+delayedExecute('p1 callback', ()=>{
+    delayedExecute('p2 callback', ()=>{
+        delayedExecute('p3 callback', ()=>{
+            delayedExecute('p4 callback');
+        });
+    });
+}); */
+
+//then(), catch(), finally() 都返回期约，所以串联起来很直观
+/* let p = new Promise((resolve, reject) => {
+    console.log('initial promise rejects');
+    reject();
+});
+p.catch(() => console.log('reject handler'))
+    .then(() => console.log('resolve handler'))
+    .finally(() => console.log('finally handler')); */
+
+//2. 期约图
+//利用期约连锁构建有向非循环图(二叉树)
+//   |E
+// |B|D
+//A| 
+// |C|F
+//   |G
+
+/* let A = new Promise((resolve, reject) => {
+    console.log('A');
+    resolve();
+});
+let B = A.then(() => console.log('B'));
+let C = A.then(() => console.log('C'));
+
+B.then(() => console.log('D'));
+B.then(() => console.log('E'));
+C.then(() => console.log('F'));
+C.then(() => console.log('G'));
+ */
+
+//3. Promise.all() & Promise.race()
+//-- Promise.all() 接受一个可迭代对象，会在一组期约全部解决后再解决 --
+/* let p1 = Promise.all([
+    Promise.resolve(),
+    Promise.resolve()
+]);
+
+//可迭代对象中的元素会通过 Promise.resolve() 转换为期约
+let p2 = Promise.all([3, 4]);
+
+//空的可迭代对象等价于 Promise.resolve()
+let p3 = Promise.all([]); */
+
+//合成的期约只会在每个包含的期约都解决后才解决
+//若有一个期约拒绝则合成的也是拒绝
+
+//Promise.race() 接受一个可迭代对象，返回一个包装期约(第一个落定的期约)
+
 //同步/异步执行的二元性
 /* try {
     throw new Error('foo');
@@ -32,6 +183,8 @@ try {
     console.log(e);
 } */
 //不能用同步处理异步错误
+
+
 
 //--- 异步函数 ---
 //async/await 以同步方式写异步代码
@@ -86,7 +239,7 @@ async function baz() {
     };
     return thenable;
 }
-baz().then(console.log); 
+baz().then(console.log);
 
 //返回一个期约
 async function qux() {
@@ -286,7 +439,7 @@ foo(); */
     const p2 = randomDelay(2);
     const p3 = randomDelay(3);
     const p4 = randomDelay(4);
-    
+
     await p0;
     await p1;
     await p2;
@@ -310,4 +463,41 @@ foo(); */
 
 //注意 await 按顺序收到每个期约的值
 
-//串行执行期约
+//--- 串行执行期约 ---
+/* function addTwo(x) { return x + 2; }
+function addThree(x) { return x + 3; }
+function addFive(x) { return x + 5; }
+async function addTen(x) {
+    for (const fn of [addTwo, addThree, addFive]){
+        x = await fn(x);
+    }
+    return x;
+}
+addTen(9).then(console.log); */
+//await 传递了每个函数的返回值
+
+//换为期约，把所有函数改为异步，结果不变
+/* async function addTwo(x) { return x + 2; }
+async function addThree(x) { return x + 3; }
+async function addFive(x) { return x + 5; }
+
+async function addTen(x) {
+    for (const fn of [addTwo, addThree, addFive]) {
+        x = await fn(x);
+    }
+    return x;
+}
+
+addTen(9).then(console.log); */
+
+//栈追踪与内存管理
+//异步和期约功能有重叠，但内存中的差别很大，下例展示了拒绝期约的栈追踪信息
+/* function fooPromiseExecutor(resolve, reject) {
+    setTimeout (reject, 1000, 'bar');
+}
+function foo() {
+    new Promise(fooPromiseExecutor);
+}
+foo(); */
+//错误信息包含嵌套函数函数的标识符，即被调用以创建最初期约实例的函数
+//若 await new Promise() 栈追踪会反应当前的调用栈，不会带来额外消耗
