@@ -47,7 +47,61 @@ console.log(iterator.next().value); //undefined
 iterator = numbers[Symbol.iterator]();
 for (const n of iterator) {
     console.log(n);
-} */
+} 
+
+const arr = [1, 2, 3];
+console.log(arr.join('-'));//1-2-3*/
+
+//类型数组
+/* let length = 5;
+let int16 = new Int16Array(length);//16位二进制补码整数
+console.log(int16); //Int16Array(5) [ 0, 0, 0, 0, 0 ]
+
+let array16 = [];
+array16.length = length;
+console.log(array16); //[ <5 empty items> ]
+
+for (let i = 0; i < length; i++){
+    int16[i] = i + 1;
+}
+console.log(int16); */
 
 //--- Stack ---
 //后进先出 LIFO
+
+class Stack {
+    constructor() {
+        this.items = [];
+    }
+    //push 添加元素到栈顶，即末尾
+
+    push(element) {
+        this.items.push(element);
+    }
+
+    //从 栈顶（末尾）移除元素
+    pop() {
+        return this.items.pop();
+    }
+
+    //查看栈顶元素
+    peek() {
+        return this.items[this.items.length - 1];
+    }
+
+    //检查栈是否为空
+    isEmpty() {
+        return this.items.length === 0;
+    }
+
+    //清空
+    clear() {
+        this.items = [];
+    }
+}
+
+const stack = new Stack();
+console.log(stack.isEmpty());
+
+stack.push(5);
+stack.push(8);
