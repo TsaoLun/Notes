@@ -94,14 +94,156 @@ class Stack {
         return this.items.length === 0;
     }
 
+    size() {
+        return this.items.length;
+    }
+
     //清空
     clear() {
         this.items = [];
     }
 }
 
-const stack = new Stack();
+/*const stack = new Stack();
 console.log(stack.isEmpty());
 
 stack.push(5);
 stack.push(8);
+
+console.log(stack.peek());//8
+
+stack.push(11);
+console.log(stack.size());//3
+console.log(stack.isEmpty());
+
+stack.pop();
+stack.pop();
+console.log(stack.size());//1 */
+
+//--- 基于 JS 对象 的 Stack 类 ---
+/* class Stack {
+    constructor() {
+        this.count = 0;
+        this.items = {};
+    }
+    push(element) {
+        this.items[this.count] = element;
+        this.count++;
+    }
+    size() {
+        return this.count;
+    }
+    isEmpty() {
+        return this.count === 0;
+    }
+    pop() {
+        if(this.isEmpty()){
+            return undefined;
+        }
+        this.count--;
+        const result = this.items[this.count];
+        delete this.items[this.count];
+        return result;
+    }
+    peek() {
+        if (this.isEmpty()) {
+            return undefined;
+        }
+        return this.items[this.count - 1];
+    }
+    clear() {
+        this.items = {};
+        this.count = 0;
+    }
+    toString(){
+        if(this.isEmpty()){
+            return '';
+        }
+        let objString = `${this.items[0]}`;
+        for (let i = 1; i < this.count; i++){
+            objString = `${objString},${this.items[i]}`;
+        }
+        return objString;
+    }
+}
+
+//保护数据结构内部元素
+const stack = new Stack();
+console.log(Object.getOwnPropertyNames(stack));
+console.log(Object.keys(stack));
+console.log(stack.count); */
+
+//Symbol 实现类也不能实现
+/* const _items = Symbol('stackItems');
+class Stack {
+    constructor(){
+        this[_items] = [];
+    }
+}*/
+
+//WeakMap 实现类
+/* const items = new WeakMap();
+
+class Stack {
+    constructor(){
+        items.set(this, []);
+    }
+    push(element){
+        const s = items.get(this);
+        s.push(element);
+    }
+    pop(){
+        const s = items.get(this);
+        const r = s.pop();
+        return r;
+    }
+} */
+
+//十进制到二进制与栈
+/* function decimalToBinary(decNumber) {
+    const remStack = new Stack();
+    let number = decNumber;
+    let rem;
+    let binaryString = '';
+
+    while (number > 0) {
+        rem = Math.floor(number % 2);
+        remStack.push(rem);
+        number = Math.floor(number / 2);
+    }
+
+    while (!remStack.isEmpty()) {
+        binaryString += remStack.pop().toString();
+    }
+
+    return binaryString;
+}
+
+console.log(decimalToBinary(10090)); */
+
+//进制转换算法
+function baseConverter(decNumber, base) {
+    const remStack = new Stack();
+    const digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let number = decNumber;
+    let rem;
+    let binaryString = '';
+
+    if (!(base >= 2 && base <= 36)) {
+        return '';
+    }
+
+    while (number > 0) {
+        rem = Math.floor(number % base);
+        remStack.push(rem);
+        number = Math.floor(number / base);
+    }
+
+    while (!remStack.isEmpty()) {
+        binaryString += digits[remStack.pop()];
+    }
+
+    return binaryString;
+}
+
+console.log(baseConverter(10090, 36));
