@@ -175,6 +175,6 @@ Array.prototype.push.call(a, 'first', 'second');
 
 console.log(a.length);
 console.log(a[0]);
-console.log(a[1]);
+console.log(a[1]); 
 console.log(a[2]);
 console.log(a); //{ '0': 'first', '1': 'second', length: 2 }
