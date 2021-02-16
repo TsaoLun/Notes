@@ -4,10 +4,11 @@
 
 + [一只编程菜鸡的笔记简介](https://github.com/TsaoLun/Notes)
 
-个人学习笔记，目前的板块：JS/TS/Node, Rust, Python，C语言，数据结构与算法，机器学习。同时也有一些 Flutter 的内容。
+小白，Node.js 后端开发，开发过一款相册应用并上架了 App Store (https://apps.apple.com/cn/app/独立相册/id1530905077 语雀上的开发日志 https://yuque.com/tsaolun)。
+
+此仓库为个人学习笔记，目前的板块：JS/TS/Node, Rust, Python，C语言，数据结构与算法，机器学习。同时也有一些 Flutter 的内容。
 
 > 推荐使用 Typora 或者 VScode 插件 Markdown Preview Enhanced 打开，以确保所有公式之类的格式正常显示。原笔记是 Linux 路径，Windows下需要将所有 "images/" 替换成 "images\\" 才能正常显示图片。
-
 
 
 #### 主要内容
