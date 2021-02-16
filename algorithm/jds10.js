@@ -3,8 +3,6 @@ function defaultCompare(a, b) {
     return a === b;
 }
 
-
-
 class Node {
     constructor(key) {
         this.key = key;
@@ -121,6 +119,40 @@ class BinarySearchTree {
             return true;
         }
     }
+
+    //移除节点
+    removeNode(node, key) {
+        if (node == null) {
+            return null;
+        }
+        if (key < node.key) {
+            node.left = this.removeNode(node.left, key);
+            return node;
+        } else if (key > node.key) {
+            node.right = this.removeNode(node.right, key);
+            return node;
+        } else {
+            //key == node.key
+            //case 1
+            if (node.left == null && node.right == null) {
+                node = null;
+                return node; //返回更新后的节点
+            }
+            //case 2
+            if (node.left == null) {
+                node = node.right;
+                return node;
+            } else if (node.right == null) {
+                node = node.left;
+                return node;
+            }
+            //case 3 
+            const aux = this.minNode(node.right); //找到右侧子树最小的节点
+            node.key = aux.key; //更新节点的值
+            node.right = this.removeNode(node.right, aux.key); //移除右侧子树的对应节点
+            return node; //返回更新后节点的引用
+        }
+    }
 }
 
 const tree = new BinarySearchTree();
@@ -144,3 +176,8 @@ const printNode = (value) => console.log(value);
 // tree.inOrderTraverse(printNode);
 // tree.preOrderTraverse(printNode);
 // tree.postOrderTraverse(printNode);
+
+// console.log(tree.search(1) ? 'Key 1 found.' : 'Key 1 not found.');
+// console.log(tree.search(8) ? 'Key 8 found.' : 'Key 8 not found.');
+
+module.exports = { BinarySearchTree, defaultCompare, Node };

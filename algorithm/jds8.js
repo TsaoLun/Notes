@@ -253,4 +253,6 @@ map.set(ob1, 'gandalf@email.com');
 map.set(ob2, 'johnsnow@email.com');
 map.set(ob3, 'tyrion@email.com');
 
-
+module.exports = {
+    Dictionary
+};
