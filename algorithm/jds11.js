@@ -2,6 +2,10 @@
 //特殊的二叉树，子节点均 大于等于或小于等于父节点
 const { BinarySearchTree, defaultCompare, Node } = require('./jds10'); //require 的文件会被执行再导入，并不会在被执行
 
+module.exports = {
+    swap
+};
+
 const swap = (array, a, b) => [array[a], array[b]] = [array[b], array[a]];
 
 class MinHeap {
