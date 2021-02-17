@@ -83,9 +83,63 @@ console.log(isString('x'));
 console.log(isString(1));
 console.log(isFunction(isFunction)); */
 
-//难点1. 异常处理
 //try-catch 只能捕获当次事件循环的异常，对下一个 Tick 才抛出的异常无能为力(process.nextTick)
 //原则1: 必须执行调用者传入的回调函数
 //原则2: 正确传递回异常供调用者判断
 
 //事件发布/订阅模式
+//events 模块有 addListener/on(), once(), removeListener(), emit() 等事件监听模式的方法实现
+//emit() 发布事件多半是伴随事件循环而异步触发的
+
+const http = require('http');
+
+const options = {
+    host: 'www.baidu.com',
+    port: 80,
+    path: '/upload',
+    meth: 'POST'
+};
+
+//http.request 
+//第一个参数为 option/URL，
+//第二个参数为参数是res(http.IncomingMessage)的回调函数
+/* const req = http.request(options, function (res) {
+    console.log('STATUS: ' + res.statusCode);
+    console.log('HEADERS: ' + JSON.stringify(res.headers));
+    res.setEncoding('utf8');
+    res.on('data', function (chunk) {
+        console.log('BODY: ' + chunk);
+    });
+    res.on('end', function () {
+        //TODO
+    });
+});
+//http.ClientRequest，on()第一个参数'error'，第二个参数为错误监听函数
+req.on('error', function (e) {
+    console.log('problem with request: ' + e.message);
+});
+//write data to request body
+req.write('data\n');
+req.write('data\n');
+req.end(); */
+
+//实现一个继承 events 的模块
+/* const events = require('events');
+const util = require('util');
+//通过 util.inherits 模块实现继承
+
+function Stream() {
+    events.EventEmitter.call(this);
+}
+
+util.inherits(Stream, events.EventEmitter);
+console.log(Stream); */
+
+// class inheritStream extends events.EventEmitter {
+//     constructor() {
+//         super();
+//     }
+// }
+// console.log(inheritStream);
+
+//利用事件队列解决雪崩问题
