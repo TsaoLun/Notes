@@ -87,18 +87,18 @@ console.log(isFunction(isFunction)); */
 //原则1: 必须执行调用者传入的回调函数
 //原则2: 正确传递回异常供调用者判断
 
-//事件发布/订阅模式
+//---------- 事件发布/订阅模式 ----------
 //events 模块有 addListener/on(), once(), removeListener(), emit() 等事件监听模式的方法实现
 //emit() 发布事件多半是伴随事件循环而异步触发的
 
-const http = require('http');
+/* const http = require('http');
 
 const options = {
     host: 'www.baidu.com',
     port: 80,
     path: '/upload',
     meth: 'POST'
-};
+}; */
 
 //http.request 
 //第一个参数为 option/URL，
@@ -123,7 +123,7 @@ req.write('data\n');
 req.write('data\n');
 req.end(); */
 
-//实现一个继承 events 的模块
+//--- 实现一个继承 events 的模块---
 /* const events = require('events');
 const util = require('util');
 //通过 util.inherits 模块实现继承
@@ -142,4 +142,76 @@ console.log(Stream); */
 // }
 // console.log(inheritStream);
 
-//利用事件队列解决雪崩问题
+//--- 利用事件队列解决雪崩问题(并发缓存失效) ---
+//通过 once() 方法添加的监听器在执行后会与事件移除关联(过滤重复性的事件响应)
+
+//以下为一条数据库查询语句的调用
+/* let db;
+const select = function (callback) {
+    db.select("SQL", results => callback(results));
+};
+//为避免同一句SQL发送到数据库中反复查询影响性能，可以添加一个状态锁
+let status = "ready";
+const selectBetter = callback => {
+    if (status === 'ready') {
+        status = "pending";
+        db.select("SQL", results => {
+            status = "ready";
+            callback(results);
+        });
+    }
+};
+//连续调用select()时只有第一次调用是生效的，此时可引入事件队列
+const events = require('events');
+const proxy = new events.EventEmitter();
+const selectBest = callback => {
+    proxy.once("selected", callback);
+    if (status === "ready") {
+        status = "pending";
+        db.select("SQL", results => {
+            proxy.emit("selected", results);
+            status = "ready";
+        });
+    }
+}; */
+//once()方法将所有请求的回调都压入事件队列中
+//利用其执行一次就移除监视器的特点保证每个回调只被执行一次
+
+//--- 多异步之间的协作方案 ---
+//事件与监听器的关系是一对多，也可能是多对一，要注意避免嵌套过深
+/* const fs = require('fs');
+function render() { }
+//模拟渲染页面需要的模版读取，数据读取和本地化资源读取
+let [count, temp_path, db, sql, l10n] = [0, './'];
+const results = {};
+const done = (key, value) => {
+    results[key] = value;
+    count++;
+    if (count === 3) {
+        render(results);
+    }
+};
+
+fs.readFile(temp_path, "utf8", function (err, template) {
+    done("template", template);
+});
+db.query(sql, function (err, data) {
+    done("data", data);
+});
+l10n.get((err, resources) => {
+    done("resources", resources);
+});
+//借助第三方函数/变量来处理异步协作的结果(哨兵变量)
+const after = (times, callback) => {
+    let count = 0;
+    const results = {};
+    return (key, value) => {
+        results[key] = value;
+        count++;
+        if (count === times) {
+            callback(results);
+        }
+    };
+};
+let times = 10;
+const doneAfter = after(times, render); */

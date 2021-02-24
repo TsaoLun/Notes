@@ -1,0 +1,147 @@
+Statistical profiling result from isolate-0x118008000-83072-v8.log, (235 ticks, 4 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+      4    1.7%          /usr/lib/system/libsystem_c.dylib
+      3    1.3%          /usr/lib/libc++.1.dylib
+      2    0.9%          /usr/lib/system/libsystem_malloc.dylib
+      1    0.4%          /usr/lib/system/libsystem_pthread.dylib
+      1    0.4%          /usr/lib/system/libsystem_kernel.dylib
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+      1    0.4%    0.4%  LazyCompile: *<anonymous> /Users/lun/Project/Notes/nodelib/test01.js:1:1
+
+ [C++]:
+   ticks  total  nonlib   name
+    143   60.9%   63.8%  t __ZN4node9inspector12_GLOBAL__N_115WaitForDebuggerERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+     35   14.9%   15.6%  T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+     19    8.1%    8.5%  T __ZN4node13native_module15NativeModuleEnv15CompileFunctionERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+      7    3.0%    3.1%  T _semaphore_create
+      2    0.9%    0.9%  t __ZN4node9inspector12_GLOBAL__N_14OpenERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+      2    0.9%    0.9%  t __ZN4node12_GLOBAL__N_111ProcessWrap5SpawnERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+      2    0.9%    0.9%  T _task_policy_set
+      2    0.9%    0.9%  T __ZN4node7binding18GetInternalBindingERKN2v820FunctionCallbackInfoINS1_5ValueEEE
+      2    0.9%    0.9%  T __ZN4node10contextify17ContextifyContext15CompileFunctionERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+      1    0.4%    0.4%  t __ZNSt3__127__tree_balance_after_insertIPNS_16__tree_node_baseIPvEEEEvT_S5_
+      1    0.4%    0.4%  t __ZN4node2osL16GetOSInformationERKN2v820FunctionCallbackInfoINS1_5ValueEEE
+      1    0.4%    0.4%  t __ZN4node2fsL7ReadDirERKN2v820FunctionCallbackInfoINS1_5ValueEEE
+      1    0.4%    0.4%  t __ZN4node2fsL22InternalModuleReadJSONERKN2v820FunctionCallbackInfoINS1_5ValueEEE
+      1    0.4%    0.4%  T __ZN4node6crypto13EntropySourceEPhm
+
+ [Summary]:
+   ticks  total  nonlib   name
+      1    0.4%    0.4%  JavaScript
+    219   93.2%   97.8%  C++
+      4    1.7%    1.8%  GC
+     11    4.7%          Shared libraries
+      4    1.7%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+    196  100.0%   83.4%  T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+    143   60.9%  t __ZN4node9inspector12_GLOBAL__N_115WaitForDebuggerERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+    143  100.0%    T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+    143  100.0%      LazyCompile: ~inspectorWaitForDebugger node:inspector:144:34
+    143  100.0%        LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:4330
+    143  100.0%          LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:3705
+    143  100.0%            LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:2813
+
+     35   14.9%  T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+     15   42.9%    T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+      4   26.7%      Eval: ~<anonymous> /Users/lun/Project/Notes/nodelib/test01.js:1:1
+      4  100.0%        LazyCompile: ~Module._compile node:internal/modules/cjs/loader:1056:37
+      4  100.0%          LazyCompile: ~Module._extensions..js node:internal/modules/cjs/loader:1111:37
+      4  100.0%            LazyCompile: ~Module.load node:internal/modules/cjs/loader:955:33
+      3   20.0%      T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+      3  100.0%        LazyCompile: ~<anonymous> node:internal/per_context/primordials:23:10
+      2   66.7%          LazyCompile: ~Module._findPath node:internal/modules/cjs/loader:479:28
+      1   50.0%            LazyCompile: ~resolveMainPath node:internal/modules/run_main:12:25
+      1   50.0%            LazyCompile: ~Module._resolveFilename node:internal/modules/cjs/loader:834:35
+      1   33.3%          LazyCompile: ~init node:internal/util/debuglog:70:16
+      1  100.0%            LazyCompile: ~debug node:internal/util/debuglog:74:15
+      3   20.0%      Eval: ~<anonymous> node:internal/main/run_main_module:1:1
+      2   13.3%      LazyCompile: ~r /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:1:33
+      1   50.0%        LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:9208
+      1  100.0%          LazyCompile: ~r /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:1:33
+      1  100.0%            LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:6748
+      1   50.0%        LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:19:5295
+      1  100.0%          LazyCompile: ~r /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:1:33
+      1  100.0%            LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:19:5249
+      1    6.7%      LazyCompile: ~readPackage node:internal/modules/cjs/loader:275:21
+      1  100.0%        LazyCompile: ~readPackageScope node:internal/modules/cjs/loader:306:26
+      1  100.0%          LazyCompile: ~Module._extensions..js node:internal/modules/cjs/loader:1111:37
+      1  100.0%            LazyCompile: ~Module.load node:internal/modules/cjs/loader:955:33
+      1    6.7%      Eval: ~<anonymous> node:internal/socket_list:1:1
+      1  100.0%        LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1  100.0%          LazyCompile: ~nativeModuleRequire node:internal/bootstrap/loaders:303:29
+      1  100.0%            Eval: ~<anonymous> node:internal/child_process:1:1
+      1    6.7%      Eval: ~<anonymous> node:internal/modules/cjs/loader:1:1
+      1  100.0%        LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1  100.0%          LazyCompile: ~nativeModuleRequire node:internal/bootstrap/loaders:303:29
+      1  100.0%            LazyCompile: ~initializeCJSLoader node:internal/bootstrap/pre_execution:413:29
+      1    2.9%    LazyCompile: ~normalizeString node:path:52:25
+      1  100.0%      LazyCompile: ~resolve node:path:973:10
+      1  100.0%        LazyCompile: ~patchProcessObject node:internal/bootstrap/pre_execution:78:28
+      1  100.0%          LazyCompile: ~prepareMainThreadExecution node:internal/bootstrap/pre_execution:21:36
+      1  100.0%            Eval: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    2.9%    LazyCompile: ~exports.checkAll /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:19:22548
+      1  100.0%      LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:3705
+      1  100.0%        LazyCompile: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:7:2813
+      1  100.0%          LazyCompile: ~r /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:1:33
+      1  100.0%            Eval: ~<anonymous> /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/ms-vscode.js-debug/src/bootloader.bundle.js:1:10
+      1    2.9%    Eval: ~<anonymous> /Users/lun/Project/Notes/nodelib/test01.js:1:1
+      1  100.0%      LazyCompile: ~Module._compile node:internal/modules/cjs/loader:1056:37
+      1  100.0%        LazyCompile: ~Module._extensions..js node:internal/modules/cjs/loader:1111:37
+      1  100.0%          LazyCompile: ~Module.load node:internal/modules/cjs/loader:955:33
+      1  100.0%            LazyCompile: ~Module._load node:internal/modules/cjs/loader:742:24
+
+     19    8.1%  T __ZN4node13native_module15NativeModuleEnv15CompileFunctionERKN2v820FunctionCallbackInfoINS2_5ValueEEE
+     19  100.0%    T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+     19  100.0%      LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+     19  100.0%        LazyCompile: ~nativeModuleRequire node:internal/bootstrap/loaders:303:29
+      3   15.8%          Eval: ~<anonymous> node:internal/modules/esm/loader:1:1
+      3  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      3   15.8%          Eval: ~<anonymous> node:crypto:1:1
+      3  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      2   10.5%          LazyCompile: ~initializeReport node:internal/bootstrap/pre_execution:179:26
+      2  100.0%            LazyCompile: ~prepareMainThreadExecution node:internal/bootstrap/pre_execution:21:36
+      2   10.5%          LazyCompile: ~initializeCJSLoader node:internal/bootstrap/pre_execution:413:29
+      2  100.0%            LazyCompile: ~prepareMainThreadExecution node:internal/bootstrap/pre_execution:21:36
+      2   10.5%          Eval: ~<anonymous> node:internal/source_map/source_map_cache:1:1
+      2  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          LazyCompile: ~lazyLoadStreams node:fs:2039:25
+      1  100.0%            LazyCompile: ~get ReadStream node:fs:2146:17
+      1    5.3%          Eval: ~<anonymous> node:worker_threads:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          Eval: ~<anonymous> node:net:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          Eval: ~<anonymous> node:internal/modules/package_json_reader:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          Eval: ~<anonymous> node:internal/modules/cjs/loader:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          Eval: ~<anonymous> node:fs:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+      1    5.3%          Eval: ~<anonymous> node:child_process:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader node:internal/bootstrap/loaders:270:27
+
+      7    3.0%  T _semaphore_create
+      1   14.3%    T __ZN2v88internal11CallPrinter18VisitNaryOperationEPNS0_13NaryOperationE
+      1  100.0%      LazyCompile: ~isEncoding node:buffer:526:40
+      1  100.0%        LazyCompile: ~assertEncoding node:internal/fs/utils:123:24
+      1  100.0%          LazyCompile: ~getOptions node:internal/fs/utils:286:20
+      1  100.0%            LazyCompile: ~readFileSync node:fs:386:22
+
+      4    1.7%  UNKNOWN
+
+      4    1.7%  /usr/lib/system/libsystem_c.dylib
+
+      3    1.3%  /usr/lib/libc++.1.dylib
+
