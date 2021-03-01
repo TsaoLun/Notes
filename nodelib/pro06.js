@@ -171,3 +171,6 @@ function doing(req, res) {
     });
 }
 //2. HTTP 响应
+//封装了底层连接的写操作，可视为可写的流对象
+//影响报文头部的有 res.setHeader() 和 res.writeHead()
+//报文体部分则是调用 res.write() 和 res.end() 实现的
