@@ -173,4 +173,38 @@ function doing(req, res) {
 //2. HTTP 响应
 //封装了底层连接的写操作，可视为可写的流对象
 //影响报文头部的有 res.setHeader() 和 res.writeHead()
-//报文体部分则是调用 res.write() 和 res.end() 实现的
+//报文体部分则是调用 res.write() 和 res.end() 实现
+//服务器端在处理业务逻辑后，务必在结束时调用 res.end() 结束请求，否则客户端将一直处于等待状态
+
+//3. HTTP 服务的事件
+//HTTP 服务器也抽象了一些事件供应用层，是一个 EventEmitter 实例
+//+ connection 事件：建立 TCP 连接时触发
+//+ request 事件：建立 TCP 连接后，http 模块从数据流中抽象出 HTTP 请求和响应，在解析出请求头后触发
+//+ close 事件：与 TCP 服务行为一致，在 server.close() 方法后所有连接断开时触发
+//+ checkContinue 事件：在发送较大数据时触发，该事件与 request 事件互斥
+//+ connect 事件，客户端发起 COINNECT 时触发
+//+ upgrade 事件
+//+ clientError 事件
+
+//HTTP 客户端负责产生报文头和报文体，同时提供底层 API：http.request(options, connect) 用于构造 HTTP 客户端
+const options = {
+    hostname: '127.0.0.1',
+    port: 1334, //服务器端口
+    path: '/',
+    method: 'GET' //HTTP默认请求方法
+};
+
+const req = http.request(options, (res)=>{
+    console.log('STATUS: ' + res.statusCode);
+    console.log('HEADERS: ' + JSON.stringify(res.headers));
+    res.setEncoding('utf8');
+    res.on('data',(chunk)=>{
+        console.log(chunk);
+    });
+});
+req.end();
+//报文体的内容由请求对象的write()方法写入，end()方法告知报文结束
+//1. ClientRequest 对象在解析完报文响应头就触发 request 事件，同时传递一个响应对象以供操作 ClientResponse，后续响应报文体以只读流方式提供
+//2. ClientRequest 对象也是通过 TCP 层实现的，为了重用 TCP 连接，http 模块默认的客户端代理对象 http.globalAgent 对每个服务器端 host + port 创建的连接进行管理
+//+ 连接池：调用 HTTP 客户端对一个服务器发起多次请求，最多只有 5 个请求处于并发状态，后续需要等待某个完成后才发出
+//+ socket：当底层连接池中建立的连接分配给当前请求对象时，触发该事件
